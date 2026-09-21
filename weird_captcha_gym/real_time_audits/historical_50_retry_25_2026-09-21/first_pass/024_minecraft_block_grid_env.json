@@ -1,0 +1,957 @@
+{
+  "case_index": 24,
+  "environment_id": "minecraft_block_grid_env",
+  "public_environment_name": "Isometric Voxel Extraction Mine",
+  "configuration_reports": [
+    {
+      "case_index": 231,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 uses four diamond targets, one screen stone, one lava hazard, one fragile-support block, durability margin 2, and unsealed targets.",
+        "Full interaction exposes horizontal canvas dragging for rotation and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "canvas_drag_rotation: a horizontal drag of at least 48 pixels changes the camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "6-6",
+          "claim": "Difficulty 1 activates four targets, one screen, one lava hazard, one support, durability margin 2, and sealed_targets false."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "267-341",
+          "claim": "The generator consumes only the supplied difficulty parameters, constructs a static voxel layout and click/rotation solution, and exports no timer, motion process, or autonomous update state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Full mode binds canvas drag to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+          "lines": "5-6,11-13",
+          "claim": "The only timed-looking effects are a compass presentation transition and a short failure animation; neither updates task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "137-229",
+          "claim": "The grader replays the ordered rotate, reset, and mine events and checks ray hits, hazards, durability, inventory, and collapse without using elapsed time."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 232,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 uses four diamond targets, one screen stone, one lava hazard, one fragile-support block, durability margin 2, and unsealed targets.",
+        "Simplified interaction exposes left/right rotation buttons and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "rotation_buttons: the left/right buttons change camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "6-6",
+          "claim": "Difficulty 1 activates four targets, one screen, one lava hazard, one support, durability margin 2, and sealed_targets false."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "267-341",
+          "claim": "The generator consumes only the supplied difficulty parameters, constructs a static voxel layout and click/rotation solution, and exports no timer, motion process, or autonomous update state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Simplified mode binds left/right buttons to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+          "lines": "5-6,11-13",
+          "claim": "The only timed-looking effects are a compass presentation transition and a short failure animation; neither updates task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "137-229",
+          "claim": "The grader replays the ordered rotate, reset, and mine events and checks ray hits, hazards, durability, inventory, and collapse without using elapsed time."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 233,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 uses two diamond targets, no screen stones, no lava, no fragile support, durability margin 4, and sealed targets with marked cap/blocker prerequisites.",
+        "Full interaction exposes horizontal canvas dragging for rotation and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "canvas_drag_rotation: a horizontal drag of at least 48 pixels changes the camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "7-7",
+          "claim": "Difficulty 2 activates two targets, no screen/lava/support hazards, durability margin 4, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Full mode binds canvas drag to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 234,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 uses two diamond targets, no screen stones, no lava, no fragile support, durability margin 4, and sealed targets with marked cap/blocker prerequisites.",
+        "Simplified interaction exposes left/right rotation buttons and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "rotation_buttons: the left/right buttons change camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "7-7",
+          "claim": "Difficulty 2 activates two targets, no screen/lava/support hazards, durability margin 4, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Simplified mode binds left/right buttons to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 235,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 uses three diamond targets, no screen stones, one lava hazard, no fragile support, durability margin 3, and sealed targets with marked cap/blocker prerequisites.",
+        "Full interaction exposes horizontal canvas dragging for rotation and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "canvas_drag_rotation: a horizontal drag of at least 48 pixels changes the camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "8-8",
+          "claim": "Difficulty 3 activates three targets, no screen, one lava hazard, no support, durability margin 3, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Full mode binds canvas drag to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 236,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 uses three diamond targets, no screen stones, one lava hazard, no fragile support, durability margin 3, and sealed targets with marked cap/blocker prerequisites.",
+        "Simplified interaction exposes left/right rotation buttons and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "rotation_buttons: the left/right buttons change camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "8-8",
+          "claim": "Difficulty 3 activates three targets, no screen, one lava hazard, no support, durability margin 3, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Simplified mode binds left/right buttons to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 237,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 uses four diamond targets, one screen stone, one lava hazard, one fragile-support block, durability margin 2, and sealed targets with marked cap/blocker prerequisites.",
+        "Full interaction exposes horizontal canvas dragging for rotation and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "canvas_drag_rotation: a horizontal drag of at least 48 pixels changes the camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "9-9",
+          "claim": "Difficulty 4 activates four targets, one screen, one lava hazard, one support, durability margin 2, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Full mode binds canvas drag to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 238,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 uses four diamond targets, one screen stone, one lava hazard, one fragile-support block, durability margin 2, and sealed targets with marked cap/blocker prerequisites.",
+        "Simplified interaction exposes left/right rotation buttons and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "rotation_buttons: the left/right buttons change camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "9-9",
+          "claim": "Difficulty 4 activates four targets, one screen, one lava hazard, one support, durability margin 2, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Simplified mode binds left/right buttons to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 239,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 uses five diamond targets, one screen stone, two lava hazards, one fragile-support block, durability margin 1, and sealed targets with marked cap/blocker prerequisites.",
+        "Full interaction exposes horizontal canvas dragging for rotation and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "canvas_drag_rotation: a horizontal drag of at least 48 pixels changes the camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "10-10",
+          "claim": "Difficulty 5 activates five targets, one screen, two lava hazards, one support, durability margin 1, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Full mode binds canvas drag to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 240,
+      "public_environment_name": "Isometric Voxel Extraction Mine",
+      "environment_id": "minecraft_block_grid_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 uses five diamond targets, one screen stone, two lava hazards, one fragile-support block, durability margin 1, and sealed targets with marked cap/blocker prerequisites.",
+        "Simplified interaction exposes left/right rotation buttons and canvas clicking for frontmost-face mining.",
+        "The REBUILD MINE button resets the pile, camera, durability, inventory, and transcript.",
+        "The EXIT MINE button submits the transcript for administrative certification."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting task process runs without a new agent action: orientation, voxels, durability, inventory, collapse state, and event history are changed only by direct handlers.",
+        "The compass has a short CSS transform transition after a rotation, and a failed submission can display a CSS failure animation; these are presentation effects and do not change the mine state or available actions.",
+        "The 180-second play allowance is a deadline, not a visibly evidenced non-clock task-state process."
+      ],
+      "grouped_control_modes": [
+        "rotation_buttons: the left/right buttons change camera orientation by one quarter turn.",
+        "canvas_click_mining: a canvas click resolves the current frontmost visible voxel face and applies its mining result.",
+        "reset_button: rebuilds the generated pile and restores the starting state.",
+        "exit_button: posts the completed transcript for verification and is administrative rather than an outcome-phase action."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Any positive wait leaves the complete task model unchanged, so an observation-free q can choose no-op for every still-solvable history and defer the board-specific click or rotation to the continuation after observing the unchanged board. Therefore clause (i) does not rule out an observation-free policy."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current endpoint screenshot is sufficient to choose the same board-specific rotation or click after the wait because the pile and depth order remain unchanged; this is static visual sufficiency, not evidence of an autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no positive Delta during which a non-clock task-state process changes autonomously. The state mutations are synchronous in rotation, mining, and reset handlers, so Q for an available action and its advantage over no-op do not strictly decrease during an idle interval. The CSS transition, failure animation, and deadline do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible pile changes only after a direct rotation, mining click, reset, or submission response; no autonomous evolution makes an action expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) fails, so the pre-run threshold cannot change the label. The implementation has no autonomous outcome phase.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "10-10",
+          "claim": "Difficulty 5 activates five targets, one screen, two lava hazards, one support, durability margin 1, and sealed_targets true."
+        },
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "lines": "12-13",
+          "claim": "Both simplified and full interaction modes are implemented; the configured play allowance is 180 seconds with a zero-millisecond observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+          "lines": "211-249,267-341",
+          "claim": "Sealed-target generation creates a finite static sequence of cap removal, blocker removal, and extraction clicks, with no autonomous update process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "200-264",
+          "claim": "Rotation, mining, and reset mutate the model synchronously inside direct event handlers; mining changes voxels, durability, inventory, or collapse only when a click occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "lines": "298-340",
+          "claim": "Simplified mode binds left/right buttons to rotation and canvas click to mining, while reset and exit are explicit controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "lines": "120-229",
+          "claim": "The grader enforces the selected interaction source and replays only ordered user events, with no elapsed-time or autonomous-state check."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

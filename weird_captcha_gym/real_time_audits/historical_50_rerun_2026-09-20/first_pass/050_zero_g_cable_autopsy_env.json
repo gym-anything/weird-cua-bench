@@ -1,0 +1,1287 @@
+{
+  "case_index": 50,
+  "environment_id": "zero_g_cable_autopsy_env",
+  "public_environment_name": "Zero-G Cable Autopsy",
+  "configuration_reports": [
+    {
+      "case_index": 491,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: 5 cable nodes, central peg only (0 support pegs), 0 alarm contacts, cable arc amplitude 0.82, one ring pair at height 1.25, peg radius 0.60, 0.50-unit gripper steps, 3 PBD substeps, and 6 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Full input: drag the canvas to orbit; press 1/2 to arm gripper A/B; W/S move y, A/D move x, Q/E move z; X detaches, Space settles, Backspace rewinds, and Enter seals; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via keyboard_gripper.",
+        "D_move: one selected-gripper x/y/z step of 0.50 world units via keyboard_axis, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via keyboard_settle.",
+        "D_detach: detach the selected gripper via keyboard_detach.",
+        "D_rewind: reset the cable via keyboard_rewind.",
+        "D_seal: final administrative verify via keyboard_seal.",
+        "D_orbit: canvas_orbit_drag camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "10-26",
+          "claim": "Difficulty 1: 5 cable nodes, central peg only (0 support pegs), 0 alarm contacts, cable arc amplitude 0.82, one ring pair at height 1.25, peg radius 0.60, 0.50-unit gripper steps, 3 PBD substeps, and 6 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "106-114",
+          "claim": "The full interaction profile is implemented and specifies the direct drag/keyboard surface; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "42-43",
+          "claim": "The full surface hides the labelled controls and binds canvas drag orbit plus keyboard gripper selection, axis motion, settle, seal, rewind, and detach."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "28-44",
+          "claim": "The grader requires full-mode canvas_orbit_drag, keyboard selection/motion/administrative actions, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator reads the difficulty condition and uses its node count, topology counts, arc amplitude, ring-height choices, peg-radius choices, move step, and PBD parameters to build the static cable instance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 492,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: 5 cable nodes, central peg only (0 support pegs), 0 alarm contacts, cable arc amplitude 0.82, one ring pair at height 1.25, peg radius 0.60, 0.50-unit gripper steps, 3 PBD substeps, and 6 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Simplified input: labelled yaw/pitch orbit buttons, A/B gripper tabs, x/y/z axis-step buttons, DETACH SELECTED, SETTLE 4×, REWIND AUTOPSY, and SEAL AUTOPSY; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via gripper_tab.",
+        "D_move: one selected-gripper x/y/z step of 0.50 world units via axis_button, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via settle_button.",
+        "D_detach: detach the selected gripper via detach_button.",
+        "D_rewind: reset the cable via rewind_button.",
+        "D_seal: final administrative verify via seal_button.",
+        "D_orbit: orbit_button camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "10-26",
+          "claim": "Difficulty 1: 5 cable nodes, central peg only (0 support pegs), 0 alarm contacts, cable arc amplitude 0.82, one ring pair at height 1.25, peg radius 0.60, 0.50-unit gripper steps, 3 PBD substeps, and 6 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "101-114",
+          "claim": "The simplified interaction profile is implemented with labelled controls, and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "38-42",
+          "claim": "The rendered simplified surface supplies orbit, gripper, axis, detach, settle, rewind, and seal buttons around the common canvas node attachment."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "10-27",
+          "claim": "The grader requires simplified orbit_button, gripper_tab, axis_button, detach_button, rewind_button, seal_button, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator reads the difficulty condition and uses its node count, topology counts, arc amplitude, ring-height choices, peg-radius choices, move step, and PBD parameters to build the static cable instance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 493,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: 7 cable nodes, central peg plus 1 support peg, 1 alarm contact, cable arc amplitude 0.94, one ring pair at height 1.50, peg radii 0.64 or 0.68, 0.35-unit gripper steps, 4 PBD substeps, and 7 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Full input: drag the canvas to orbit; press 1/2 to arm gripper A/B; W/S move y, A/D move x, Q/E move z; X detaches, Space settles, Backspace rewinds, and Enter seals; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via keyboard_gripper.",
+        "D_move: one selected-gripper x/y/z step of 0.35 world units via keyboard_axis, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via keyboard_settle.",
+        "D_detach: detach the selected gripper via keyboard_detach.",
+        "D_rewind: reset the cable via keyboard_rewind.",
+        "D_seal: final administrative verify via keyboard_seal.",
+        "D_orbit: canvas_orbit_drag camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "28-44",
+          "claim": "Difficulty 2: 7 cable nodes, central peg plus 1 support peg, 1 alarm contact, cable arc amplitude 0.94, one ring pair at height 1.50, peg radii 0.64 or 0.68, 0.35-unit gripper steps, 4 PBD substeps, and 7 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "106-114",
+          "claim": "The full interaction profile is implemented and specifies the direct drag/keyboard surface; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "42-43",
+          "claim": "The full surface hides the labelled controls and binds canvas drag orbit plus keyboard gripper selection, axis motion, settle, seal, rewind, and detach."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "28-44",
+          "claim": "The grader requires full-mode canvas_orbit_drag, keyboard selection/motion/administrative actions, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-2 seven-node, one-support-peg, one-alarm, ring-height, peg-radius, move-step, and PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 494,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: 7 cable nodes, central peg plus 1 support peg, 1 alarm contact, cable arc amplitude 0.94, one ring pair at height 1.50, peg radii 0.64 or 0.68, 0.35-unit gripper steps, 4 PBD substeps, and 7 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Simplified input: labelled yaw/pitch orbit buttons, A/B gripper tabs, x/y/z axis-step buttons, DETACH SELECTED, SETTLE 4×, REWIND AUTOPSY, and SEAL AUTOPSY; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via gripper_tab.",
+        "D_move: one selected-gripper x/y/z step of 0.35 world units via axis_button, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via settle_button.",
+        "D_detach: detach the selected gripper via detach_button.",
+        "D_rewind: reset the cable via rewind_button.",
+        "D_seal: final administrative verify via seal_button.",
+        "D_orbit: orbit_button camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "28-44",
+          "claim": "Difficulty 2: 7 cable nodes, central peg plus 1 support peg, 1 alarm contact, cable arc amplitude 0.94, one ring pair at height 1.50, peg radii 0.64 or 0.68, 0.35-unit gripper steps, 4 PBD substeps, and 7 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "101-114",
+          "claim": "The simplified interaction profile is implemented with labelled controls, and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "38-42",
+          "claim": "The rendered simplified surface supplies orbit, gripper, axis, detach, settle, rewind, and seal buttons around the common canvas node attachment."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "10-27",
+          "claim": "The grader requires simplified orbit_button, gripper_tab, axis_button, detach_button, rewind_button, seal_button, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-2 seven-node, one-support-peg, one-alarm, ring-height, peg-radius, move-step, and PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 495,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.00, one ring pair at height 1.50 or 1.75, peg radii 0.64/0.68/0.72, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Full input: drag the canvas to orbit; press 1/2 to arm gripper A/B; W/S move y, A/D move x, Q/E move z; X detaches, Space settles, Backspace rewinds, and Enter seals; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via keyboard_gripper.",
+        "D_move: one selected-gripper x/y/z step of 0.25 world units via keyboard_axis, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via keyboard_settle.",
+        "D_detach: detach the selected gripper via keyboard_detach.",
+        "D_rewind: reset the cable via keyboard_rewind.",
+        "D_seal: final administrative verify via keyboard_seal.",
+        "D_orbit: canvas_orbit_drag camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "46-62",
+          "claim": "Difficulty 3: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.00, one ring pair at height 1.50 or 1.75, peg radii 0.64/0.68/0.72, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "106-114",
+          "claim": "The full interaction profile is implemented and specifies the direct drag/keyboard surface; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "42-43",
+          "claim": "The full surface hides the labelled controls and binds canvas drag orbit plus keyboard gripper selection, axis motion, settle, seal, rewind, and detach."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "28-44",
+          "claim": "The grader requires full-mode canvas_orbit_drag, keyboard selection/motion/administrative actions, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-3 nine-node, two-support-peg, two-alarm, ring-height, peg-radius, move-step, and PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 496,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.00, one ring pair at height 1.50 or 1.75, peg radii 0.64/0.68/0.72, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Simplified input: labelled yaw/pitch orbit buttons, A/B gripper tabs, x/y/z axis-step buttons, DETACH SELECTED, SETTLE 4×, REWIND AUTOPSY, and SEAL AUTOPSY; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via gripper_tab.",
+        "D_move: one selected-gripper x/y/z step of 0.25 world units via axis_button, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via settle_button.",
+        "D_detach: detach the selected gripper via detach_button.",
+        "D_rewind: reset the cable via rewind_button.",
+        "D_seal: final administrative verify via seal_button.",
+        "D_orbit: orbit_button camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "46-62",
+          "claim": "Difficulty 3: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.00, one ring pair at height 1.50 or 1.75, peg radii 0.64/0.68/0.72, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "101-114",
+          "claim": "The simplified interaction profile is implemented with labelled controls, and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "38-42",
+          "claim": "The rendered simplified surface supplies orbit, gripper, axis, detach, settle, rewind, and seal buttons around the common canvas node attachment."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "10-27",
+          "claim": "The grader requires simplified orbit_button, gripper_tab, axis_button, detach_button, rewind_button, seal_button, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-3 nine-node, two-support-peg, two-alarm, ring-height, peg-radius, move-step, and PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 497,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.05, one ring pair at height 1.50/1.75/2.00, peg radii 0.68/0.72/0.76, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Full input: drag the canvas to orbit; press 1/2 to arm gripper A/B; W/S move y, A/D move x, Q/E move z; X detaches, Space settles, Backspace rewinds, and Enter seals; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via keyboard_gripper.",
+        "D_move: one selected-gripper x/y/z step of 0.25 world units via keyboard_axis, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via keyboard_settle.",
+        "D_detach: detach the selected gripper via keyboard_detach.",
+        "D_rewind: reset the cable via keyboard_rewind.",
+        "D_seal: final administrative verify via keyboard_seal.",
+        "D_orbit: canvas_orbit_drag camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "64-80",
+          "claim": "Difficulty 4: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.05, one ring pair at height 1.50/1.75/2.00, peg radii 0.68/0.72/0.76, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "106-114",
+          "claim": "The full interaction profile is implemented and specifies the direct drag/keyboard surface; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "42-43",
+          "claim": "The full surface hides the labelled controls and binds canvas drag orbit plus keyboard gripper selection, axis motion, settle, seal, rewind, and detach."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "28-44",
+          "claim": "The grader requires full-mode canvas_orbit_drag, keyboard selection/motion/administrative actions, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-4 nine-node, two-support-peg, two-alarm, ring-height, peg-radius, move-step, and PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 498,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.05, one ring pair at height 1.50/1.75/2.00, peg radii 0.68/0.72/0.76, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Simplified input: labelled yaw/pitch orbit buttons, A/B gripper tabs, x/y/z axis-step buttons, DETACH SELECTED, SETTLE 4×, REWIND AUTOPSY, and SEAL AUTOPSY; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via gripper_tab.",
+        "D_move: one selected-gripper x/y/z step of 0.25 world units via axis_button, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via settle_button.",
+        "D_detach: detach the selected gripper via detach_button.",
+        "D_rewind: reset the cable via rewind_button.",
+        "D_seal: final administrative verify via seal_button.",
+        "D_orbit: orbit_button camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "64-80",
+          "claim": "Difficulty 4: 9 cable nodes, central peg plus 2 support pegs, 2 alarm contacts, cable arc amplitude 1.05, one ring pair at height 1.50/1.75/2.00, peg radii 0.68/0.72/0.76, 0.25-unit gripper steps, 4 PBD substeps, and 8 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "101-114",
+          "claim": "The simplified interaction profile is implemented with labelled controls, and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "38-42",
+          "claim": "The rendered simplified surface supplies orbit, gripper, axis, detach, settle, rewind, and seal buttons around the common canvas node attachment."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "10-27",
+          "claim": "The grader requires simplified orbit_button, gripper_tab, axis_button, detach_button, rewind_button, seal_button, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-4 nine-node, two-support-peg, two-alarm, ring-height, peg-radius, move-step, and PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 499,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: 11 cable nodes, central peg plus 2 support pegs, 3 alarm contacts, cable arc amplitude 1.18, one ring pair at height 2.40 or 2.60, peg radii 0.76 or 0.80, 0.20-unit gripper steps, 5 PBD substeps, and 10 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Full input: drag the canvas to orbit; press 1/2 to arm gripper A/B; W/S move y, A/D move x, Q/E move z; X detaches, Space settles, Backspace rewinds, and Enter seals; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via keyboard_gripper.",
+        "D_move: one selected-gripper x/y/z step of 0.20 world units via keyboard_axis, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via keyboard_settle.",
+        "D_detach: detach the selected gripper via keyboard_detach.",
+        "D_rewind: reset the cable via keyboard_rewind.",
+        "D_seal: final administrative verify via keyboard_seal.",
+        "D_orbit: canvas_orbit_drag camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "82-98",
+          "claim": "Difficulty 5: 11 cable nodes, central peg plus 2 support pegs, 3 alarm contacts, cable arc amplitude 1.18, one ring pair at height 2.40 or 2.60, peg radii 0.76 or 0.80, 0.20-unit gripper steps, 5 PBD substeps, and 10 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "106-114",
+          "claim": "The full interaction profile is implemented and specifies the direct drag/keyboard surface; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "42-43",
+          "claim": "The full surface hides the labelled controls and binds canvas drag orbit plus keyboard gripper selection, axis motion, settle, seal, rewind, and detach."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "28-44",
+          "claim": "The grader requires full-mode canvas_orbit_drag, keyboard selection/motion/administrative actions, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-5 eleven-node, two-support-peg, three-alarm, ring-height, peg-radius, move-step, and denser PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 500,
+      "public_environment_name": "Zero-G Cable Autopsy",
+      "environment_id": "zero_g_cable_autopsy_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: 11 cable nodes, central peg plus 2 support pegs, 3 alarm contacts, cable arc amplitude 1.18, one ring pair at height 2.40 or 2.60, peg radii 0.76 or 0.80, 0.20-unit gripper steps, 5 PBD substeps, and 10 constraint iterations.",
+        "Common task controls: attach both endpoint grippers, move either selected gripper on three axes, detach, settle, rewind, and seal; the generated task has one port/starboard ring pair.",
+        "Simplified input: labelled yaw/pitch orbit buttons, A/B gripper tabs, x/y/z axis-step buttons, DETACH SELECTED, SETTLE 4×, REWIND AUTOPSY, and SEAL AUTOPSY; node attachment is a canvas click."
+      ],
+      "autonomous_processes": [
+        "Active attempt: none. Between input events, cable nodes, previous positions, gripper targets, ring crossings, alarm/collision counters, winding, and substep counters remain unchanged; there is no idle physics loop.",
+        "Action-triggered PBD: an accepted gripper step or an explicit settle action synchronously runs the configured PBD substeps inside the input handler.",
+        "Post-failure UI lifecycle only: a 1600 ms failure-verdict timer removes presentation, and a 1650 ms fresh-failure timer activates the next challenge/UI state after a failed seal; neither advances cable physics or changes an active solvable opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_attach: click a visible projected cable node for the selected gripper via canvas_node_click, across all attachment occurrences.",
+        "D_select: select gripper A or B via gripper_tab.",
+        "D_move: one selected-gripper x/y/z step of 0.20 world units via axis_button, grouped across all move occurrences.",
+        "D_settle: explicit PBD settle via settle_button.",
+        "D_detach: detach the selected gripper via detach_button.",
+        "D_rewind: reset the cable via rewind_button.",
+        "D_seal: final administrative verify via seal_button.",
+        "D_orbit: orbit_button camera orbit; observation-only and not an outcome-affecting candidate."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "The generated differences are static geometry and profile parameters, not a delay-dependent transition. A fixed action-history schedule can use the profile's finite attachment/lift/outward extraction route (including a profile-safe maximum lift), so the source does not rule out an observation-free q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current-frame window is sufficient for the static geometry, and g can ignore W_t^w and use the same fixed action-history schedule. This is static visual solving, not prediction of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Clause (iii) fails for every positive Delta that remains inside a salvageable attempt: with no new action, the browser does not call runPhysics or otherwise mutate the cable state, so H_t^tau has the same outcome-affecting state as H_t. Any later deadline or completion-time effect is explicitly excluded by the definition."
+      },
+      "common_visible_process": "No common visible autonomous task process exists during a solvable active attempt. The cable is static between actions; the only timers are post-failure UI lifecycle timers, not motion, physics, alarm progression, ring progression, or opportunity degradation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clause (iii) fails for every positive delay; the 50% pre-run threshold cannot override that result, and no source-defined autonomous outcome phase exists.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/task.json",
+        "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+        "weird_captcha_gym/tools/incubator_solvers/zero_g_cable_autopsy.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "82-98",
+          "claim": "Difficulty 5: 11 cable nodes, central peg plus 2 support pegs, 3 alarm contacts, cable arc amplitude 1.18, one ring pair at height 2.40 or 2.60, peg radii 0.76 or 0.80, 0.20-unit gripper steps, 5 PBD substeps, and 10 constraint iterations."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/controls.json",
+          "lines": "101-114",
+          "claim": "The simplified interaction profile is implemented with labelled controls, and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "38-42",
+          "claim": "The rendered simplified surface supplies orbit, gripper, axis, detach, settle, rewind, and seal buttons around the common canvas node attachment."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "10-27",
+          "claim": "The grader requires simplified orbit_button, gripper_tab, axis_button, detach_button, rewind_button, seal_button, and common canvas node attachment surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "40-60",
+          "claim": "The generator applies the difficulty-5 eleven-node, two-support-peg, three-alarm, ring-height, peg-radius, move-step, and denser PBD settings to the static generated geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/zero_g_cable_autopsy.py",
+          "lines": "118-133",
+          "claim": "The generated solution is a finite attachment, lift, and outward-pull sequence; it contains no timer, autonomous phase, or action-expiry rule."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/env.json",
+          "lines": "3-5",
+          "claim": "The task is described as deterministic Verlet/PBD cable physics and the runner is synchronous with observation_window_ms 0 and one captured frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "20-27",
+          "claim": "runPhysics is invoked by accepted gripper movement and explicit settle; orbit, selection, attachment, detachment, and rewind are event handlers, with no idle physics callback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.js",
+          "lines": "34-38",
+          "claim": "The only timers are failure presentation removal and fresh-failure challenge activation after a failed submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/zero_g_cable_autopsy.py",
+          "lines": "278-295",
+          "claim": "The independent replay advances PBD only for transcript gripper_move/physics_tick events and requires their explicit ordering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/zero_g_cable_autopsy.css",
+          "lines": "1-3",
+          "claim": "The mechanic CSS supplies static layout and verdict styling and contains no animation or physics process."
+        },
+        {
+          "path": "weird_captcha_gym/environments/zero_g_cable_autopsy_env/tasks/zero_g_cable_autopsy_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier only loads the exported result and invokes the independent cable grader; it adds no autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

@@ -1,0 +1,658 @@
+{
+  "case_index": 13,
+  "environment_id": "dead_mans_switch_env",
+  "public_environment_name": "Dead Man's Switch",
+  "configuration_reports": [
+    {
+      "case_index": 121,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A 9x7 course has one ordered relay and a dock; the generated route is constrained to 7-12 moves.",
+        "A visible pressure pad moves with a 4800 ms sinusoidal period, x amplitude 155-175 milli, y amplitude 95-115 milli, and a 270x310 milli hit ellipse; samples are required every 140 ms, with a 520 ms maximum gap and 460 ms outside grace.",
+        "Full input is a primary-pointer press held on the pressure pad with pointer movement to track it, plus WASD or arrow-key presses for course movement; the continuous hold must last at least 3000 ms."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame repeatedly moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "During a full hold, the same loop checks the last pointer position, emits pressure samples when it is inside the moving hit ellipse, updates the continuity display, and resets the route after the configured outside grace if tracking is lost.",
+        "The vehicle, relay progress, and route position do not advance autonomously; they change only after accepted keyboard movement."
+      ],
+      "grouped_control_modes": [
+        "full:pointer_tracking — every held-pointer start, tracking move/sample, and release/reset occurrence across seeds and attempts",
+        "full:keyboard — every WASD or arrow-key course movement while the pointer hold is active"
+      ],
+      "delta_ms": 200,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=full:pointer_tracking, the generator randomizes the pressure period, phase, and amplitudes. Histories with the same prior actions and task times can therefore show different current trajectories, so no action-only q can choose the delayed pointer target for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 500 ms observation window visibly show the pad's recent position and direction. A bounded-window g can use that trajectory, together with the action history, to place the held pointer at the predicted pad location 200 ms later."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Using the same moving-pad process, choose a held pointer position just inside the leading edge of the hit ellipse. A pointer-tracking action at that visible location is useful immediately, but for some tau<200 ms the pad moves past it and the action loses its pressure-sampling advantage. Success remains possible because the 200 ms horizon is below this level's 460 ms outside grace and the route can be recovered."
+      },
+      "common_visible_process": "The visible pressure pad continuously follows the sinusoidal trajectory. Its recent motion is the evidence needed to predict the delayed full pointer target, and the same motion makes a fixed pointer location less effective during the 200 ms witness horizon.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated course needs at least seven accepted moves. Full mode accepts those moves only as outcome-affecting keyboard events while a continuous pointer hold is active, and it also needs continuing pointer tracking, so no instance can complete its outcome phase without further outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "12-35, 156-159", "claim": "Difficulty 1 sets the 9x7 one-relay course, pressure tolerances and sampling/grace values, and the 500 ms/5-frame observation settings."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py", "lines": "67-90, 122-175", "claim": "The configured difficulty parameters generate alternating relay gaps, a route, and randomized period, phase, amplitudes, hit tolerances, and sampling thresholds."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "36-101, 397-472", "claim": "The pad position is a time-dependent sine trajectory; full mode starts a pointer-tracking hold, updates it from pointermove, samples it, and resets when it leaves too long."},
+        {"path": "weird_captcha_gym/shared_runtime/app/time_controller.js", "lines": "267-339", "claim": "requestAnimationFrame callbacks run with the virtual task clock while live and remain queued while paused."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 199-227, 249-305", "claim": "The grader binds full mode to pointer_tracking plus keyboard, requires continuous pressure samples and movement during one hold, and enforces the minimum hold and sampling gaps."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "47-77", "claim": "The full solver holds the pointer down, repeatedly relocates it to the moving pad, and sends route keys during the hold; this is implementation evidence of the required visible control sequence."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 122,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 9x7 course has one ordered relay and a dock; the generated route is constrained to 7-12 moves.",
+        "A visible pressure pad still moves with a 4800 ms sinusoidal period, x amplitude 155-175 milli, y amplitude 95-115 milli, and a 270x310 milli hit ellipse; the hold requires 140 ms samples, a 520 ms maximum gap, 460 ms outside grace, and 3000 ms minimum duration.",
+        "Simplified input is one visible ENGAGE TRACKER click followed by visible N/W/S/E direction-button clicks; the pressure pad is not pointer-interactive in this mode."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "After ENGAGE TRACKER, each animation frame sets the proxy's last pointer to the current pressure center, samples it, and advances the continuity display without further pointer input.",
+        "The vehicle and checkpoint progress change only when a direction button is clicked; the course itself is static."
+      ],
+      "grouped_control_modes": [
+        "simplified:tracker_proxy — every ENGAGE TRACKER start and automatic proxy-tracking hold occurrence across seeds and attempts",
+        "simplified:direction_buttons — every N/W/S/E route click while the proxy hold is active"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=simplified:direction_buttons, seed-dependent relay gaps and route geometry prevent a policy using only prior actions and task times from selecting the correct next direction across all histories. The tracker_proxy control itself is invariant and does not need observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible static course, checkpoint progress, and vehicle position are sufficient in a bounded current screenshot to choose the next direction-button action; the moving pad is also visible but is automatically followed by the proxy."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The moving pad does not degrade any outcome-affecting simplified control: once engaged, updatePressureMotion overwrites lastPointer with pressureCenter on every frame, so the proxy remains on the pad. Direction buttons remain effective while holding, and the static vehicle changes only on their clicks. Waiting therefore loses no action opportunity caused by task-state evolution, so no legitimate D, Delta, and w satisfies clause iii."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure pad moves visibly, but the tracker proxy follows that motion autonomously; the only remaining outcome-affecting route actions operate on a static course.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration is already No because clause iii fails; the pre-run threshold cannot change that mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "12-35, 133-159", "claim": "Difficulty 1 parameters and the simplified/full interaction contract are explicit, including the 500 ms/5-frame observation settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "65-101, 320-348, 379-459", "claim": "The mode renders ENGAGE TRACKER and direction buttons for simplified interaction; while simplified holding, each animation frame sets lastPointer to pressureCenter, while route movement is button-driven."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css", "lines": "181-200", "claim": "The pressure pad has pointer-events:none in simplified mode, leaving the proxy button as the hold input."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 216-227, 249-305", "claim": "The grader binds simplified mode to tracker_proxy and direction_buttons and checks movement only while the hold is active."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "32-46", "claim": "The mode-specific solver engages the proxy once and then sends direction-button clicks; it does not track the pad with pointer actions."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 123,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A 12x8 course has two ordered relays and a dock; the generated route is constrained to 15-20 moves.",
+        "A visible pressure pad moves with a 4400 or 4600 ms period, x amplitude 195-215 milli, y amplitude 120-140 milli, and a 240x280 milli hit ellipse; samples are required every 125 ms, with a 460 ms maximum gap and 390 ms outside grace.",
+        "Full input is a primary-pointer press held on the pressure pad with pointer movement to track it, plus WASD or arrow-key presses for course movement; the continuous hold must last at least 3800 ms."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame repeatedly moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "During a full hold, the same loop checks the last pointer position, emits pressure samples when it is inside the moving hit ellipse, updates the continuity display, and resets the route after the configured outside grace if tracking is lost.",
+        "The vehicle, relay progress, and route position do not advance autonomously; they change only after accepted keyboard movement."
+      ],
+      "grouped_control_modes": [
+        "full:pointer_tracking — every held-pointer start, tracking move/sample, and release/reset occurrence across seeds and attempts",
+        "full:keyboard — every WASD or arrow-key course movement while the pointer hold is active"
+      ],
+      "delta_ms": 200,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=full:pointer_tracking, the generator randomizes the pressure period, phase, and amplitudes. Histories with the same prior actions and task times can therefore show different current trajectories, so no action-only q can choose the delayed pointer target for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 500 ms observation window visibly show the pad's recent position and direction. A bounded-window g can use that trajectory, together with the action history, to place the held pointer at the predicted pad location 200 ms later."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Using the same moving-pad process, choose a held pointer position just inside the leading edge of the hit ellipse. A pointer-tracking action at that visible location is useful immediately, but for some tau<200 ms the pad moves past it and the action loses its pressure-sampling advantage. Success remains possible because the 200 ms horizon is below this level's 390 ms outside grace and the route can be recovered."
+      },
+      "common_visible_process": "The visible pressure pad continuously follows the sinusoidal trajectory. Its recent motion is the evidence needed to predict the delayed full pointer target, and the same motion makes a fixed pointer location less effective during the 200 ms witness horizon.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated course needs at least fifteen accepted moves. Full mode accepts those moves only as outcome-affecting keyboard events while a continuous pointer hold is active, and it also needs continuing pointer tracking, so no instance can complete its outcome phase without further outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "37-62, 156-159", "claim": "Difficulty 2 sets the 12x8 two-relay course, faster/narrower pressure tolerances, and the 500 ms/5-frame observation settings."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py", "lines": "67-90, 122-175", "claim": "The generator applies the exact difficulty parameters and randomizes motion period, phase, and amplitudes for each instance."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "36-101, 397-472", "claim": "The pad moves autonomously and full mode requires pointerdown plus pointermove tracking and samples/reset logic during the hold."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 199-227, 249-305", "claim": "The grader enforces full pointer_tracking and keyboard inputs, recent pressure samples, one continuous hold, and the difficulty-specific minimum hold."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "47-77", "claim": "The full solver repeatedly moves the held pointer to the moving pad while sending route keys."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 124,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 12x8 course has two ordered relays and a dock; the generated route is constrained to 15-20 moves.",
+        "A visible pressure pad still moves with a 4400 or 4600 ms period, x amplitude 195-215 milli, y amplitude 120-140 milli, and a 240x280 milli hit ellipse; the hold requires 125 ms samples, a 460 ms maximum gap, 390 ms outside grace, and 3800 ms minimum duration.",
+        "Simplified input is one visible ENGAGE TRACKER click followed by visible N/W/S/E direction-button clicks; the pressure pad is not pointer-interactive in this mode."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "After ENGAGE TRACKER, each animation frame sets the proxy's last pointer to the current pressure center, samples it, and advances the continuity display without further pointer input.",
+        "The vehicle and checkpoint progress change only when a direction button is clicked; the course itself is static."
+      ],
+      "grouped_control_modes": [
+        "simplified:tracker_proxy — every ENGAGE TRACKER start and automatic proxy-tracking hold occurrence across seeds and attempts",
+        "simplified:direction_buttons — every N/W/S/E route click while the proxy hold is active"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=simplified:direction_buttons, seed-dependent relay gaps and route geometry prevent a policy using only prior actions and task times from selecting the correct next direction across all histories. The tracker_proxy control itself is invariant and does not need observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible static course, checkpoint progress, and vehicle position are sufficient in a bounded current screenshot to choose the next direction-button action; the moving pad is also visible but is automatically followed by the proxy."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The moving pad does not degrade any outcome-affecting simplified control: once engaged, updatePressureMotion overwrites lastPointer with pressureCenter on every frame, so the proxy remains on the pad. Direction buttons remain effective while holding, and the static vehicle changes only on their clicks. Waiting therefore loses no action opportunity caused by task-state evolution, so no legitimate D, Delta, and w satisfies clause iii."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure pad moves visibly, but the tracker proxy follows that motion autonomously; the only remaining outcome-affecting route actions operate on a static course.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration is already No because clause iii fails; the pre-run threshold cannot change that mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "37-62, 133-159", "claim": "Difficulty 2 parameters and the simplified/full interaction contract are explicit."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "65-101, 320-348, 379-459", "claim": "Simplified rendering exposes the tracker proxy and direction buttons; the proxy follows pressureCenter every frame while route movement is button-driven."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css", "lines": "181-200", "claim": "The pressure pad has pointer-events:none in simplified mode."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 216-227, 249-305", "claim": "The grader binds simplified mode to tracker_proxy and direction_buttons and checks movement only while the hold is active."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "32-46", "claim": "The simplified solver engages the proxy once and then clicks direction controls."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 125,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A 15x9 course has three ordered relays and a dock; the generated route is constrained to 28-36 moves.",
+        "A visible pressure pad moves with a 4000 or 4200 ms period, x amplitude 220-240 milli, y amplitude 140-160 milli, and a 210x255 milli hit ellipse; samples are required every 110 ms, with a 410 ms maximum gap and 350 ms outside grace.",
+        "Full input is a primary-pointer press held on the pressure pad with pointer movement to track it, plus WASD or arrow-key presses for course movement; the continuous hold must last at least 4500 ms."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame repeatedly moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "During a full hold, the same loop checks the last pointer position, emits pressure samples when it is inside the moving hit ellipse, updates the continuity display, and resets the route after the configured outside grace if tracking is lost.",
+        "The vehicle, relay progress, and route position do not advance autonomously; they change only after accepted keyboard movement."
+      ],
+      "grouped_control_modes": [
+        "full:pointer_tracking — every held-pointer start, tracking move/sample, and release/reset occurrence across seeds and attempts",
+        "full:keyboard — every WASD or arrow-key course movement while the pointer hold is active"
+      ],
+      "delta_ms": 200,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=full:pointer_tracking, the generator randomizes the pressure period, phase, and amplitudes. Histories with the same prior actions and task times can therefore show different current trajectories, so no action-only q can choose the delayed pointer target for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 500 ms observation window visibly show the pad's recent position and direction. A bounded-window g can use that trajectory, together with the action history, to place the held pointer at the predicted pad location 200 ms later."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Using the same moving-pad process, choose a held pointer position just inside the leading edge of the hit ellipse. A pointer-tracking action at that visible location is useful immediately, but for some tau<200 ms the pad moves past it and the action loses its pressure-sampling advantage. Success remains possible because the 200 ms horizon is below this level's 350 ms outside grace and the route can be recovered."
+      },
+      "common_visible_process": "The visible pressure pad continuously follows the sinusoidal trajectory. Its recent motion is the evidence needed to predict the delayed full pointer target, and the same motion makes a fixed pointer location less effective during the 200 ms witness horizon.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated course needs at least twenty-eight accepted moves. Full mode accepts those moves only as outcome-affecting keyboard events while a continuous pointer hold is active, and it also needs continuing pointer tracking, so no instance can complete its outcome phase without further outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "64-89, 156-159", "claim": "Difficulty 3 sets the 15x9 three-relay course, motion tolerances, grace values, and 500 ms/5-frame observations."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py", "lines": "67-90, 122-175", "claim": "The generator creates the relay route and randomized sinusoidal pressure motion for the selected difficulty."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "36-101, 397-472", "claim": "Full pointer tracking is updated and sampled against the moving pad, with autonomous reset after an outside interval."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 199-227, 249-305", "claim": "The grader requires the full pointer/keyboard inputs and continuous-hold evidence for the selected difficulty."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "47-77", "claim": "The full solver follows the moving pressure pad while issuing route keys."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 126,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 15x9 course has three ordered relays and a dock; the generated route is constrained to 28-36 moves.",
+        "A visible pressure pad still moves with a 4000 or 4200 ms period, x amplitude 220-240 milli, y amplitude 140-160 milli, and a 210x255 milli hit ellipse; the hold requires 110 ms samples, a 410 ms maximum gap, 350 ms outside grace, and 4500 ms minimum duration.",
+        "Simplified input is one visible ENGAGE TRACKER click followed by visible N/W/S/E direction-button clicks; the pressure pad is not pointer-interactive in this mode."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "After ENGAGE TRACKER, each animation frame sets the proxy's last pointer to the current pressure center, samples it, and advances the continuity display without further pointer input.",
+        "The vehicle and checkpoint progress change only when a direction button is clicked; the course itself is static."
+      ],
+      "grouped_control_modes": [
+        "simplified:tracker_proxy — every ENGAGE TRACKER start and automatic proxy-tracking hold occurrence across seeds and attempts",
+        "simplified:direction_buttons — every N/W/S/E route click while the proxy hold is active"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=simplified:direction_buttons, seed-dependent relay gaps and route geometry prevent a policy using only prior actions and task times from selecting the correct next direction across all histories. The tracker_proxy control itself is invariant and does not need observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible static course, checkpoint progress, and vehicle position are sufficient in a bounded current screenshot to choose the next direction-button action; the moving pad is also visible but is automatically followed by the proxy."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The moving pad does not degrade any outcome-affecting simplified control: once engaged, updatePressureMotion overwrites lastPointer with pressureCenter on every frame, so the proxy remains on the pad. Direction buttons remain effective while holding, and the static vehicle changes only on their clicks. Waiting therefore loses no action opportunity caused by task-state evolution, so no legitimate D, Delta, and w satisfies clause iii."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure pad moves visibly, but the tracker proxy follows that motion autonomously; the only remaining outcome-affecting route actions operate on a static course.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration is already No because clause iii fails; the pre-run threshold cannot change that mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "64-89, 133-159", "claim": "Difficulty 3 parameters and the simplified/full interaction contract are explicit."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "65-101, 320-348, 379-459", "claim": "The simplified proxy follows the moving center every frame, while the course moves only from direction-button clicks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css", "lines": "181-200", "claim": "The pressure pad is non-pointer-interactive in simplified mode."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 216-227, 249-305", "claim": "The grader binds simplified mode to tracker_proxy and direction_buttons and verifies the continuous route transcript."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "32-46", "claim": "The simplified solver uses one proxy-arm click followed by route-button clicks."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 127,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "An 18x10 course has five ordered relays and a dock; the generated route is constrained to 45-57 moves.",
+        "A visible pressure pad moves with a 3600, 3800, or 4000 ms period, x amplitude 245-285 milli, y amplitude 155-190 milli, and a 185x235 milli hit ellipse; samples are required every 100 ms, with a 360 ms maximum gap and 310 ms outside grace.",
+        "Full input is a primary-pointer press held on the pressure pad with pointer movement to track it, plus WASD or arrow-key presses for course movement; the continuous hold must last at least 5200 ms."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame repeatedly moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "During a full hold, the same loop checks the last pointer position, emits pressure samples when it is inside the moving hit ellipse, updates the continuity display, and resets the route after the configured outside grace if tracking is lost.",
+        "The vehicle, relay progress, and route position do not advance autonomously; they change only after accepted keyboard movement."
+      ],
+      "grouped_control_modes": [
+        "full:pointer_tracking — every held-pointer start, tracking move/sample, and release/reset occurrence across seeds and attempts",
+        "full:keyboard — every WASD or arrow-key course movement while the pointer hold is active"
+      ],
+      "delta_ms": 200,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=full:pointer_tracking, the generator randomizes the pressure period, phase, and amplitudes. Histories with the same prior actions and task times can therefore show different current trajectories, so no action-only q can choose the delayed pointer target for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 500 ms observation window visibly show the pad's recent position and direction. A bounded-window g can use that trajectory, together with the action history, to place the held pointer at the predicted pad location 200 ms later."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Using the same moving-pad process, choose a held pointer position just inside the leading edge of the hit ellipse. A pointer-tracking action at that visible location is useful immediately, but for some tau<200 ms the pad moves past it and the action loses its pressure-sampling advantage. Success remains possible because the 200 ms horizon is below this level's 310 ms outside grace and the route can be recovered."
+      },
+      "common_visible_process": "The visible pressure pad continuously follows the sinusoidal trajectory. Its recent motion is the evidence needed to predict the delayed full pointer target, and the same motion makes a fixed pointer location less effective during the 200 ms witness horizon.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated course needs at least forty-five accepted moves. Full mode accepts those moves only as outcome-affecting keyboard events while a continuous pointer hold is active, and it also needs continuing pointer tracking, so no instance can complete its outcome phase without further outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "91-116, 156-159", "claim": "Difficulty 4 sets the 18x10 five-relay course, faster/narrower pressure tracking, and the 500 ms/5-frame observation settings."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py", "lines": "67-90, 122-175", "claim": "The generator applies the five-relay configuration and randomizes the sinusoidal motion parameters."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "36-101, 397-472", "claim": "The full pointer target moves autonomously and the hold samples/reset behavior depends on tracking it."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 199-227, 249-305", "claim": "The grader requires full pointer_tracking and keyboard transcripts, pressure samples, minimum hold duration, and a complete route."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "47-77", "claim": "The full solver continuously moves the held pointer to the moving pad while issuing route keys."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 128,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "An 18x10 course has five ordered relays and a dock; the generated route is constrained to 45-57 moves.",
+        "A visible pressure pad still moves with a 3600, 3800, or 4000 ms period, x amplitude 245-285 milli, y amplitude 155-190 milli, and a 185x235 milli hit ellipse; the hold requires 100 ms samples, a 360 ms maximum gap, 310 ms outside grace, and 5200 ms minimum duration.",
+        "Simplified input is one visible ENGAGE TRACKER click followed by visible N/W/S/E direction-button clicks; the pressure pad is not pointer-interactive in this mode."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "After ENGAGE TRACKER, each animation frame sets the proxy's last pointer to the current pressure center, samples it, and advances the continuity display without further pointer input.",
+        "The vehicle and checkpoint progress change only when a direction button is clicked; the course itself is static."
+      ],
+      "grouped_control_modes": [
+        "simplified:tracker_proxy — every ENGAGE TRACKER start and automatic proxy-tracking hold occurrence across seeds and attempts",
+        "simplified:direction_buttons — every N/W/S/E route click while the proxy hold is active"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=simplified:direction_buttons, seed-dependent relay gaps and route geometry prevent a policy using only prior actions and task times from selecting the correct next direction across all histories. The tracker_proxy control itself is invariant and does not need observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible static course, checkpoint progress, and vehicle position are sufficient in a bounded current screenshot to choose the next direction-button action; the moving pad is also visible but is automatically followed by the proxy."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The moving pad does not degrade any outcome-affecting simplified control: once engaged, updatePressureMotion overwrites lastPointer with pressureCenter on every frame, so the proxy remains on the pad. Direction buttons remain effective while holding, and the static vehicle changes only on their clicks. Waiting therefore loses no action opportunity caused by task-state evolution, so no legitimate D, Delta, and w satisfies clause iii."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure pad moves visibly, but the tracker proxy follows that motion autonomously; the only remaining outcome-affecting route actions operate on a static course.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration is already No because clause iii fails; the pre-run threshold cannot change that mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "91-116, 133-159", "claim": "Difficulty 4 parameters and the simplified/full interaction contract are explicit."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "65-101, 320-348, 379-459", "claim": "Simplified mode follows the moving center with a tracker proxy and changes the vehicle only from direction-button clicks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css", "lines": "181-200", "claim": "The pressure pad has pointer-events:none in simplified mode."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 216-227, 249-305", "claim": "The grader binds simplified mode to tracker_proxy and direction_buttons and validates the held route."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "32-46", "claim": "The simplified solver arms the proxy once and then clicks route buttons."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 129,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A 22x12 course has six ordered relays and a dock; the generated route is constrained to 60-74 moves.",
+        "A visible pressure pad moves with a 3200, 3400, or 3600 ms period, x amplitude 285-315 milli, y amplitude 185-215 milli, and a 155x200 milli hit ellipse; samples are required every 85 ms, with a 300 ms maximum gap and 240 ms outside grace.",
+        "Full input is a primary-pointer press held on the pressure pad with pointer movement to track it, plus WASD or arrow-key presses for course movement; the continuous hold must last at least 6500 ms."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame repeatedly moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "During a full hold, the same loop checks the last pointer position, emits pressure samples when it is inside the moving hit ellipse, updates the continuity display, and resets the route after the configured outside grace if tracking is lost.",
+        "The vehicle, relay progress, and route position do not advance autonomously; they change only after accepted keyboard movement."
+      ],
+      "grouped_control_modes": [
+        "full:pointer_tracking — every held-pointer start, tracking move/sample, and release/reset occurrence across seeds and attempts",
+        "full:keyboard — every WASD or arrow-key course movement while the pointer hold is active"
+      ],
+      "delta_ms": 200,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=full:pointer_tracking, the generator randomizes the pressure period, phase, and amplitudes. Histories with the same prior actions and task times can therefore show different current trajectories, so no action-only q can choose the delayed pointer target for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 500 ms observation window visibly show the pad's recent position and direction. A bounded-window g can use that trajectory, together with the action history, to place the held pointer at the predicted pad location 200 ms later."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Using the same moving-pad process, choose a held pointer position just inside the leading edge of the hit ellipse. A pointer-tracking action at that visible location is useful immediately, but for some tau<200 ms the pad moves past it and the action loses its pressure-sampling advantage. Success remains possible because the 200 ms horizon is below this level's 240 ms outside grace and the route can be recovered."
+      },
+      "common_visible_process": "The visible pressure pad continuously follows the sinusoidal trajectory. Its recent motion is the evidence needed to predict the delayed full pointer target, and the same motion makes a fixed pointer location less effective during the 200 ms witness horizon.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated course needs at least sixty accepted moves. Full mode accepts those moves only as outcome-affecting keyboard events while a continuous pointer hold is active, and it also needs continuing pointer tracking, so no instance can complete its outcome phase without further outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "118-151, 156-159", "claim": "Difficulty 5 sets the 22x12 six-relay course, narrowest/fastest pressure tracking, and the 500 ms/5-frame observation settings."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py", "lines": "67-90, 122-175", "claim": "The generator applies the six-relay configuration and randomizes the sinusoidal motion parameters."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "36-101, 397-472", "claim": "Full mode must update and sample a pointer against the autonomous moving pad and resets when tracking is lost."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 199-227, 249-305", "claim": "The grader binds full mode to pointer_tracking and keyboard and enforces the short sample gaps, minimum hold, and complete route."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "47-77", "claim": "The full solver follows the moving pressure pad while issuing the route keys."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 130,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 22x12 course has six ordered relays and a dock; the generated route is constrained to 60-74 moves.",
+        "A visible pressure pad still moves with a 3200, 3400, or 3600 ms period, x amplitude 285-315 milli, y amplitude 185-215 milli, and a 155x200 milli hit ellipse; the hold requires 85 ms samples, a 300 ms maximum gap, 240 ms outside grace, and 6500 ms minimum duration.",
+        "Simplified input is one visible ENGAGE TRACKER click followed by visible N/W/S/E direction-button clicks; the pressure pad is not pointer-interactive in this mode."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame moves the visible pressure pad along its sinusoidal x/y trajectory.",
+        "After ENGAGE TRACKER, each animation frame sets the proxy's last pointer to the current pressure center, samples it, and advances the continuity display without further pointer input.",
+        "The vehicle and checkpoint progress change only when a direction button is clicked; the course itself is static."
+      ],
+      "grouped_control_modes": [
+        "simplified:tracker_proxy — every ENGAGE TRACKER start and automatic proxy-tracking hold occurrence across seeds and attempts",
+        "simplified:direction_buttons — every N/W/S/E route click while the proxy hold is active"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=simplified:direction_buttons, seed-dependent relay gaps and route geometry prevent a policy using only prior actions and task times from selecting the correct next direction across all histories. The tracker_proxy control itself is invariant and does not need observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible static course, checkpoint progress, and vehicle position are sufficient in a bounded current screenshot to choose the next direction-button action; the moving pad is also visible but is automatically followed by the proxy."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The moving pad does not degrade any outcome-affecting simplified control: once engaged, updatePressureMotion overwrites lastPointer with pressureCenter on every frame, so the proxy remains on the pad. Direction buttons remain effective while holding, and the static vehicle changes only on their clicks. Waiting therefore loses no action opportunity caused by task-state evolution, so no legitimate D, Delta, and w satisfies clause iii."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure pad moves visibly, but the tracker proxy follows that motion autonomously; the only remaining outcome-affecting route actions operate on a static course.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration is already No because clause iii fails; the pre-run threshold cannot change that mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json", "lines": "118-151, 133-159", "claim": "Difficulty 5 parameters and the simplified/full interaction contract are explicit."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js", "lines": "65-101, 320-348, 379-459", "claim": "Simplified mode follows the moving center with the proxy and changes the vehicle only from direction-button clicks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css", "lines": "181-200", "claim": "The pressure pad is non-pointer-interactive in simplified mode."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py", "lines": "95-106, 216-227, 249-305", "claim": "The grader binds simplified mode to tracker_proxy and direction_buttons and checks the held route transcript."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py", "lines": "32-46", "claim": "The simplified solver arms the proxy once and then clicks route buttons."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

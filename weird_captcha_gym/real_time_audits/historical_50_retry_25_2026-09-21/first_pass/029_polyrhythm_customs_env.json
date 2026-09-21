@@ -1,0 +1,690 @@
+{
+  "case_index": 29,
+  "environment_id": "polyrhythm_customs_env",
+  "public_environment_name": "Polyrhythm Customs",
+  "configuration_reports": [
+    {
+      "case_index": 281,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the two-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined performance, A and S keydown/keyup events or direct pointer-down/pointer-up on the visible lane pads are outcome-affecting.",
+        "CERTIFY NOW submits the recorded transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; event input is locked.",
+        "A fixed three-count countdown hides the score and keeps performance event recording inactive.",
+        "In full performance, the meter and performance clock advance autonomously and a timeout ends the generated performance interval; key/pad events can change the transcript during that interval."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard: A/S keydown and keyup events on the focused performance shell.",
+        "D_full_pointer_direct: pointer-down and pointer-up events on the A/S lane pads during performance."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, the beat choice, hold lane/slot/duration, and preview order vary with the private seed. I_t contains only prior actions and task times, so an observation-free q cannot choose the required next lane event for every history in the full keyboard or pointer mode."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "During the active full-performance control window the score is replaced by MANIFEST HIDDEN; the recent screen contains only the performance void, meter, and clock. The two-lane score was shown earlier one lane at a time, outside the bounded 1000 ms observation window, so W_t cannot distinguish histories with different hidden hold choices or beat choices."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The only autonomous change while full controls are available is the fixed performance clock/meter and timeout. A late key event loses value only because its timestamp is later than the fixed note schedule/start window, which is the excluded clock/deadline or later-delivery effect; no non-clock moving task state visibly degrades the action."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The scanhead and note pulses occur before full controls are enabled, while the active performance screen hides the score and exposes only a fixed clock/progress display; that display cannot supply the missing lane choice.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated instance has nonempty expected notes and the full transcript can only be populated by key/pad events after the performance phase begins. Starting that phase and sending no outcome-affecting actions cannot produce a successful transcript, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "10-42", "claim": "Difficulty 1 is two lanes with eight notes, one hold, no chord, zero tap jitter, and a 320 ms start window."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator chooses beat/lead values and seed-dependent hold slots, jitter, durations, and performance length, while emitting nonempty expected notes."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175", "claim": "Sequential preview animation advances autonomously and explicitly reports input locked; countdown timers hide the score before performance."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "283-329", "claim": "Full performance shows only a meter/clock and hidden-manifest text, records live events, and ends by timeout; simplified ledger behavior is separate."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "450-485", "claim": "Full mode binds keyboard and direct pad down/up events, while the simplified mode does not install pad handlers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "35-91,142-213", "claim": "The grader enforces normalized down/up transcripts, source-specific interaction modes, note start windows, and hold/chord scoring."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The configured observation is an eight-frame 1000 ms window and the task has a 120 second play allowance."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py", "lines": "53-101", "claim": "The scripted solver reads private expected_notes and schedules full-mode key events; that is implementation evidence, not policy-visible information."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 282,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the two-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined timing declaration, click an A or S timing track for a tap and drag horizontally on it for a hold; vertically aligned marks can form a chord, though this profile has no chord.",
+        "CERTIFY NOW submits the ledger transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; ledger input is locked.",
+        "A fixed three-count countdown hides the score and keeps ledger input inactive.",
+        "Once simplified performance begins, the blank timing ledger is static: pointer actions add markers and rebuild the transcript, but no performance timer advances or ends the phase."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tap: click on a visible lane timing track to place a tap.",
+        "D_simplified_hold: horizontal drag on a visible lane timing track to place a hold."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, the beat choice, hold lane/slot/duration, and preview order vary with the private seed. I_t does not contain the earlier lane-preview content, so an observation-free q cannot choose the required next ledger placement for every history in the simplified mode."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "When simplified controls become available, W_t shows the blank ledger and any marks already created by the agent, not the sealed score. The two-lane previews are sequential and earlier than the ledger, so the bounded 1000 ms window cannot distinguish histories with different hidden hold choices or beat choices."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Preview and countdown evolve only while ledger controls are locked. During the active click/drag ledger, waiting changes no task state and does not reduce the value or availability of a placement; certification is administrative."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The animated preview is before the active ledger, and the active ledger is a static coordinate surface whose marks remain actionable indefinitely.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The simplified performance phase resets to an empty ledger and requires post-start click/drag actions to create the transcript; it has no autonomous end. A no-action run cannot submit a successful nonempty transcript, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "10-42", "claim": "Difficulty 1 is two lanes with eight notes, one hold, no chord, zero tap jitter, and the 320 ms start window."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator creates seed-dependent note timing, hold selection, and duration while keeping the expected score private to the generated ground truth."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175", "claim": "The only pre-ledger autonomous animation is sequential preview/countdown, and it explicitly locks input."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "203-280,295-329", "claim": "Simplified performance creates a blank ledger, maps click/drag geometry into transcript timestamps, and installs no autonomous end timer."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css", "lines": "61-77,108-118", "claim": "The simplified ledger is a static visible track, and the pad bank is disabled during simplified performance."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "73-91,142-213", "claim": "The grader requires pointer_toggle events in simplified mode and scores their submitted timestamps against the hidden notes."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The bounded observation window is 1000 ms with eight chronological frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 283,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the three-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined performance, A, S, and D keydown/keyup events or direct pointer-down/pointer-up on the visible lane pads are outcome-affecting.",
+        "CERTIFY NOW submits the recorded transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; event input is locked.",
+        "A fixed three-count countdown hides the score and keeps performance event recording inactive.",
+        "In full performance, the meter and performance clock advance autonomously and a timeout ends the generated performance interval; key/pad events can change the transcript during that interval."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard: A/S/D keydown and keyup events on the focused performance shell.",
+        "D_full_pointer_direct: pointer-down and pointer-up events on the A/S/D lane pads during performance."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The three-lane profile randomizes beat/lead choices, tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot identify which lane event is optimal in every full-mode history, so no observation-free q exists across the grouped full control modes."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The score is sealed before full performance and the active screen exposes only the hidden-manifest performance view, meter, and clock. The three separate previews are outside the bounded 1000 ms window, so W_t cannot recover the randomized chord, hold, or jitter information needed for the next event."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "While full controls are enabled, the only autonomous evolution is the fixed performance clock/meter and timeout. A timestamp becoming late relative to the fixed score is an excluded clock/deadline or later-delivery loss, not a visibly evidenced non-clock task-state process."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Preview motion occurs with input locked; performance motion is only a fixed progress clock while the randomized score is hidden.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generated score always has outcome-affecting notes, and full-mode events are accepted only after performance begins. A no-action autonomous performance cannot create the required transcript, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "44-76", "claim": "Difficulty 2 is three lanes with fourteen notes, one hold, one chord, randomized tap jitter, and a 280 ms start window."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator uses seed randomness for beat/lead selection, chord pairs, jitter, hold slots, and durations."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,283-329", "claim": "The preview/countdown evolve before input, while full performance hides the manifest and advances only its meter/clock before timeout."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "450-485", "claim": "Full mode records A/S/D keyboard or direct-pad down/up input, with no preview input accepted."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "73-91,151-213", "claim": "The grader checks the full input source and scores exact note starts, holds, chords, and accuracy."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The configured recent observation is 1000 ms across eight frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 284,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the three-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined timing declaration, click an A, S, or D timing track for a tap and drag horizontally for a hold; align marks vertically to form the one chord.",
+        "CERTIFY NOW submits the ledger transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; ledger input is locked.",
+        "A fixed three-count countdown hides the score and keeps ledger input inactive.",
+        "Once simplified performance begins, the blank timing ledger is static: pointer actions add markers and rebuild the transcript, but no performance timer advances or ends the phase."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tap: click on a visible A/S/D timing track to place a tap.",
+        "D_simplified_hold: horizontal drag on a visible A/S/D timing track to place a hold."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The three-lane profile randomizes beat/lead choices, tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot identify the next hidden score placement in every simplified-mode history, so no observation-free q exists."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The active ledger shows only blank tracks, a ruler, and the agent's own marks; the randomized score is sealed after sequential previews. A 1000 ms recent window cannot distinguish histories with different chord, hold, or jitter information needed for the next placement."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Preview and countdown evolve only while ledger controls are locked. During the active click/drag ledger, waiting changes no task state and does not reduce the value or availability of a placement; certification is administrative."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The animated preview is before the active ledger, and the active ledger is a static surface on which marks remain actionable indefinitely.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The simplified phase starts with an empty ledger and requires post-start pointer placements; it has no autonomous end. A no-action run cannot submit a successful transcript, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "44-76", "claim": "Difficulty 2 is three lanes with fourteen notes, one hold, one chord, randomized tap jitter, and a 280 ms start window."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator creates seed-dependent note timing, chord membership, hold selection, and duration."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,203-329", "claim": "Preview/countdown are autonomous and locked, whereas simplified performance is a blank click/drag ledger with no autonomous completion timer."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css", "lines": "61-77,108-118", "claim": "The ledger and its marks are static visible tracks and the performance pad bank is disabled in simplified mode."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "73-91,151-213", "claim": "The grader restricts simplified submissions to pointer_toggle events and compares their placed timestamps with the hidden score."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The recent visual bound is 1000 ms with eight frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 285,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the three-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined performance, A, S, and D keydown/keyup events or direct pointer-down/pointer-up on the visible lane pads are outcome-affecting.",
+        "CERTIFY NOW submits the recorded transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; event input is locked.",
+        "A fixed three-count countdown hides the score and keeps performance event recording inactive.",
+        "In full performance, the meter and performance clock advance autonomously and a timeout ends the generated performance interval; key/pad events can change the transcript during that interval."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard: A/S/D keydown and keyup events on the focused performance shell.",
+        "D_full_pointer_direct: pointer-down and pointer-up events on the A/S/D lane pads during performance."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The three-lane dense profile randomizes beat/lead choices, tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot select the correct next lane event for every full-mode history, so no observation-free q exists."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "During full performance the manifest is hidden and the recent screen contains only the meter, clock, and performance prompt. The three sequential previews, including the randomized two holds and chord, are outside the bounded 1000 ms window, so W_t is insufficient to choose the next event."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The active full-mode evolution is only the fixed performance clock/meter and timeout. Losing a fixed note's start window through later delivery is an excluded clock/deadline effect, and no non-clock moving task state is visible while the controls are usable."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Preview motion is input-locked, and the active performance view has no visible score trajectory or target state beyond fixed elapsed progress.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated instance has required notes and full-mode transcript events are accepted only after performance starts. A no-action run cannot produce the required events, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "78-110", "claim": "Difficulty 3 is three lanes with sixteen notes, two holds, one chord, denser timing, and a 260 ms start window."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator makes timing, chord, hold, and duration details seed-dependent and computes the performance interval from the notes."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,283-329", "claim": "Autonomous preview/countdown precedes input, and full performance exposes only progress/clock while hiding the score until timeout."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "450-485", "claim": "Full keyboard and direct-pad down/up handlers are the active outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "151-213", "claim": "The grader requires timed note matching, chord simultaneity, and the configured accuracy threshold."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The bounded observation is 1000 ms and eight frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 286,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the three-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined timing declaration, click an A, S, or D timing track for a tap and drag horizontally for a hold; align marks vertically to form the one chord.",
+        "CERTIFY NOW submits the ledger transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; ledger input is locked.",
+        "A fixed three-count countdown hides the score and keeps ledger input inactive.",
+        "Once simplified performance begins, the blank timing ledger is static: pointer actions add markers and rebuild the transcript, but no performance timer advances or ends the phase."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tap: click on a visible A/S/D timing track to place a tap.",
+        "D_simplified_hold: horizontal drag on a visible A/S/D timing track to place a hold."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The three-lane dense profile randomizes beat/lead choices, tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot select the correct hidden ledger placement for every simplified-mode history, so no observation-free q exists."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The active ledger shows only blank tracks, a ruler, and prior self-entered marks; the randomized score is sealed after sequential previews. A bounded 1000 ms window cannot recover the hidden two-hold/chord timing needed for the next placement."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Preview and countdown evolve only while ledger controls are locked. During the active click/drag ledger, waiting changes no task state and does not reduce the value or availability of a placement; certification is administrative."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The animated preview is before the active ledger, and the active ledger is static with no expiring placement opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The simplified phase starts with an empty ledger and requires post-start pointer placements; it has no autonomous end. A no-action run cannot submit a successful transcript, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "78-110", "claim": "Difficulty 3 is three lanes with sixteen notes, two holds, one chord, denser timing, and a 260 ms start window."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator creates seed-dependent note timing, chord membership, hold selection, and duration."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,203-329", "claim": "Preview/countdown are autonomous and locked, whereas simplified performance is a static click/drag ledger with no autonomous completion timer."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css", "lines": "61-77,108-118", "claim": "The ledger is rendered as static tracks and the performance pad bank is disabled for simplified interaction."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "73-91,151-213", "claim": "The grader restricts the simplified input source and compares entered timing marks with hidden notes, holds, and chords."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The recent visual bound is 1000 ms with eight frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 287,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the four-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined performance, A, S, D, and F keydown/keyup events or direct pointer-down/pointer-up on the visible lane pads are outcome-affecting.",
+        "CERTIFY NOW submits the recorded transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; event input is locked.",
+        "A fixed three-count countdown hides the score and keeps performance event recording inactive.",
+        "In full performance, the meter and performance clock advance autonomously and a timeout ends the generated performance interval; key/pad events can change the transcript during that interval."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard: A/S/D/F keydown and keyup events on the focused performance shell.",
+        "D_full_pointer_direct: pointer-down and pointer-up events on the A/S/D/F lane pads during performance."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The four-lane profile randomizes beat/lead choices, tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot select the correct next lane event for every full-mode history, so no observation-free q exists."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "During full performance the manifest is hidden and W_t contains only the performance prompt, meter, and clock. The four separate previews, including two holds and two chords, are outside the bounded 1000 ms window, so it cannot distinguish histories requiring different next events."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The active full-mode evolution is only the fixed performance clock/meter and timeout. A start event becoming late relative to a fixed note schedule is an excluded clock/deadline or later-delivery loss; no non-clock moving task state is visibly available to degrade the action."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Preview motion is input-locked, and the active performance screen hides the randomized score and shows only fixed elapsed progress.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated instance has required notes and full-mode transcript events are accepted only after performance starts. A no-action run cannot produce the required events, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "112-144", "claim": "Difficulty 4 is the four-lane profile with 18-22 interleaved notes, two holds, two chords, and 240 ms start tolerance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator makes the note timing, chord pair membership, hold selection, and duration seed-dependent and computes a finite performance interval."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,283-329", "claim": "Autonomous preview/countdown precede input, and full performance shows only progress/clock while hiding the manifest until timeout."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "450-485", "claim": "Full mode binds A/S/D/F keyboard and direct-pad down/up events as the active controls."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "151-213", "claim": "The grader scores note start windows, two chord windows, hold bonuses, and the accuracy threshold."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The recent observation bound is 1000 ms with eight frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 288,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the four-lane sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined timing declaration, click an A, S, D, or F timing track for a tap and drag horizontally for a hold; align marks vertically to form the two chords.",
+        "CERTIFY NOW submits the ledger transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; ledger input is locked.",
+        "A fixed three-count countdown hides the score and keeps ledger input inactive.",
+        "Once simplified performance begins, the blank timing ledger is static: pointer actions add markers and rebuild the transcript, but no performance timer advances or ends the phase."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tap: click on a visible A/S/D/F timing track to place a tap.",
+        "D_simplified_hold: horizontal drag on a visible A/S/D/F timing track to place a hold."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The four-lane profile randomizes beat/lead choices, tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot select the correct hidden ledger placement for every simplified-mode history, so no observation-free q exists."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The active ledger shows only blank tracks, a ruler, and prior self-entered marks; the randomized four-lane score is sealed after sequential previews. A bounded 1000 ms window cannot recover the hidden two-hold/two-chord timing needed for the next placement."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Preview and countdown evolve only while ledger controls are locked. During the active click/drag ledger, waiting changes no task state and does not reduce the value or availability of a placement; certification is administrative."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The animated preview is before the active ledger, and the active ledger is static with no expiring placement opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The simplified phase starts with an empty ledger and requires post-start pointer placements; it has no autonomous end. A no-action run cannot submit a successful transcript, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "112-144", "claim": "Difficulty 4 is the four-lane profile with 18-22 interleaved notes, two holds, two chords, and 240 ms start tolerance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-172", "claim": "The generator creates seed-dependent note timing, chord membership, hold selection, and duration."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,203-329", "claim": "Preview/countdown are autonomous and locked, whereas simplified performance is a static click/drag ledger with no autonomous completion timer."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css", "lines": "61-77,108-118", "claim": "The ledger is a static visible track and the performance pad bank is disabled in simplified mode."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "73-91,151-213", "claim": "The grader restricts simplified input to pointer_toggle and checks note, hold, chord, and accuracy conditions."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The recent visual bound is 1000 ms with eight frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 289,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the four-lane dense sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined performance, A, S, D, and F keydown/keyup events or direct pointer-down/pointer-up on the visible lane pads are outcome-affecting; the three long bars require their displayed duration.",
+        "CERTIFY NOW submits the recorded transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; event input is locked.",
+        "A fixed three-count countdown hides the score and keeps performance event recording inactive.",
+        "In full performance, the meter and performance clock advance autonomously and a timeout ends the generated performance interval; key/pad events can change the transcript during that interval."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard: A/S/D/F keydown and keyup events on the focused performance shell.",
+        "D_full_pointer_direct: pointer-down and pointer-up events on the A/S/D/F lane pads during performance."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The four-lane dense profile randomizes beat/lead choices, wide tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot select the correct next lane event for every full-mode history, so no observation-free q exists."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "During full performance the manifest is hidden and W_t contains only the performance prompt, meter, and clock. The four separate previews, including three duration-required holds and three chords, are outside the bounded 1000 ms window, so it cannot distinguish histories requiring different next events."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The active full-mode evolution is only the fixed performance clock/meter and timeout. A start event becoming late relative to a fixed note schedule is an excluded clock/deadline or later-delivery loss; no non-clock moving task state is visibly available to degrade the action."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Preview motion is input-locked, and the active performance screen hides the randomized score and shows only fixed elapsed progress.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated instance has required notes and full-mode transcript events are accepted only after performance starts. A no-action run cannot produce the required events, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "146-180", "claim": "Difficulty 5 is four dense lanes with 23-or-more notes, three holds, three chords, shorter preview/timing tolerances, and require_hold_duration true."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-178", "claim": "The generator makes dense note timing, chord pairs, hold selection/duration, and performance length seed-dependent; the profile carries the hold-duration requirement."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,283-329", "claim": "Autonomous preview/countdown precede input, and full performance exposes only progress/clock while hiding the manifest until timeout."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "450-485", "claim": "Full mode binds A/S/D/F keyboard and direct-pad down/up events as the active controls."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "94-100,151-213", "claim": "The grader reads the explicit hold-duration requirement and enforces timed notes, all chords, duration-matched holds, and accuracy."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The recent observation bound is 1000 ms with eight frames."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 290,
+      "public_environment_name": "Polyrhythm Customs",
+      "environment_id": "polyrhythm_customs_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "BEGIN INSPECTION starts the four-lane dense sequential preview; REPLAY WHOLE TRIAL restarts it.",
+        "During combined timing declaration, click an A, S, D, or F timing track for a tap and drag horizontally for a hold; align marks vertically to form the three chords and match the three required hold durations.",
+        "CERTIFY NOW submits the ledger transcript and is administrative."
+      ],
+      "autonomous_processes": [
+        "The preview requestAnimationFrame moves a scanhead and pulses one lane's notes at a time, then advances to the next lane after the scaled score duration plus the preview gap; ledger input is locked.",
+        "A fixed three-count countdown hides the score and keeps ledger input inactive.",
+        "Once simplified performance begins, the blank timing ledger is static: pointer actions add markers and rebuild the transcript, but no performance timer advances or ends the phase."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tap: click on a visible A/S/D/F timing track to place a tap.",
+        "D_simplified_hold: horizontal drag on a visible A/S/D/F timing track to place a hold."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The four-lane dense profile randomizes beat/lead choices, wide tap jitter, chord pair placement, hold selection, and hold duration across seeds. I_t alone cannot select the correct hidden ledger placement for every simplified-mode history, so no observation-free q exists."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The active ledger shows only blank tracks, a ruler, and prior self-entered marks; the randomized four-lane score is sealed after sequential previews. A bounded 1000 ms window cannot recover the hidden three-hold/three-chord timing needed for the next placement."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Preview and countdown evolve only while ledger controls are locked. During the active click/drag ledger, waiting changes no task state and does not reduce the value or availability of a placement; certification is administrative."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The animated preview is before the active ledger, and the active ledger is static with no expiring placement opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The simplified phase starts with an empty ledger and requires post-start pointer placements; it has no autonomous end. A no-action run cannot submit a successful transcript, so the pre-run threshold is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/env.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/polyrhythm_customs_env/tasks/polyrhythm_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polyrhythm_customs.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/controls.json", "lines": "146-180", "claim": "Difficulty 5 is four dense lanes with 23-or-more notes, three holds, three chords, shorter preview/timing tolerances, and require_hold_duration true."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/polyrhythm_customs.py", "lines": "62-178", "claim": "The generator creates seed-dependent dense timing, chord membership, hold selection/duration, and a finite performance interval."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.js", "lines": "101-175,203-329", "claim": "Preview/countdown are autonomous and locked, whereas simplified performance is a static click/drag ledger with no autonomous completion timer."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/polyrhythm_customs.css", "lines": "61-77,108-118", "claim": "The ledger is a static visible track and the performance pad bank is disabled in simplified mode."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polyrhythm_customs.py", "lines": "73-91,94-100,151-213", "claim": "The grader restricts simplified input to pointer_toggle and enforces the explicit hold-duration, chord, timing, and accuracy rules."},
+        {"path": "weird_captcha_gym/environments/polyrhythm_customs_env/env.json", "lines": "9-15", "claim": "The recent visual bound is 1000 ms with eight frames."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

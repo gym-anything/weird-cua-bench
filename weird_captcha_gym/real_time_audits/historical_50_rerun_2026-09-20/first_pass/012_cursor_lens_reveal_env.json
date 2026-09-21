@@ -1,0 +1,1187 @@
+{
+  "case_index": 12,
+  "environment_id": "cursor_lens_reveal_env",
+  "public_environment_name": "Polarized Palimpsest",
+  "configuration_reports": [
+    {
+      "case_index": 111,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Canvas pointermove moves the lens and records full-mode lens probes; pointerdown starts a hold only when the current echo has the correct polarization and is within the 50 px lock radius; pointermove during the hold must keep the pointer within that radius and supplies track samples; pointerup or pointercancel ends the hold.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 0.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 1 has 1 ordered echo, 24 clutter marks, a 120 px lens, 200 ms minimum hold, 2 required track samples, 6 probe samples over 3 cells, and echo motion radii x=5-9 px and y=4-7 px with 9000-11000 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 1 uses slow motion with the configured 5-9 px by 4-7 px radii and 9000-11000 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After an accepted hold the visible decay cue fades for 820 ms; during a full hold the progress ring advances with elapsed hold time while the pointer itself does not move autonomously."
+      ],
+      "grouped_control_modes": [
+        "D_full_canvas_capture: canvas pointer probe, pointerdown hold, pointer tracking, and pointer release/cancel for the current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For a correctly placed full-mode hold, the echo's entire level-1 motion envelope is within the 50 px lock radius, so a release or fixed local tracking schedule can be selected from prior actions without needing the current frame."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The six-frame, 600 ms observation window can show the moving echo, but that bounded visual evidence is not necessary for the delayed action in this level-1 control geometry."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The maximum possible displacement from one position to another is 2*sqrt(9^2+7^2), about 22.8 px, below the 50 px lock radius. The moving node therefore does not make a correctly positioned pointer action strictly less effective during a delay; the other autonomous changes are visual-only."
+      },
+      "common_visible_process": "The active echo moves visibly, but its level-1 trajectory remains inside the full-mode lock tolerance after a normal centered capture. No common autonomous process both requires a recent visual prediction and degrades the available capture action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Full mode records the required lock_track events only from canvas pointermove while each hold is active, and level 1 requires 2 tracks per echo. A full capture cannot be completed by starting an autonomous outcome phase and then sending no outcome-affecting actions, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "6",
+          "claim": "Level 1 sets 1 echoes, 24 clutter marks, lens_radius=120, lock_radius=50, minimum_hold_ms=200, minimum_track_samples=2, minimum_probe_samples=6, minimum_probe_cells=3, minimum_tuning_changes=0, motion radii x=5-9, y=4-7, and periods 9000-11000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Full mode uses direct canvas pointer tracking for the lens and holds. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "41-57",
+          "claim": "Canvas pointer events probe, start, track, cancel, and release a moving echo; release is checked against its current position."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 6 probes, 3 probe cells, 0 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "75-89",
+          "claim": "The full solver sends repeated pointer moves during the hold before release."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 112,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "X and Y numeric inputs plus MOVE GLASS place the lens and record simplified-mode probes; CAPTURE ECHO starts a capture only when the tuned echo is within the 50 px lock radius.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 0.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 1 has 1 ordered echo, 24 clutter marks, a 120 px lens, 200 ms minimum hold, 2 automatic track samples, 6 probe samples over 3 cells, and echo motion radii x=5-9 px and y=4-7 px with 9000-11000 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 1 uses slow motion with the configured 5-9 px by 4-7 px radii and 9000-11000 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After CAPTURE ECHO, automatic hold advancement places the lens at the current node position, emits track events every 70 ms, and completes after the minimum hold and track counts; the visible cue then fades for 820 ms."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_coordinate_capture: X/Y placement with MOVE GLASS followed by CAPTURE ECHO for each current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "After preparation places the lens on a level-1 echo, the same fixed coordinate remains within the 50 px capture radius for the complete trajectory, so CAPTURE ECHO can be scheduled from the action history without a current-frame-dependent correction."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The six-frame, 600 ms observation window can show the moving echo, but that bounded visual evidence is not necessary for the delayed action in this level-1 control geometry."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The maximum possible displacement from one position to another is 2*sqrt(9^2+7^2), about 22.8 px, below the 50 px lock radius. The moving node therefore does not make a correctly positioned coordinate capture strictly less effective during a delay; the other autonomous changes are visual-only."
+      },
+      "common_visible_process": "The active echo moves visibly, but its level-1 trajectory remains inside the simplified capture tolerance after a normal centered capture. No common autonomous process both requires a recent visual prediction and degrades the available capture action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After visible preparation places the X/Y coordinate on the current echo and CAPTURE ECHO is clicked, the browser starts an automatic hold that follows nodePosition, records the required tracks, and completes without further outcome-affecting input. This path is available for every generated level-1 instance, so the pre-run threshold is met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "6",
+          "claim": "Level 1 sets 1 echoes, 24 clutter marks, lens_radius=120, lock_radius=50, minimum_hold_ms=200, minimum_track_samples=2, minimum_probe_samples=6, minimum_probe_cells=3, minimum_tuning_changes=0, motion radii x=5-9, y=4-7, and periods 9000-11000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Simplified mode uses X/Y coordinate controls and automatic pointer tracking. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "59-62",
+          "claim": "Coordinate placement records probes, CAPTURE ECHO starts an automatic hold, and automatic advancement follows nodePosition while emitting tracks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 6 probes, 3 probe cells, 0 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "67-74",
+          "claim": "The simplified solver places the coordinate lens, clicks capture, and waits while automatic tracking runs."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 113,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas pointermove moves the lens and records full-mode lens probes; pointerdown starts a hold only when the current echo has the correct polarization and is within the 40 px lock radius; pointermove during the hold must keep the pointer within that radius and supplies track samples; pointerup or pointercancel ends the hold.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 0.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 2 has 1 ordered echo, 50 clutter marks, a 95 px lens, 300 ms minimum hold, 3 required track samples, 12 probe samples over 6 cells, and echo motion radii x=9-17 px and y=7-13 px with 7500-9500 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 2 uses moving motion with the configured 9-17 px by 7-13 px radii and 7500-9500 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After an accepted hold the visible decay cue fades for 820 ms; during a full hold the progress ring advances with elapsed hold time while the pointer itself does not move autonomously."
+      ],
+      "grouped_control_modes": [
+        "D_full_canvas_capture: canvas pointer probe, pointerdown hold, pointer tracking, and pointer release/cancel for the current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same full-mode hold action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed pointer correction or release point for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to choose the pointer correction that keeps the delayed hold within the 40 px lock radius."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 2 permits a 2*sqrt(17^2+13^2), about 42.8 px against a 40 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale pointer-up/hold point has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo during a full canvas hold. Its visible trajectory over the six-frame window predicts the delayed pointer correction, and the same motion can carry a stale pointer outside the 40 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Full mode records the required lock_track events only from canvas pointermove while each hold is active, and level 2 requires 3 tracks per echo. A full capture cannot be completed by starting an autonomous outcome phase and then sending no outcome-affecting actions, so the pre-run threshold does not override the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "7",
+          "claim": "Level 2 sets 1 echoes, 50 clutter marks, lens_radius=95, lock_radius=40, minimum_hold_ms=300, minimum_track_samples=3, minimum_probe_samples=12, minimum_probe_cells=6, minimum_tuning_changes=0, motion radii x=9-17, y=7-13, and periods 7500-9500 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Full mode uses direct canvas pointer tracking for the lens and holds. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "41-57",
+          "claim": "Canvas pointer events probe, start, track, cancel, and release a moving echo; release is checked against its current position."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 12 probes, 6 probe cells, 0 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "75-89",
+          "claim": "The full solver sends repeated pointer moves during the hold before release."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 114,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "X and Y numeric inputs plus MOVE GLASS place the lens and record simplified-mode probes; CAPTURE ECHO starts a capture only when the tuned echo is within the 40 px lock radius.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 0.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 2 has 1 ordered echo, 50 clutter marks, a 95 px lens, 300 ms minimum hold, 3 automatic track samples, 12 probe samples over 6 cells, and echo motion radii x=9-17 px and y=7-13 px with 7500-9500 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 2 uses moving motion with the configured 9-17 px by 7-13 px radii and 7500-9500 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After CAPTURE ECHO, automatic hold advancement places the lens at the current node position, emits track events every 70 ms, and completes after the minimum hold and track counts; the visible cue then fades for 820 ms."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_coordinate_capture: X/Y placement with MOVE GLASS followed by CAPTURE ECHO for each current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same coordinate-capture action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed lens coordinate before CAPTURE ECHO for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to update X/Y before clicking CAPTURE ECHO."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 2 permits a 2*sqrt(17^2+13^2), about 42.8 px against a 40 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale coordinate capture has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo before coordinate capture. Its visible trajectory over the six-frame window predicts the delayed lens placement, and the same motion can carry a stale coordinate outside the 40 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After visible preparation places each X/Y coordinate on the current echo and CAPTURE ECHO is clicked, the browser starts an automatic hold that follows nodePosition, records the required tracks, and completes without further outcome-affecting input. This path is available for every generated level-2 instance, so the pre-run threshold overrides the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "7",
+          "claim": "Level 2 sets 1 echoes, 50 clutter marks, lens_radius=95, lock_radius=40, minimum_hold_ms=300, minimum_track_samples=3, minimum_probe_samples=12, minimum_probe_cells=6, minimum_tuning_changes=0, motion radii x=9-17, y=7-13, and periods 7500-9500 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Simplified mode uses X/Y coordinate controls and automatic pointer tracking. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "59-62",
+          "claim": "Coordinate placement records probes, CAPTURE ECHO starts an automatic hold, and automatic advancement follows nodePosition while emitting tracks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 12 probes, 6 probe cells, 0 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "67-74",
+          "claim": "The simplified solver places the coordinate lens, clicks capture, and waits while automatic tracking runs."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 115,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas pointermove moves the lens and records full-mode lens probes; pointerdown starts a hold only when the current echo has the correct polarization and is within the 31 px lock radius; pointermove during the hold must keep the pointer within that radius and supplies track samples; pointerup or pointercancel ends the hold.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 4.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 3 has 5 ordered echoes, 145 clutter marks, a 72 px lens, 460 ms minimum hold, 4 required track samples, 32 probe samples over 14 cells, and echo motion radii x=14-27 px and y=10-22 px with 5400-7600 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 3 uses moving motion with the configured 14-27 px by 10-22 px radii and 5400-7600 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After an accepted hold the visible decay cue fades for 820 ms; during a full hold the progress ring advances with elapsed hold time while the pointer itself does not move autonomously."
+      ],
+      "grouped_control_modes": [
+        "D_full_canvas_capture: canvas pointer probe, pointerdown hold, pointer tracking, and pointer release/cancel for the current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same full-mode hold action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed pointer correction or release point for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to choose the pointer correction that keeps the delayed hold within the 31 px lock radius."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 3 permits a 2*sqrt(27^2+22^2), about 38.6 px against a 31 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale pointer-up/hold point has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo during a full canvas hold. Its visible trajectory over the six-frame window predicts the delayed pointer correction, and the same motion can carry a stale pointer outside the 31 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Full mode records the required lock_track events only from canvas pointermove while each hold is active, and level 3 requires 4 tracks per echo. A full capture cannot be completed by starting an autonomous outcome phase and then sending no outcome-affecting actions, so the pre-run threshold does not override the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "8",
+          "claim": "Level 3 sets 5 echoes, 145 clutter marks, lens_radius=72, lock_radius=31, minimum_hold_ms=460, minimum_track_samples=4, minimum_probe_samples=32, minimum_probe_cells=14, minimum_tuning_changes=4, motion radii x=14-27, y=10-22, and periods 5400-7600 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Full mode uses direct canvas pointer tracking for the lens and holds. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "41-57",
+          "claim": "Canvas pointer events probe, start, track, cancel, and release a moving echo; release is checked against its current position."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 32 probes, 14 probe cells, 4 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "75-89",
+          "claim": "The full solver sends repeated pointer moves during the hold before release."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 116,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "X and Y numeric inputs plus MOVE GLASS place the lens and record simplified-mode probes; CAPTURE ECHO starts a capture only when the tuned echo is within the 31 px lock radius.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 4.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 3 has 5 ordered echoes, 145 clutter marks, a 72 px lens, 460 ms minimum hold, 4 automatic track samples, 32 probe samples over 14 cells, and echo motion radii x=14-27 px and y=10-22 px with 5400-7600 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 3 uses moving motion with the configured 14-27 px by 10-22 px radii and 5400-7600 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After CAPTURE ECHO, automatic hold advancement places the lens at the current node position, emits track events every 70 ms, and completes after the minimum hold and track counts; the visible cue then fades for 820 ms."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_coordinate_capture: X/Y placement with MOVE GLASS followed by CAPTURE ECHO for each current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same coordinate-capture action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed lens coordinate before CAPTURE ECHO for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to update X/Y before clicking CAPTURE ECHO."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 3 permits a 2*sqrt(27^2+22^2), about 38.6 px against a 31 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale coordinate capture has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo before coordinate capture. Its visible trajectory over the six-frame window predicts the delayed lens placement, and the same motion can carry a stale coordinate outside the 31 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After visible preparation places each X/Y coordinate on the current echo and CAPTURE ECHO is clicked, the browser starts an automatic hold that follows nodePosition, records the required tracks, and completes without further outcome-affecting input. This path is available for every generated level-3 instance, so the pre-run threshold overrides the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "8",
+          "claim": "Level 3 sets 5 echoes, 145 clutter marks, lens_radius=72, lock_radius=31, minimum_hold_ms=460, minimum_track_samples=4, minimum_probe_samples=32, minimum_probe_cells=14, minimum_tuning_changes=4, motion radii x=14-27, y=10-22, and periods 5400-7600 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Simplified mode uses X/Y coordinate controls and automatic pointer tracking. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "59-62",
+          "claim": "Coordinate placement records probes, CAPTURE ECHO starts an automatic hold, and automatic advancement follows nodePosition while emitting tracks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 32 probes, 14 probe cells, 4 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "67-74",
+          "claim": "The simplified solver places the coordinate lens, clicks capture, and waits while automatic tracking runs."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 117,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas pointermove moves the lens and records full-mode lens probes; pointerdown starts a hold only when the current echo has the correct polarization and is within the 25 px lock radius; pointermove during the hold must keep the pointer within that radius and supplies track samples; pointerup or pointercancel ends the hold.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 4.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 4 has 5 ordered echoes, 190 clutter marks, a 58 px lens, 600 ms minimum hold, 5 required track samples, 32 probe samples over 14 cells, and echo motion radii x=18-33 px and y=13-27 px with 4300-6200 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 4 uses faster motion with the configured 18-33 px by 13-27 px radii and 4300-6200 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After an accepted hold the visible decay cue fades for 820 ms; during a full hold the progress ring advances with elapsed hold time while the pointer itself does not move autonomously."
+      ],
+      "grouped_control_modes": [
+        "D_full_canvas_capture: canvas pointer probe, pointerdown hold, pointer tracking, and pointer release/cancel for the current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same full-mode hold action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed pointer correction or release point for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to choose the pointer correction that keeps the delayed hold within the 25 px lock radius."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 4 permits a 2*sqrt(33^2+27^2), about 47.3 px against a 25 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale pointer-up/hold point has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo during a full canvas hold. Its visible trajectory over the six-frame window predicts the delayed pointer correction, and the same motion can carry a stale pointer outside the 25 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Full mode records the required lock_track events only from canvas pointermove while each hold is active, and level 4 requires 5 tracks per echo. A full capture cannot be completed by starting an autonomous outcome phase and then sending no outcome-affecting actions, so the pre-run threshold does not override the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "9",
+          "claim": "Level 4 sets 5 echoes, 190 clutter marks, lens_radius=58, lock_radius=25, minimum_hold_ms=600, minimum_track_samples=5, minimum_probe_samples=32, minimum_probe_cells=14, minimum_tuning_changes=4, motion radii x=18-33, y=13-27, and periods 4300-6200 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Full mode uses direct canvas pointer tracking for the lens and holds. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "41-57",
+          "claim": "Canvas pointer events probe, start, track, cancel, and release a moving echo; release is checked against its current position."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 32 probes, 14 probe cells, 4 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "75-89",
+          "claim": "The full solver sends repeated pointer moves during the hold before release."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 118,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "X and Y numeric inputs plus MOVE GLASS place the lens and record simplified-mode probes; CAPTURE ECHO starts a capture only when the tuned echo is within the 25 px lock radius.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 4.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 4 has 5 ordered echoes, 190 clutter marks, a 58 px lens, 600 ms minimum hold, 5 automatic track samples, 32 probe samples over 14 cells, and echo motion radii x=18-33 px and y=13-27 px with 4300-6200 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 4 uses faster motion with the configured 18-33 px by 13-27 px radii and 4300-6200 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After CAPTURE ECHO, automatic hold advancement places the lens at the current node position, emits track events every 70 ms, and completes after the minimum hold and track counts; the visible cue then fades for 820 ms."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_coordinate_capture: X/Y placement with MOVE GLASS followed by CAPTURE ECHO for each current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same coordinate-capture action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed lens coordinate before CAPTURE ECHO for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to update X/Y before clicking CAPTURE ECHO."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 4 permits a 2*sqrt(33^2+27^2), about 47.3 px against a 25 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale coordinate capture has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo before coordinate capture. Its visible trajectory over the six-frame window predicts the delayed lens placement, and the same motion can carry a stale coordinate outside the 25 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After visible preparation places each X/Y coordinate on the current echo and CAPTURE ECHO is clicked, the browser starts an automatic hold that follows nodePosition, records the required tracks, and completes without further outcome-affecting input. This path is available for every generated level-4 instance, so the pre-run threshold overrides the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "9",
+          "claim": "Level 4 sets 5 echoes, 190 clutter marks, lens_radius=58, lock_radius=25, minimum_hold_ms=600, minimum_track_samples=5, minimum_probe_samples=32, minimum_probe_cells=14, minimum_tuning_changes=4, motion radii x=18-33, y=13-27, and periods 4300-6200 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Simplified mode uses X/Y coordinate controls and automatic pointer tracking. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "59-62",
+          "claim": "Coordinate placement records probes, CAPTURE ECHO starts an automatic hold, and automatic advancement follows nodePosition while emitting tracks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 32 probes, 14 probe cells, 4 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "67-74",
+          "claim": "The simplified solver places the coordinate lens, clicks capture, and waits while automatic tracking runs."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 119,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas pointermove moves the lens and records full-mode lens probes; pointerdown starts a hold only when the current echo has the correct polarization and is within the 19 px lock radius; pointermove during the hold must keep the pointer within that radius and supplies track samples; pointerup or pointercancel ends the hold.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 4.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 5 has 5 ordered echoes, 240 clutter marks, a 46 px lens, 800 ms minimum hold, 7 required track samples, 32 probe samples over 14 cells, and echo motion radii x=24-40 px and y=18-32 px with 3500-5000 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 5 uses fast motion with the configured 24-40 px by 18-32 px radii and 3500-5000 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After an accepted hold the visible decay cue fades for 820 ms; during a full hold the progress ring advances with elapsed hold time while the pointer itself does not move autonomously."
+      ],
+      "grouped_control_modes": [
+        "D_full_canvas_capture: canvas pointer probe, pointerdown hold, pointer tracking, and pointer release/cancel for the current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same full-mode hold action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed pointer correction or release point for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to choose the pointer correction that keeps the delayed hold within the 19 px lock radius."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 5 permits a 2*sqrt(40^2+32^2), about 51.2 px against a 19 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale pointer-up/hold point has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo during a full canvas hold. Its visible trajectory over the six-frame window predicts the delayed pointer correction, and the same motion can carry a stale pointer outside the 19 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Full mode records the required lock_track events only from canvas pointermove while each hold is active, and level 5 requires 7 tracks per echo. A full capture cannot be completed by starting an autonomous outcome phase and then sending no outcome-affecting actions, so the pre-run threshold does not override the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "10",
+          "claim": "Level 5 sets 5 echoes, 240 clutter marks, lens_radius=46, lock_radius=19, minimum_hold_ms=800, minimum_track_samples=7, minimum_probe_samples=32, minimum_probe_cells=14, minimum_tuning_changes=4, motion radii x=24-40, y=18-32, and periods 3500-5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Full mode uses direct canvas pointer tracking for the lens and holds. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "41-57",
+          "claim": "Canvas pointer events probe, start, track, cancel, and release a moving echo; release is checked against its current position."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 32 probes, 14 probe cells, 4 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "75-89",
+          "claim": "The full solver sends repeated pointer moves during the hold before release."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 120,
+      "public_environment_name": "Polarized Palimpsest",
+      "environment_id": "cursor_lens_reveal_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "X and Y numeric inputs plus MOVE GLASS place the lens and record simplified-mode probes; CAPTURE ECHO starts a capture only when the tuned echo is within the 19 px lock radius.",
+        "Polarizer buttons turn the setting by -45 or +45 degrees; minimum tuning changes is 4.",
+        "WASH SEQUENCE resets the ordered captures, and DEVELOP THE PLATE submits the replay.",
+        "Difficulty 5 has 5 ordered echoes, 240 clutter marks, a 46 px lens, 800 ms minimum hold, 7 automatic track samples, 32 probe samples over 14 cells, and echo motion radii x=24-40 px and y=18-32 px with 3500-5000 ms periods."
+      ],
+      "autonomous_processes": [
+        "The active ordered echo position is recomputed from elapsed time by sinusoidal nodePosition motion on every animation frame; level 5 uses fast motion with the configured 24-40 px by 18-32 px radii and 3500-5000 ms period range.",
+        "Clutter opacity flickers with elapsed time, and the active echo emits a 220 ms pulse once per 1450 ms; these changes are visual-only.",
+        "After CAPTURE ECHO, automatic hold advancement places the lens at the current node position, emits track events every 70 ms, and completes after the minimum hold and track counts; the visible cue then fades for 820 ms."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_coordinate_capture: X/Y placement with MOVE GLASS followed by CAPTURE ECHO for each current ordered echo.",
+        "Polarizer -45/+45 button control.",
+        "WASH SEQUENCE reset.",
+        "DEVELOP THE PLATE seal/submit."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The same coordinate-capture action history can occur with different seed-dependent phase, position, and direction. I_t has prior actions and times but not the current visible trajectory, so an observation-free q cannot choose the delayed lens coordinate before CAPTURE ECHO for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over the configured 600 ms window visibly show the echo's position and direction. A bounded-window policy can use that trajectory to update X/Y before clicking CAPTURE ECHO."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Level 5 permits a 2*sqrt(40^2+32^2), about 51.2 px against a 19 px lock radius. In a still-salvageable opportunity near the outward lock boundary, the echo moves autonomously during a 600 ms delay; the same stale coordinate capture has lower value, while moving to the visibly predicted echo remains successful."
+      },
+      "common_visible_process": "The common witness is the tuned moving echo before coordinate capture. Its visible trajectory over the six-frame window predicts the delayed lens placement, and the same motion can carry a stale coordinate outside the 19 px lock tolerance.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After visible preparation places each X/Y coordinate on the current echo and CAPTURE ECHO is clicked, the browser starts an automatic hold that follows nodePosition, records the required tracks, and completes without further outcome-affecting input. This path is available for every generated level-5 instance, so the pre-run threshold overrides the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "10",
+          "claim": "Level 5 sets 5 echoes, 240 clutter marks, lens_radius=46, lock_radius=19, minimum_hold_ms=800, minimum_track_samples=7, minimum_probe_samples=32, minimum_probe_cells=14, minimum_tuning_changes=4, motion radii x=24-40, y=18-32, and periods 3500-5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/controls.json",
+          "lines": "13-16",
+          "claim": "Simplified mode uses X/Y coordinate controls and automatic pointer tracking. The shared setting is a 600 ms observation window with 6 chronological frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes a frame window plus native mouse and keyboard action surfaces and uses the 600 ms runner observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cursor_lens_reveal.py",
+          "lines": "19-27",
+          "claim": "The generated echo position is a seeded, time-dependent sinusoidal function of elapsed_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "20-34",
+          "claim": "drawFrame recomputes and visibly draws the moving echo each animation frame, along with the visual clutter, pulse, cue, and hold progress."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cursor_lens_reveal.js",
+          "lines": "59-62",
+          "claim": "Coordinate placement records probes, CAPTURE ECHO starts an automatic hold, and automatic advancement follows nodePosition while emitting tracks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "105-164",
+          "claim": "The replay grader binds each mode to its required input source and checks event positions against node position, lock radius, hold duration, and track counts."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_lens_reveal.py",
+          "lines": "193-208",
+          "claim": "Passing requires ordered echo completion plus at least 32 probes, 14 probe cells, 4 tuning changes, and a submitted seal."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/cursor_lens_reveal.py",
+          "lines": "67-74",
+          "claim": "The simplified solver places the coordinate lens, clicks capture, and waits while automatic tracking runs."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/verifier.py",
+          "lines": "20-30",
+          "claim": "The task verifier loads the exported result and delegates this mechanic to the shared cursor-lens replay verifier."
+        },
+        {
+          "path": "weird_captcha_gym/environments/cursor_lens_reveal_env/tasks/cursor_lens_reveal_seed_0001/task.json",
+          "lines": "5-6",
+          "claim": "The assigned public task is Polarized Palimpsest, an ordered moving-echo hold task."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

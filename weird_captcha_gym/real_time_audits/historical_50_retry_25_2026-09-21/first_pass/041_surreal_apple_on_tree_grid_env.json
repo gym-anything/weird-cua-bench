@@ -1,0 +1,1257 @@
+{
+  "case_index": 41,
+  "environment_id": "surreal_apple_on_tree_grid_env",
+  "public_environment_name": "Parallax Orchard",
+  "configuration_reports": [
+    {
+      "case_index": 401,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: 3 fruits, 1 attached, detached depth gap 110–140, view limit ±75°, fruit radius 26–28, basket 220×160; harvest unlock requires 18 orbit samples, at least 96° span, 156° travel, and 4 view sectors.",
+        "Parallax orchard canvas: drag empty canvas space to orbit within the level's view limit.",
+        "After the exploration thresholds, drag a visible fruit into the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_full_orbit: every full-mode canvas_drag occurrence, represented by orbit_start/orbit_move/orbit_end across seeds and attempts.",
+        "D_full_harvest: every full-mode fruit_drag occurrence, represented by pluck_start/pluck_move/pluck_end from a visible fruit to the basket.",
+        "D_full_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 3-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct full canvas drag and fruit drag action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit drag or fruit-to-basket drag at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 1 profile is 3 fruits/1 attached, depth gap 110–140, view limit 75°, radius 26–28, and basket 220×160."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 156° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The full branch starts canvas orbit or fruit drag on pointerdown, updates only on pointermove, and records the result on pointerup."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "110-205",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 402,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: 3 fruits, 1 attached, detached depth gap 110–140, view limit ±75°, fruit radius 26–28, basket 220×160; harvest unlock requires 18 orbit samples, at least 96° span, 156° travel, and 4 view sectors.",
+        "ORBIT LEFT and ORBIT RIGHT buttons change the camera by 6° per click, clamped to the level's view limit.",
+        "After the exploration thresholds, click a visible fruit on the canvas and then click the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_orbit: every simplified-mode ORBIT LEFT/ORBIT RIGHT click, represented by orbit_step events.",
+        "D_simplified_harvest: every simplified-mode fruit_basket_clicks occurrence, represented by pluck_select followed by basket_click.",
+        "D_simplified_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 3-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct simplified orbit-button and fruit/basket click action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit-button, fruit, or basket click at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 1 profile is 3 fruits/1 attached, depth gap 110–140, view limit 75°, radius 26–28, and basket 220×160."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 156° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The simplified branch accepts only the orbit buttons for orbit_step and canvas fruit/basket clicks for selection and harvest; it does not use canvas dragging to orbit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "146-237",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 403,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: 4 fruits, 2 attached, detached depth gap 90–125, view limit ±68°, fruit radius 23–27, basket 195×145; harvest unlock requires 18 orbit samples, at least 96° span, 156° travel, and 4 view sectors.",
+        "Parallax orchard canvas: drag empty canvas space to orbit within the level's view limit.",
+        "After the exploration thresholds, drag a visible fruit into the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_full_orbit: every full-mode canvas_drag occurrence, represented by orbit_start/orbit_move/orbit_end across seeds and attempts.",
+        "D_full_harvest: every full-mode fruit_drag occurrence, represented by pluck_start/pluck_move/pluck_end from a visible fruit to the basket.",
+        "D_full_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 4-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct full canvas drag and fruit drag action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit drag or fruit-to-basket drag at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 2 profile is 4 fruits/2 attached, depth gap 90–125, view limit 68°, radius 23–27, and basket 195×145."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 156° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The full branch starts canvas orbit or fruit drag on pointerdown, updates only on pointermove, and records the result on pointerup."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "110-205",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 404,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: 4 fruits, 2 attached, detached depth gap 90–125, view limit ±68°, fruit radius 23–27, basket 195×145; harvest unlock requires 18 orbit samples, at least 96° span, 156° travel, and 4 view sectors.",
+        "ORBIT LEFT and ORBIT RIGHT buttons change the camera by 6° per click, clamped to the level's view limit.",
+        "After the exploration thresholds, click a visible fruit on the canvas and then click the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_orbit: every simplified-mode ORBIT LEFT/ORBIT RIGHT click, represented by orbit_step events.",
+        "D_simplified_harvest: every simplified-mode fruit_basket_clicks occurrence, represented by pluck_select followed by basket_click.",
+        "D_simplified_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 4-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct simplified orbit-button and fruit/basket click action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit-button, fruit, or basket click at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 2 profile is 4 fruits/2 attached, depth gap 90–125, view limit 68°, radius 23–27, and basket 195×145."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 156° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The simplified branch accepts only the orbit buttons for orbit_step and canvas fruit/basket clicks for selection and harvest; it does not use canvas dragging to orbit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "146-237",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 405,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: 5 fruits, 2 attached, detached depth gap 80–120, view limit ±66°, fruit radius 22–26, basket 185×140; harvest unlock requires 18 orbit samples, at least 96° span, 156° travel, and 4 view sectors.",
+        "Parallax orchard canvas: drag empty canvas space to orbit within the level's view limit.",
+        "After the exploration thresholds, drag a visible fruit into the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_full_orbit: every full-mode canvas_drag occurrence, represented by orbit_start/orbit_move/orbit_end across seeds and attempts.",
+        "D_full_harvest: every full-mode fruit_drag occurrence, represented by pluck_start/pluck_move/pluck_end from a visible fruit to the basket.",
+        "D_full_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 5-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct full canvas drag and fruit drag action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit drag or fruit-to-basket drag at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 3 profile is 5 fruits/2 attached, depth gap 80–120, view limit 66°, radius 22–26, and basket 185×140."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 156° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The full branch starts canvas orbit or fruit drag on pointerdown, updates only on pointermove, and records the result on pointerup."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "110-205",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 406,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: 5 fruits, 2 attached, detached depth gap 80–120, view limit ±66°, fruit radius 22–26, basket 185×140; harvest unlock requires 18 orbit samples, at least 96° span, 156° travel, and 4 view sectors.",
+        "ORBIT LEFT and ORBIT RIGHT buttons change the camera by 6° per click, clamped to the level's view limit.",
+        "After the exploration thresholds, click a visible fruit on the canvas and then click the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_orbit: every simplified-mode ORBIT LEFT/ORBIT RIGHT click, represented by orbit_step events.",
+        "D_simplified_harvest: every simplified-mode fruit_basket_clicks occurrence, represented by pluck_select followed by basket_click.",
+        "D_simplified_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 5-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct simplified orbit-button and fruit/basket click action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit-button, fruit, or basket click at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 3 profile is 5 fruits/2 attached, depth gap 80–120, view limit 66°, radius 22–26, and basket 185×140."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 156° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The simplified branch accepts only the orbit buttons for orbit_step and canvas fruit/basket clicks for selection and harvest; it does not use canvas dragging to orbit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "146-237",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 407,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: 5 fruits, 3 attached, detached depth gap 68–112, view limit ±62°, fruit radius 20–24, basket 172×132; harvest unlock requires 18 orbit samples, at least 96° span, 155° travel, and 4 view sectors.",
+        "Parallax orchard canvas: drag empty canvas space to orbit within the level's view limit.",
+        "After the exploration thresholds, drag a visible fruit into the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_full_orbit: every full-mode canvas_drag occurrence, represented by orbit_start/orbit_move/orbit_end across seeds and attempts.",
+        "D_full_harvest: every full-mode fruit_drag occurrence, represented by pluck_start/pluck_move/pluck_end from a visible fruit to the basket.",
+        "D_full_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 5-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct full canvas drag and fruit drag action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit drag or fruit-to-basket drag at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 4 profile is 5 fruits/3 attached, depth gap 68–112, view limit 62°, radius 20–24, and basket 172×132."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 155° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The full branch starts canvas orbit or fruit drag on pointerdown, updates only on pointermove, and records the result on pointerup."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "110-205",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 408,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: 5 fruits, 3 attached, detached depth gap 68–112, view limit ±62°, fruit radius 20–24, basket 172×132; harvest unlock requires 18 orbit samples, at least 96° span, 155° travel, and 4 view sectors.",
+        "ORBIT LEFT and ORBIT RIGHT buttons change the camera by 6° per click, clamped to the level's view limit.",
+        "After the exploration thresholds, click a visible fruit on the canvas and then click the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_orbit: every simplified-mode ORBIT LEFT/ORBIT RIGHT click, represented by orbit_step events.",
+        "D_simplified_harvest: every simplified-mode fruit_basket_clicks occurrence, represented by pluck_select followed by basket_click.",
+        "D_simplified_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 5-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct simplified orbit-button and fruit/basket click action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit-button, fruit, or basket click at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 4 profile is 5 fruits/3 attached, depth gap 68–112, view limit 62°, radius 20–24, and basket 172×132."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 96° minimum span, 155° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The simplified branch accepts only the orbit buttons for orbit_step and canvas fruit/basket clicks for selection and harvest; it does not use canvas dragging to orbit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "146-237",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 409,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: 7 fruits, 3 attached, detached depth gap 48–84, view limit ±54°, fruit radius 18–22, basket 150×112; harvest unlock requires 18 orbit samples, at least 84° span, 136° travel, and 4 view sectors.",
+        "Parallax orchard canvas: drag empty canvas space to orbit within the level's view limit.",
+        "After the exploration thresholds, drag a visible fruit into the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_full_orbit: every full-mode canvas_drag occurrence, represented by orbit_start/orbit_move/orbit_end across seeds and attempts.",
+        "D_full_harvest: every full-mode fruit_drag occurrence, represented by pluck_start/pluck_move/pluck_end from a visible fruit to the basket.",
+        "D_full_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 7-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct full canvas drag and fruit drag action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit drag or fruit-to-basket drag at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 5 profile is 7 fruits/3 attached, depth gap 48–84, view limit 54°, radius 18–22, and basket 150×112."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 84° minimum span, 136° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The full branch starts canvas orbit or fruit drag on pointerdown, updates only on pointermove, and records the result on pointerup."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "110-205",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 410,
+      "public_environment_name": "Parallax Orchard",
+      "environment_id": "surreal_apple_on_tree_grid_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: 7 fruits, 3 attached, detached depth gap 48–84, view limit ±54°, fruit radius 18–22, basket 150×112; harvest unlock requires 18 orbit samples, at least 84° span, 136° travel, and 4 view sectors.",
+        "ORBIT LEFT and ORBIT RIGHT buttons change the camera by 6° per click, clamped to the level's view limit.",
+        "After the exploration thresholds, click a visible fruit on the canvas and then click the basket to harvest it.",
+        "RESET HARVEST clears plucked fruit and strike state while retaining the camera baseline.",
+        "SEAL THE HARVEST submits the event transcript; no keyboard control is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "Normal active play has no autonomous orchard process: camera angle, projected branches and fruit, selection, plucks, strike state, and counters change only in input handlers.",
+        "After a failed SEAL THE HARVEST submission, the asynchronous verifier response may replace the task with a fresh state; this follows an agent action and is administrative retry handling, not an autonomous active opportunity.",
+        "The only no-action callback is a 1,350 ms post-failure setTimeout that hides the fresh-failure banner and restores the idle readout; it does not change orchard geometry, attachment, basket, harvest, or control availability.",
+        "The 90-second play allowance is a fixed deadline, not an evolving task-state process."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_orbit: every simplified-mode ORBIT LEFT/ORBIT RIGHT click, represented by orbit_step events.",
+        "D_simplified_harvest: every simplified-mode fruit_basket_clicks occurrence, represented by pluck_select followed by basket_click.",
+        "D_simplified_reset: every RESET HARVEST click, which clears plucked and strike state.",
+        "SEAL THE HARVEST is administrative submission and is not an outcome-phase control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seed-generated 7-fruit instances, the attached IDs and projected coordinates vary, so no policy q(I_t) using only its own prior actions and task times can choose every correct simplified orbit-button and fruit/basket click action. The current visible orchard supplies the missing state, but this static observation dependence is not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the next orbit-button, fruit, or basket click at this difficulty; no future frame is needed because the orchard does not change without input. The configured observation window is 0 ms, so a multi-frame temporal window is unnecessary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate grouped control mode has an action whose value or advantage strictly decreases after waiting inside an active opportunity. With no new action, the angle, projections, branch contacts, selection/pluck sets, strike state, basket, and controls remain unchanged. performance.now() duration fields, the 10,000 ms transcript check for drag moves, and the 90-second allowance are clock/validation effects rather than non-clock task-state evolution; the post-failure timeout is presentation-only."
+      },
+      "common_visible_process": "None during normal play: event-triggered parallax and harvest changes are caused by the agent. The only no-action visible change is the post-failure banner/readout timeout, which is unrelated to action value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this configuration; no autonomous outcome phase exists whose pre-run rate could override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/env.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "10",
+          "claim": "The supplied difficulty 5 profile is 7 fruits/3 attached, depth gap 48–84, view limit 54°, radius 18–22, and basket 150×112."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/controls.json",
+          "lines": "16-23",
+          "claim": "Both interaction modes are implemented; the configured observation window is 0 ms with one frame, and the difficulty-specific orbit requirement is supplied by the generator."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "32-47",
+          "claim": "The generator consumes the active difficulty parameters from _control_condition and creates seed-dependent fruit/attachment geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surreal_apple_on_tree_grid.py",
+          "lines": "70-95",
+          "claim": "Detached depth is exposed by an agent-controlled orbit; this profile's fixed requirements are 84° minimum span, 136° minimum travel, 4 sectors, and 18 samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "18-23",
+          "claim": "Harvest is gated by accumulated orbit samples, span, travel, and sectors, all of which are state changed by inputs rather than by elapsed time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "91-142",
+          "claim": "The simplified branch accepts only the orbit buttons for orbit_step and canvas fruit/basket clicks for selection and harvest; it does not use canvas dragging to orbit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surreal_apple_on_tree_grid.js",
+          "lines": "145-156",
+          "claim": "Rendering installs event listeners and calls updateInterface once; there is no animation loop or normal-play timer. The sole setTimeout only clears the post-failure banner/readout."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "146-237",
+          "claim": "The grader replays the mode-specific event transcript and accepts harvest from current projected geometry and attached IDs; it does not advance a world between events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surreal_apple_on_tree_grid.py",
+          "lines": "254-278",
+          "claim": "Final grading checks the replayed counts, selected IDs, and exploration thresholds plus a seal; it has no autonomous-state or deadline-based action-value check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surreal_apple_on_tree_grid_env/tasks/surreal_apple_on_tree_grid_seed_0001/verifier.py",
+          "lines": "20-29",
+          "claim": "The authoritative task verifier loads the exported result and dispatches the analytic-parallax state to the external mechanic verifier."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30",
+          "claim": "The verifier helper loads the mechanic grader and grades the submitted result against public state and ground truth."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

@@ -1,0 +1,707 @@
+{
+  "case_index": 46,
+  "environment_id": "top_face_dice_arithmetic_env",
+  "public_environment_name": "Top-Face Dice Arithmetic",
+  "configuration_reports": [
+    {
+      "case_index": 451,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 has one die, an always-visible top-face display, and a target sum from 1 through 6.",
+        "Full mode drags the die token from its current rail cell to one adjacent rail cell; the drop direction performs the roll.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE, and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_full_drag_roll: every direct die-token drag to an adjacent rail cell across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after the die is docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes initial orientations and route plans and derives the target from the selected final top face, while target and face evidence are absent from I_t. The same prior drag sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, the docked die's face, target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. This supplies no temporal prediction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the drag is released. The subsequent CSS motion is presentation-only. The only later logical progression is post-WEIGH LOT settlement, when all outcome-affecting controls are disabled and the top-sum outcome is already fixed. No Delta can make an available action strictly less effective."
+      },
+      "common_visible_process": "No qualifying common process exists: roll/turn/collision animations are visual effects after synchronous input, while the balance waveform begins only after WEIGH LOT and locks the controls.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "9-19; 66-80", "claim": "Difficulty 1 uses one always-visible die with target bounds 1-6; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and visibility, while randomized orientations/routes generate the final tops and target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "203-251; 253-298", "claim": "Roll state changes synchronously on a roll, and full mode translates a drag release into one adjacent-cell roll."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader checks event ordering and replayed synchronous roll/settlement state; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 452,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 has one die, an always-visible top-face display, and a target sum from 1 through 6.",
+        "Simplified mode selects the die with its labelled DIE CLAMP button (also keyboard 1-4 or rail-token selection) and rolls with the N/E/S/W pad or WASD/arrow jog keys.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE (or R), and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_roll: every die-clamp selection followed by a roll-pad or keyboard jog roll across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after the die is docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE or R."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes initial orientations and route plans and derives the target from the selected final top face, while target and face evidence are absent from I_t. The same prior selection and jog sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, the docked die's face, target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. This supplies no temporal prediction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the pad or key action is delivered. The subsequent CSS motion is presentation-only. The only later logical progression is post-WEIGH LOT settlement, when all outcome-affecting controls are disabled and the top-sum outcome is already fixed. No Delta can make an available action strictly less effective."
+      },
+      "common_visible_process": "No qualifying common process exists: roll/turn/collision animations are visual effects after synchronous input, while the balance waveform begins only after WEIGH LOT and locks the controls.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "9-19; 66-80", "claim": "Difficulty 1 uses one always-visible die with target bounds 1-6; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and visibility, while randomized orientations/routes generate the final tops and target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "181-251; 583-623", "claim": "Simplified mode exposes die selection, roll-pad, keyboard, view, reset, and weigh handlers; roll state changes synchronously."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader checks event ordering and replayed synchronous roll/settlement state; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 453,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 has two dice, always-visible top-face displays, and a target sum from 3 through 11.",
+        "Full mode drags the selected die token from its current rail cell to one adjacent rail cell; the drop direction performs the roll.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE, and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_full_drag_roll: every direct die-token drag to an adjacent rail cell across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes both dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and face evidence are absent from I_t. The same prior drag sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, both docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. This supplies no temporal prediction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the drag is released. The subsequent CSS motion is presentation-only. The only later logical progression is post-WEIGH LOT settlement, when all outcome-affecting controls are disabled and the top-sum outcome is already fixed. No Delta can make an available action strictly less effective."
+      },
+      "common_visible_process": "No qualifying common process exists: roll/turn/collision animations are visual effects after synchronous input, while the balance waveform begins only after WEIGH LOT and locks the controls.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "21-30; 66-80", "claim": "Difficulty 2 uses two always-visible dice with target bounds 3-11; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "203-251; 253-298", "claim": "Roll state changes synchronously on a roll, and full mode translates a drag release into one adjacent-cell roll."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader checks event ordering and replayed synchronous roll/settlement state; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 454,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 has two dice, always-visible top-face displays, and a target sum from 3 through 11.",
+        "Simplified mode selects a die with a labelled DIE CLAMP button (also keyboard 1-4 or rail-token selection) and rolls with the N/E/S/W pad or WASD/arrow jog keys.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE (or R), and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_roll: every die-clamp selection followed by a roll-pad or keyboard jog roll across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE or R."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes both dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and face evidence are absent from I_t. The same prior selection and jog sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, both docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. This supplies no temporal prediction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the pad or key action is delivered. The subsequent CSS motion is presentation-only. The only later logical progression is post-WEIGH LOT settlement, when all outcome-affecting controls are disabled and the top-sum outcome is already fixed. No Delta can make an available action strictly less effective."
+      },
+      "common_visible_process": "No qualifying common process exists: roll/turn/collision animations are visual effects after synchronous input, while the balance waveform begins only after WEIGH LOT and locks the controls.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "21-30; 66-80", "claim": "Difficulty 2 uses two always-visible dice with target bounds 3-11; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "181-251; 583-623", "claim": "Simplified mode exposes die selection, roll-pad, keyboard, view, reset, and weigh handlers; roll state changes synchronously."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader checks event ordering and replayed synchronous roll/settlement state; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 455,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 has three dice, always-visible top-face displays, and a target sum from 6 through 15.",
+        "Full mode drags each die token from its current rail cell to one adjacent rail cell; the drop direction performs the roll.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE, and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_full_drag_roll: every direct die-token drag to an adjacent rail cell across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes three dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and face evidence are absent from I_t. The same prior drag sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, all three docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. This supplies no temporal prediction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the drag is released. The subsequent CSS motion is presentation-only. The only later logical progression is post-WEIGH LOT settlement, when all outcome-affecting controls are disabled and the top-sum outcome is already fixed. No Delta can make an available action strictly less effective."
+      },
+      "common_visible_process": "No qualifying common process exists: roll/turn/collision animations are visual effects after synchronous input, while the balance waveform begins only after WEIGH LOT and locks the controls.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "32-41; 66-80", "claim": "Difficulty 3 uses three always-visible dice with target bounds 6-15; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "203-251; 253-298", "claim": "Roll state changes synchronously on a roll, and full mode translates a drag release into one adjacent-cell roll."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader checks event ordering and replayed synchronous roll/settlement state; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 456,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 has three dice, always-visible top-face displays, and a target sum from 6 through 15.",
+        "Simplified mode selects a die with a labelled DIE CLAMP button (also keyboard 1-4 or rail-token selection) and rolls with the N/E/S/W pad or WASD/arrow jog keys.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE (or R), and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_roll: every die-clamp selection followed by a roll-pad or keyboard jog roll across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE or R."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes three dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and face evidence are absent from I_t. The same prior selection and jog sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, all three docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. This supplies no temporal prediction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the pad or key action is delivered. The subsequent CSS motion is presentation-only. The only later logical progression is post-WEIGH LOT settlement, when all outcome-affecting controls are disabled and the top-sum outcome is already fixed. No Delta can make an available action strictly less effective."
+      },
+      "common_visible_process": "No qualifying common process exists: roll/turn/collision animations are visual effects after synchronous input, while the balance waveform begins only after WEIGH LOT and locks the controls.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "32-41; 66-80", "claim": "Difficulty 3 uses three always-visible dice with target bounds 6-15; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "181-251; 583-623", "claim": "Simplified mode exposes die selection, roll-pad, keyboard, view, reset, and weigh handlers; roll state changes synchronously."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader checks event ordering and replayed synchronous roll/settlement state; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 457,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 has three dice, scanner-only top-face visibility after the initial reveal, and a target sum from 6 through 15; housing cells show SEALED and scanner/dock cells reveal the top face.",
+        "Full mode drags each die token from its current rail cell to one adjacent rail cell; the drop direction performs the roll.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE, and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_full_drag_roll: every direct die-token drag to an adjacent rail cell across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes three dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and scanner/face evidence are absent from I_t. The same prior drag sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, all three docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. Scanner occlusion changes what is visible, but does not create a changing opportunity."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the drag is released; leaving a scanner immediately changes visibility as part of that same action, not autonomously during a delay. The subsequent CSS motion is presentation-only. Post-WEIGH LOT settlement disables all outcome-affecting controls, so no Delta produces a strict loss of an available action."
+      },
+      "common_visible_process": "No qualifying common process exists: scanner/housing visibility is a synchronous consequence of the roll, roll/turn/collision animations are visual effects, and the balance waveform begins only after WEIGH LOT with controls locked.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "43-52; 66-80", "claim": "Difficulty 4 uses three scanner-visibility dice with target bounds 6-15; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and scanner visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "73-90; 203-251; 253-298", "claim": "Visibility is a synchronous function of initial/scanner/dock position, rolls mutate state synchronously, and full drags perform adjacent-cell rolls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader replays visibility and roll state from events and checks settlement after the action transcript; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 458,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 has three dice, scanner-only top-face visibility after the initial reveal, and a target sum from 6 through 15; housing cells show SEALED and scanner/dock cells reveal the top face.",
+        "Simplified mode selects a die with a labelled DIE CLAMP button (also keyboard 1-4 or rail-token selection) and rolls with the N/E/S/W pad or WASD/arrow jog keys.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE (or R), and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_roll: every die-clamp selection followed by a roll-pad or keyboard jog roll across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE or R."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes three dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and scanner/face evidence are absent from I_t. The same prior selection and jog sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, all three docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. Scanner occlusion changes what is visible, but does not create a changing opportunity."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the pad or key action is delivered; leaving a scanner immediately changes visibility as part of that same action, not autonomously during a delay. The subsequent CSS motion is presentation-only. Post-WEIGH LOT settlement disables all outcome-affecting controls, so no Delta produces a strict loss of an available action."
+      },
+      "common_visible_process": "No qualifying common process exists: scanner/housing visibility is a synchronous consequence of the roll, roll/turn/collision animations are visual effects, and the balance waveform begins only after WEIGH LOT with controls locked.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "43-52; 66-80", "claim": "Difficulty 4 uses three scanner-visibility dice with target bounds 6-15; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and scanner visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "73-90; 181-251; 583-623", "claim": "Visibility is a synchronous function of initial/scanner/dock position, and simplified selection/roll controls mutate state synchronously."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader replays visibility and roll state from events and checks settlement after the action transcript; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 459,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 has four independently oriented dice, scanner-only top-face visibility after the initial reveal, and a target sum from 10 through 20; housing cells show SEALED and scanner/dock cells reveal the top face.",
+        "Full mode drags each die token from its current rail cell to one adjacent rail cell; the drop direction performs the roll. Table rotation is optional.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE, and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_full_drag_roll: every direct die-token drag to an adjacent rail cell across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes four dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and scanner/face evidence are absent from I_t. The same prior drag sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, all four docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. Scanner occlusion changes what is visible, but does not create a changing opportunity."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the drag is released; leaving a scanner immediately changes visibility as part of that same action, not autonomously during a delay. The subsequent CSS motion is presentation-only. Post-WEIGH LOT settlement disables all outcome-affecting controls, so no Delta produces a strict loss of an available action."
+      },
+      "common_visible_process": "No qualifying common process exists: scanner/housing visibility is a synchronous consequence of the roll, roll/turn/collision animations are visual effects, and the balance waveform begins only after WEIGH LOT with controls locked.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "54-64; 66-80", "claim": "Difficulty 5 uses four scanner-visibility dice with target bounds 10-20; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and scanner visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "73-90; 203-251; 253-298", "claim": "Visibility is a synchronous function of initial/scanner/dock position, rolls mutate state synchronously, and full drags perform adjacent-cell rolls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader replays visibility and roll state from events and checks settlement after the action transcript; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 460,
+      "public_environment_name": "Top-Face Dice Arithmetic",
+      "environment_id": "top_face_dice_arithmetic_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 has four independently oriented dice, scanner-only top-face visibility after the initial reveal, and a target sum from 10 through 20; housing cells show SEALED and scanner/dock cells reveal the top face.",
+        "Simplified mode selects a die with a labelled DIE CLAMP button (also keyboard 1-4 or rail-token selection) and rolls with the N/E/S/W pad or WASD/arrow jog keys; table rotation is optional.",
+        "ROTATE VIEW (180 degrees, optional), RESET TABLE (or R), and WEIGH LOT are available outside settlement."
+      ],
+      "autonomous_processes": [
+        "After a roll, the die-token position/grid transitions and the 260 ms die-roll animation continue without a new action; the success-relevant position and orientation were already changed synchronously by the roll.",
+        "After an invalid roll, a 340 ms collision animation and readout cleanup continue without input; no logical outcome state changes.",
+        "After ROTATE VIEW, a 420 ms table-turn animation continues; the view counter changes synchronously and does not change die outcomes.",
+        "After WEIGH LOT with all dice ready, a 90 ms first settlement timer, 115 ms inter-sample timers, and a 150 ms completion timer update the visible balance waveform and then post the result; all roll, selection, rotation, reset, and weigh controls are disabled while settling.",
+        "The asynchronous result response shows a verdict or renders a fresh challenge after submission; it is post-submission result/retry handling."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_roll: every die-clamp selection followed by a roll-pad or keyboard jog roll across dice, seeds, and route occurrences.",
+        "D_weigh_gate: the visible pre-WEIGH LOT decision after all dice are docked.",
+        "D_view: optional 180-degree table rotation.",
+        "D_reset: RESET TABLE or R."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free policy q cannot be optimal across the generated histories: the generator randomizes four dice' initial orientations and route plans and derives a coupled target from their selected final tops, while target and scanner/face evidence are absent from I_t. The same prior selection and jog sequence can therefore require different next actions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "At the nonempty pre-weigh gate, all four docked faces, the coupled target, rail/dock state, and available controls are visible in a bounded current screenshot, so a static visual policy can choose the next submit or recovery action. Scanner occlusion changes what is visible, but does not create a changing opportunity."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Accepted position, orientation, and dock state change synchronously inside rollSelected when the pad or key action is delivered; leaving a scanner immediately changes visibility as part of that same action, not autonomously during a delay. The subsequent CSS motion is presentation-only. Post-WEIGH LOT settlement disables all outcome-affecting controls, so no Delta produces a strict loss of an available action."
+      },
+      "common_visible_process": "No qualifying common process exists: scanner/housing visibility is a synchronous consequence of the roll, roll/turn/collision animations are visual effects, and the balance waveform begins only after WEIGH LOT with controls locked.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause iii, so the pre-run override is not applicable. There is no autonomous outcome phase before the roll actions; settlement starts only after the administrative weigh action.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/env.json",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py",
+        "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/top_face_dice_arithmetic.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/controls.json", "lines": "54-64; 66-80", "claim": "Difficulty 5 uses four scanner-visibility dice with target bounds 10-20; full and simplified interaction profiles and the 300 ms/3-frame observation settings are defined here."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py", "lines": "120-143; 174-216; 219-261", "claim": "Difficulty parameters drive dice count and scanner visibility, while randomized orientations/routes generate the final tops and coupled target sum."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "73-90; 181-251; 583-623", "claim": "Visibility is a synchronous function of initial/scanner/dock position, and simplified selection/roll controls mutate state synchronously."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.js", "lines": "174-178; 387-426", "claim": "Settlement is timer-driven after WEIGH LOT and disables the task controls while it runs."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/top_face_dice_arithmetic.css", "lines": "247-308", "claim": "The table-turn, rail/grid, token-position, collision, and die-roll changes are CSS animations/transitions rather than outcome-state evolution."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/top_face_dice_arithmetic.py", "lines": "230-315; 317-378", "claim": "The grader replays visibility and roll state from events and checks settlement after the action transcript; event timestamps do not drive the replay."},
+        {"path": "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/verifier.py", "lines": "44-61", "claim": "The verifier delegates the submitted UI transcript to the independent replay grader."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

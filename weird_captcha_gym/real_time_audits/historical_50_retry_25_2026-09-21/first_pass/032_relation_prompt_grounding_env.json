@@ -1,0 +1,1297 @@
+{
+  "case_index": 32,
+  "environment_id": "relation_prompt_grounding_env",
+  "public_environment_name": "Dual-Projection Sculpture Rig",
+  "configuration_reports": [
+    {
+      "case_index": 311,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse direct-drag of each object from the moving carousel to the worktable",
+        "Mouse drag on the selected placed object's depth rail",
+        "Mouse RUN FORCE / INSPECTION control after all objects are placed",
+        "Mouse RESET SCULPTURE and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 150 ms without a new agent action; the 2-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_full: all direct drags that acquire an unplaced object from the moving carousel",
+        "D_table_full: direct drags that reposition an already placed worktable object",
+        "D_depth_full: depth-rail drags for a selected placed object",
+        "D_settle_full: RUN FORCE / INSPECTION",
+        "D_reset_full: RESET SCULPTURE"
+      ],
+      "delta_ms": 300,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_full, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a direct-drag start point that hits the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+300 ms, then issue the direct drag there; the visible projection seals provide the table destination and depth evidence."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a direct drag whose pointer-down must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 300 ms; the object visibly advances to the next orbit point, so the same drag start is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this two-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "10-20",
+          "claim": "Difficulty 1 selects 2 objects, a 150 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The full interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the full surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "110-161",
+          "claim": "Full mode starts a direct drag at the currently rendered object and only places it on a valid table drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "207-264",
+          "claim": "The grader requires full-mode carousel geometry at drag_start and replays the physical drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 312,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse click on a moving-carousel object followed by a worktable destination click",
+        "Mouse click on a placed object followed by a worktable destination click for repositioning",
+        "Mouse labelled REAR 10, REAR 1, FRONT 1, and FRONT 10 depth buttons",
+        "Mouse RUN FORCE / INSPECTION, RESET SCULPTURE, and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 150 ms without a new agent action; the 2-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_simplified: all proxy selections of an unplaced object from the moving carousel, followed by proxy placement",
+        "D_table_simplified: proxy selections and placement clicks for an already placed worktable object",
+        "D_depth_simplified: labelled depth-button nudges for a selected placed object",
+        "D_settle_simplified: RUN FORCE / INSPECTION",
+        "D_reset_simplified: RESET SCULPTURE"
+      ],
+      "delta_ms": 300,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_simplified, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a proxy-click point that selects the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+300 ms, then issue the proxy click there; the visible projection seals and depth buttons provide the remaining placement controls."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a proxy selection click whose point must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 300 ms; the object visibly advances to the next orbit point, so the same proxy click is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this two-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "10-20",
+          "claim": "Difficulty 1 selects 2 objects, a 150 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The simplified interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the simplified surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "163-186",
+          "claim": "Simplified mode selects the currently rendered object with a proxy click and then places it with a second worktable click."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "265-300",
+          "claim": "The grader requires simplified-mode carousel geometry at proxy_select and replays the proxy placement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 313,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse direct-drag of each object from the moving carousel to the worktable",
+        "Mouse drag on the selected placed object's depth rail",
+        "Mouse RUN FORCE / INSPECTION control after all objects are placed",
+        "Mouse RESET SCULPTURE and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 125 ms without a new agent action; the 3-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_full: all direct drags that acquire an unplaced object from the moving carousel",
+        "D_table_full: direct drags that reposition an already placed worktable object",
+        "D_depth_full: depth-rail drags for a selected placed object",
+        "D_settle_full: RUN FORCE / INSPECTION",
+        "D_reset_full: RESET SCULPTURE"
+      ],
+      "delta_ms": 250,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_full, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a direct-drag start point that hits the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+250 ms, then issue the direct drag there; the visible projection seals provide the table destination and depth evidence."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a direct drag whose pointer-down must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 250 ms; the object visibly advances to the next orbit point, so the same drag start is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this three-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "23-33",
+          "claim": "Difficulty 2 selects 3 objects, a 125 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The full interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the full surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "110-161",
+          "claim": "Full mode starts a direct drag at the currently rendered object and only places it on a valid table drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "207-264",
+          "claim": "The grader requires full-mode carousel geometry at drag_start and replays the physical drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 314,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse click on a moving-carousel object followed by a worktable destination click",
+        "Mouse click on a placed object followed by a worktable destination click for repositioning",
+        "Mouse labelled REAR 10, REAR 1, FRONT 1, and FRONT 10 depth buttons",
+        "Mouse RUN FORCE / INSPECTION, RESET SCULPTURE, and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 125 ms without a new agent action; the 3-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_simplified: all proxy selections of an unplaced object from the moving carousel, followed by proxy placement",
+        "D_table_simplified: proxy selections and placement clicks for an already placed worktable object",
+        "D_depth_simplified: labelled depth-button nudges for a selected placed object",
+        "D_settle_simplified: RUN FORCE / INSPECTION",
+        "D_reset_simplified: RESET SCULPTURE"
+      ],
+      "delta_ms": 250,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_simplified, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a proxy-click point that selects the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+250 ms, then issue the proxy click there; the visible projection seals and depth buttons provide the remaining placement controls."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a proxy selection click whose point must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 250 ms; the object visibly advances to the next orbit point, so the same proxy click is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this three-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "23-33",
+          "claim": "Difficulty 2 selects 3 objects, a 125 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The simplified interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the simplified surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "163-186",
+          "claim": "Simplified mode selects the currently rendered object with a proxy click and then places it with a second worktable click."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "265-300",
+          "claim": "The grader requires simplified-mode carousel geometry at proxy_select and replays the proxy placement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 315,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse direct-drag of each object from the moving carousel to the worktable",
+        "Mouse drag on the selected placed object's depth rail",
+        "Mouse RUN FORCE / INSPECTION control after all objects are placed",
+        "Mouse RESET SCULPTURE and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 110 ms without a new agent action; the 4-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_full: all direct drags that acquire an unplaced object from the moving carousel",
+        "D_table_full: direct drags that reposition an already placed worktable object",
+        "D_depth_full: depth-rail drags for a selected placed object",
+        "D_settle_full: RUN FORCE / INSPECTION",
+        "D_reset_full: RESET SCULPTURE"
+      ],
+      "delta_ms": 220,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_full, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a direct-drag start point that hits the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+220 ms, then issue the direct drag there; the visible projection seals provide the table destination and depth evidence."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a direct drag whose pointer-down must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 220 ms; the object visibly advances to the next orbit point, so the same drag start is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this four-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "36-46",
+          "claim": "Difficulty 3 selects 4 objects, a 110 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The full interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the full surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "110-161",
+          "claim": "Full mode starts a direct drag at the currently rendered object and only places it on a valid table drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "207-264",
+          "claim": "The grader requires full-mode carousel geometry at drag_start and replays the physical drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 316,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse click on a moving-carousel object followed by a worktable destination click",
+        "Mouse click on a placed object followed by a worktable destination click for repositioning",
+        "Mouse labelled REAR 10, REAR 1, FRONT 1, and FRONT 10 depth buttons",
+        "Mouse RUN FORCE / INSPECTION, RESET SCULPTURE, and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 110 ms without a new agent action; the 4-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_simplified: all proxy selections of an unplaced object from the moving carousel, followed by proxy placement",
+        "D_table_simplified: proxy selections and placement clicks for an already placed worktable object",
+        "D_depth_simplified: labelled depth-button nudges for a selected placed object",
+        "D_settle_simplified: RUN FORCE / INSPECTION",
+        "D_reset_simplified: RESET SCULPTURE"
+      ],
+      "delta_ms": 220,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_simplified, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a proxy-click point that selects the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+220 ms, then issue the proxy click there; the visible projection seals and depth buttons provide the remaining placement controls."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a proxy selection click whose point must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 220 ms; the object visibly advances to the next orbit point, so the same proxy click is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this four-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "36-46",
+          "claim": "Difficulty 3 selects 4 objects, a 110 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The simplified interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the simplified surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "163-186",
+          "claim": "Simplified mode selects the currently rendered object with a proxy click and then places it with a second worktable click."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "265-300",
+          "claim": "The grader requires simplified-mode carousel geometry at proxy_select and replays the proxy placement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 317,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse direct-drag of each object from the moving carousel to the worktable",
+        "Mouse drag on the selected placed object's depth rail",
+        "Mouse RUN FORCE / INSPECTION control after all objects are placed",
+        "Mouse RESET SCULPTURE and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 95 ms without a new agent action; the 5-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_full: all direct drags that acquire an unplaced object from the moving carousel",
+        "D_table_full: direct drags that reposition an already placed worktable object",
+        "D_depth_full: depth-rail drags for a selected placed object",
+        "D_settle_full: RUN FORCE / INSPECTION",
+        "D_reset_full: RESET SCULPTURE"
+      ],
+      "delta_ms": 190,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_full, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a direct-drag start point that hits the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+190 ms, then issue the direct drag there; the visible projection seals provide the table destination and depth evidence."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a direct drag whose pointer-down must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 190 ms; the object visibly advances to the next orbit point, so the same drag start is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this five-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "49-59",
+          "claim": "Difficulty 4 selects 5 objects, a 95 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The full interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "85-148",
+          "claim": "The level-4 legacy/reference generator creates the five-object world, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "211-220",
+          "claim": "The generator dispatches difficulty 4 to the legacy five-object configuration and attaches the selected control condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the full surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "110-161",
+          "claim": "Full mode starts a direct drag at the currently rendered object and only places it on a valid table drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "207-264",
+          "claim": "The grader requires full-mode carousel geometry at drag_start and replays the physical drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 318,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse click on a moving-carousel object followed by a worktable destination click",
+        "Mouse click on a placed object followed by a worktable destination click for repositioning",
+        "Mouse labelled REAR 10, REAR 1, FRONT 1, and FRONT 10 depth buttons",
+        "Mouse RUN FORCE / INSPECTION, RESET SCULPTURE, and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 95 ms without a new agent action; the 5-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_simplified: all proxy selections of an unplaced object from the moving carousel, followed by proxy placement",
+        "D_table_simplified: proxy selections and placement clicks for an already placed worktable object",
+        "D_depth_simplified: labelled depth-button nudges for a selected placed object",
+        "D_settle_simplified: RUN FORCE / INSPECTION",
+        "D_reset_simplified: RESET SCULPTURE"
+      ],
+      "delta_ms": 190,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_simplified, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a proxy-click point that selects the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+190 ms, then issue the proxy click there; the visible projection seals and depth buttons provide the remaining placement controls."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a proxy selection click whose point must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 190 ms; the object visibly advances to the next orbit point, so the same proxy click is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this five-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "49-59",
+          "claim": "Difficulty 4 selects 5 objects, a 95 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The simplified interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "85-148",
+          "claim": "The level-4 legacy/reference generator creates the five-object world, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "211-220",
+          "claim": "The generator dispatches difficulty 4 to the legacy five-object configuration and attaches the selected control condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the simplified surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "163-186",
+          "claim": "Simplified mode selects the currently rendered object with a proxy click and then places it with a second worktable click."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "265-300",
+          "claim": "The grader requires simplified-mode carousel geometry at proxy_select and replays the proxy placement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 319,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse direct-drag of each object from the moving carousel to the worktable",
+        "Mouse drag on the selected placed object's depth rail",
+        "Mouse RUN FORCE / INSPECTION control after all objects are placed",
+        "Mouse RESET SCULPTURE and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 75 ms without a new agent action; the 5-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_full: all direct drags that acquire an unplaced object from the moving carousel",
+        "D_table_full: direct drags that reposition an already placed worktable object",
+        "D_depth_full: depth-rail drags for a selected placed object",
+        "D_settle_full: RUN FORCE / INSPECTION",
+        "D_reset_full: RESET SCULPTURE"
+      ],
+      "delta_ms": 150,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_full, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a direct-drag start point that hits the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+150 ms, then issue the direct drag there; the visible projection seals provide the table destination and depth evidence."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a direct drag whose pointer-down must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 150 ms; the object visibly advances to the next orbit point, so the same drag start is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this five-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "62-72",
+          "claim": "Difficulty 5 selects 5 objects, a 75 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The full interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the full surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "110-161",
+          "claim": "Full mode starts a direct drag at the currently rendered object and only places it on a valid table drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "207-264",
+          "claim": "The grader requires full-mode carousel geometry at drag_start and replays the physical drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 320,
+      "public_environment_name": "Dual-Projection Sculpture Rig",
+      "environment_id": "relation_prompt_grounding_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible FRONT / X·Y and SIDE / Z·Y target outlines with live solid marks",
+        "Mouse click on a moving-carousel object followed by a worktable destination click",
+        "Mouse click on a placed object followed by a worktable destination click for repositioning",
+        "Mouse labelled REAR 10, REAR 1, FRONT 1, and FRONT 10 depth buttons",
+        "Mouse RUN FORCE / INSPECTION, RESET SCULPTURE, and CERTIFY DUAL PROJECTION controls"
+      ],
+      "autonomous_processes": [
+        "While an object is unplaced, the browser advances its visible carousel position every 75 ms without a new agent action; the 5-object level leaves that process active until the objects are acquired.",
+        "The carousel shell also has a continuous visible CSS rotation; the hit geometry itself is updated by the discrete carousel timer.",
+        "After RUN FORCE / INSPECTION, an autonomous eight-tick settle interval runs every 110 ms, visibly adding each object's seeded x/y force drift before the settled state is exposed."
+      ],
+      "grouped_control_modes": [
+        "D_carousel_simplified: all proxy selections of an unplaced object from the moving carousel, followed by proxy placement",
+        "D_table_simplified: proxy selections and placement clicks for an already placed worktable object",
+        "D_depth_simplified: labelled depth-button nudges for a selected placed object",
+        "D_settle_simplified: RUN FORCE / INSPECTION",
+        "D_reset_simplified: RESET SCULPTURE"
+      ],
+      "delta_ms": 150,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_carousel_simplified, histories can have identical prior actions and task times but different seed-derived carousel phases. No action-only q can choose a proxy-click point that selects the correct moving object in every such history; the grader requires the current carousel geometry."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the bounded 600 ms window and five chronological frames, g can read the object's visible orbit and extrapolate its position at t+150 ms, then issue the proxy click there; the visible projection seals and depth buttons provide the remaining placement controls."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t just before a carousel tick and a proxy selection click whose point must land on the object's current carousel position. For a no-action interval crossing that tick, take τ between 0 and 150 ms; the object visibly advances to the next orbit point, so the same proxy click is unavailable or misses it while success remains possible at the new visible point. The strict loss is geometric target mismatch, not deadline passage or later completion."
+      },
+      "common_visible_process": "The common witness for clauses i-iii is the visible movement of an unplaced object around the carousel: recent frames evidence its current orbit, that evidence predicts the delayed acquisition point, and waiting across a carousel tick makes an acquisition at the old point lose its geometric effectiveness. The later force-settle drift is not used for this witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The source provides a prepare-then-settle sequence for this five-object profile: place every object and calibrate every depth before clicking RUN FORCE / INSPECTION, send no further outcome-affecting manipulation during the eight-tick autonomous settle, then certify after it ends. The generator constructs exact pre-settle solution positions and the solver follows this order for both interaction surfaces; certification is administrative. Therefore the at-least-half pre-run threshold overrides the carousel mathematical witness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/env.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/task.json",
+        "weird_captcha_gym/environments/relation_prompt_grounding_env/tasks/relation_prompt_grounding_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+        "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "62-72",
+          "claim": "Difficulty 5 selects 5 objects, a 75 ms carousel tick, the profile-specific settle-force bound, and the listed projection tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/relation_prompt_grounding_env/controls.json",
+          "lines": "76-89",
+          "claim": "The simplified interaction surface is implemented, and the shared real-time settings are a 600 ms observation window with 5 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/relation_prompt_grounding.py",
+          "lines": "151-208",
+          "claim": "The controlled generator creates the profile object count, moving-carousel phase, deterministic settle vectors, pre-settle solution positions, and final projection targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "28-45",
+          "claim": "Unplaced objects use carousel_phase plus the live carouselTick to compute their visible orbital position; placed objects instead use their table coordinates."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "348-370",
+          "claim": "The browser renders both projection seals, selects the simplified surface, and advances carouselTick autonomously with setInterval at state.carousel.tick_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.css",
+          "lines": "86-93",
+          "claim": "The carousel is visibly animated, so the changing acquisition geometry is visible rather than a hidden clock-only effect."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock drains task timers only while task time is running, so the carousel timer is an autonomous live-task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "163-186",
+          "claim": "Simplified mode selects the currently rendered object with a proxy click and then places it with a second worktable click."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "265-300",
+          "claim": "The grader requires simplified-mode carousel geometry at proxy_select and replays the proxy placement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/relation_prompt_grounding.js",
+          "lines": "247-290",
+          "claim": "After all objects are placed, RUN FORCE / INSPECTION starts an eight-tick, 110 ms-per-tick settle interval and no placement/depth action is needed to finish it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/relation_prompt_grounding.py",
+          "lines": "351-421",
+          "claim": "The grader replays the eight settle ticks and accepts only the final settled projections, so the settle phase can be completed without another outcome-affecting manipulation."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/relation_prompt_grounding.py",
+          "lines": "109-147",
+          "claim": "The implementation's generic solve order performs every placement and depth calibration before clicking settle, waits for settled=true, and submits afterward; this establishes the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

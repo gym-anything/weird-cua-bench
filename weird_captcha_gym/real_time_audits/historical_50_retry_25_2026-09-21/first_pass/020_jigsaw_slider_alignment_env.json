@@ -1,0 +1,1383 @@
+{
+  "case_index": 20,
+  "environment_id": "jigsaw_slider_alignment_env",
+  "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+  "configuration_reports": [
+    {
+      "case_index": 191,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Directly drag the rail carriage or fragment; pointer release speed determines whether frictional rail coast starts.",
+        "Directly drag the separate depth grip to change projected depth, scale, and parallax.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "direct_rail_drag: carriage or fragment drag and release",
+        "direct_depth_drag: depth-grip drag and release",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the rail/depth correction modes, the generated target and initial pose vary by seed; prior actions and their times alone do not identify the visible coincidence point, while the current screenshot can select the required direct correction. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, when present, the rail's visible coast; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast direct rail release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "10-34",
+          "claim": "Difficulty 1 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The full interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "251-335",
+          "claim": "Full rail drag samples pointer motion; release speed at or above the profile threshold starts a 50 ms friction interval that moves the rail and decays velocity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Full mode wires the carriage/fragment and depth grip for direct input and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds full to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 192,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Click the labelled rail proxy buttons: −50 PX or +50 PX coarse release, and −5 PX or +5 PX fine release.",
+        "Click the depth proxy buttons: FAR −100, FAR −10, NEAR +10, or NEAR +100.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "No frictional rail coast is reachable through the L1 simplified buttons: the coarse 50,000-milli / 200 ms proxy is 250,000 milli-units/s, below the 260,000 threshold; the fine buttons are slower.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "rail_nudge_button: coarse ±50 PX and fine ±5 PX rail releases",
+        "depth_nudge_button: ±100 and ±10 depth nudges",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the proxy correction modes, the generated target and initial pose vary by seed; prior button presses and their times alone do not identify how many or which-direction nudges are needed, while the current screenshot can select them. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, for levels with coarse coast, its visible rail trajectory; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. No simplified L1 rail button starts inertia, so no non-clock autonomous geometry change exists. The optical-lock interval is only a fixed-duration sample/hold, and waiting does not make its required release less effective."
+      },
+      "common_visible_process": "No valid common visible process: the available simplified L1 rail controls cannot start the friction coast, and the remaining scan timer is fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "10-34",
+          "claim": "Difficulty 1 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The simplified interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "381-425",
+          "claim": "Simplified mode uses fixed 200 ms rail proxies and depth buttons; a 50,000-milli coarse press computes 250,000 milli-units/s before the profile threshold check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "287-321",
+          "claim": "A proxy release that meets the threshold enters the same visible friction coast as a direct drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Simplified mode wires the rail and depth proxy buttons and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds simplified to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 193,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Directly drag the rail carriage or fragment; pointer release speed determines whether frictional rail coast starts.",
+        "Directly drag the separate depth grip to change projected depth, scale, and parallax.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "direct_rail_drag: carriage or fragment drag and release",
+        "direct_depth_drag: depth-grip drag and release",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the rail/depth correction modes, the generated target and initial pose vary by seed; prior actions and their times alone do not identify the visible coincidence point, while the current screenshot can select the required direct correction. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, when present, the rail's visible coast; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast direct rail release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "36-60",
+          "claim": "Difficulty 2 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The full interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "251-335",
+          "claim": "Full rail drag samples pointer motion; release speed at or above the profile threshold starts a 50 ms friction interval that moves the rail and decays velocity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Full mode wires the carriage/fragment and depth grip for direct input and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds full to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 194,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Click the labelled rail proxy buttons: −50 PX or +50 PX coarse release, and −5 PX or +5 PX fine release.",
+        "Click the depth proxy buttons: FAR −100, FAR −10, NEAR +10, or NEAR +100.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "rail_nudge_button: coarse ±50 PX and fine ±5 PX rail releases",
+        "depth_nudge_button: ±100 and ±10 depth nudges",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the proxy correction modes, the generated target and initial pose vary by seed; prior button presses and their times alone do not identify how many or which-direction nudges are needed, while the current screenshot can select them. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, for levels with coarse coast, its visible rail trajectory; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast coarse rail proxy release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "36-60",
+          "claim": "Difficulty 2 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The simplified interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "381-425",
+          "claim": "Simplified mode uses fixed 200 ms rail proxies and depth buttons; a 50,000-milli coarse press computes 250,000 milli-units/s before the profile threshold check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "287-321",
+          "claim": "A proxy release that meets the threshold enters the same visible friction coast as a direct drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Simplified mode wires the rail and depth proxy buttons and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds simplified to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 195,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Directly drag the rail carriage or fragment; pointer release speed determines whether frictional rail coast starts.",
+        "Directly drag the separate depth grip to change projected depth, scale, and parallax.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "direct_rail_drag: carriage or fragment drag and release",
+        "direct_depth_drag: depth-grip drag and release",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the rail/depth correction modes, the generated target and initial pose vary by seed; prior actions and their times alone do not identify the visible coincidence point, while the current screenshot can select the required direct correction. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, when present, the rail's visible coast; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast direct rail release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "62-86",
+          "claim": "Difficulty 3 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The full interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "251-335",
+          "claim": "Full rail drag samples pointer motion; release speed at or above the profile threshold starts a 50 ms friction interval that moves the rail and decays velocity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Full mode wires the carriage/fragment and depth grip for direct input and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds full to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 196,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Click the labelled rail proxy buttons: −50 PX or +50 PX coarse release, and −5 PX or +5 PX fine release.",
+        "Click the depth proxy buttons: FAR −100, FAR −10, NEAR +10, or NEAR +100.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "rail_nudge_button: coarse ±50 PX and fine ±5 PX rail releases",
+        "depth_nudge_button: ±100 and ±10 depth nudges",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the proxy correction modes, the generated target and initial pose vary by seed; prior button presses and their times alone do not identify how many or which-direction nudges are needed, while the current screenshot can select them. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, for levels with coarse coast, its visible rail trajectory; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast coarse rail proxy release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "62-86",
+          "claim": "Difficulty 3 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The simplified interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "381-425",
+          "claim": "Simplified mode uses fixed 200 ms rail proxies and depth buttons; a 50,000-milli coarse press computes 250,000 milli-units/s before the profile threshold check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "287-321",
+          "claim": "A proxy release that meets the threshold enters the same visible friction coast as a direct drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Simplified mode wires the rail and depth proxy buttons and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds simplified to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 197,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Directly drag the rail carriage or fragment; pointer release speed determines whether frictional rail coast starts.",
+        "Directly drag the separate depth grip to change projected depth, scale, and parallax.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "direct_rail_drag: carriage or fragment drag and release",
+        "direct_depth_drag: depth-grip drag and release",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the rail/depth correction modes, the generated target and initial pose vary by seed; prior actions and their times alone do not identify the visible coincidence point, while the current screenshot can select the required direct correction. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, when present, the rail's visible coast; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast direct rail release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "88-112",
+          "claim": "Difficulty 4 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The full interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "251-335",
+          "claim": "Full rail drag samples pointer motion; release speed at or above the profile threshold starts a 50 ms friction interval that moves the rail and decays velocity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Full mode wires the carriage/fragment and depth grip for direct input and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds full to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 198,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Click the labelled rail proxy buttons: −50 PX or +50 PX coarse release, and −5 PX or +5 PX fine release.",
+        "Click the depth proxy buttons: FAR −100, FAR −10, NEAR +10, or NEAR +100.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "rail_nudge_button: coarse ±50 PX and fine ±5 PX rail releases",
+        "depth_nudge_button: ±100 and ±10 depth nudges",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the proxy correction modes, the generated target and initial pose vary by seed; prior button presses and their times alone do not identify how many or which-direction nudges are needed, while the current screenshot can select them. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, for levels with coarse coast, its visible rail trajectory; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast coarse rail proxy release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "88-112",
+          "claim": "Difficulty 4 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The simplified interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "381-425",
+          "claim": "Simplified mode uses fixed 200 ms rail proxies and depth buttons; a 50,000-milli coarse press computes 250,000 milli-units/s before the profile threshold check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "287-321",
+          "claim": "A proxy release that meets the threshold enters the same visible friction coast as a direct drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Simplified mode wires the rail and depth proxy buttons and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds simplified to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 199,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Directly drag the rail carriage or fragment; pointer release speed determines whether frictional rail coast starts.",
+        "Directly drag the separate depth grip to change projected depth, scale, and parallax.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "direct_rail_drag: carriage or fragment drag and release",
+        "direct_depth_drag: depth-grip drag and release",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the rail/depth correction modes, the generated target and initial pose vary by seed; prior actions and their times alone do not identify the visible coincidence point, while the current screenshot can select the required direct correction. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, when present, the rail's visible coast; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast direct rail release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "114-138",
+          "claim": "Difficulty 5 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The full interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "251-335",
+          "claim": "Full rail drag samples pointer motion; release speed at or above the profile threshold starts a 50 ms friction interval that moves the rail and decays velocity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Full mode wires the carriage/fragment and depth grip for direct input and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds full to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 200,
+      "public_environment_name": "Parallax / Inertial Jigsaw Alignment",
+      "environment_id": "jigsaw_slider_alignment_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Click the labelled rail proxy buttons: −50 PX or +50 PX coarse release, and −5 PX or +5 PX fine release.",
+        "Click the depth proxy buttons: FAR −100, FAR −10, NEAR +10, or NEAR +100.",
+        "Click the −15° or +15° orientation console button.",
+        "Press and hold OPTICAL LOCK, then release it after the required stable scan.",
+        "Click ZERO INSTRUMENT to reset the current attempt."
+      ],
+      "autonomous_processes": [
+        "A qualifying fast rail release starts a visible frictional coast: every 50 ms the rail advances, velocity decays, the fragment's projected position changes, and the console reports COASTING until friction or a boundary ends it.",
+        "While optical lock is held, the sample interval appends optical samples and advances fixed progress; rail, depth, rotation, and target geometry do not change.",
+        "A failed submission can asynchronously render fresh geometry after the agent's submission, but that post-submission response is not an active successful-run control opportunity."
+      ],
+      "grouped_control_modes": [
+        "rail_nudge_button: coarse ±50 PX and fine ±5 PX rail releases",
+        "depth_nudge_button: ±100 and ±10 depth nudges",
+        "rotation_console_button: ±15° orientation clicks",
+        "optical_lock_button: continuous optical-lock hold and release"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the proxy correction modes, the generated target and initial pose vary by seed; prior button presses and their times alone do not identify how many or which-direction nudges are needed, while the current screenshot can select them. This candidate observation dependence is not enough without an expiring action opportunity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible fragment, cutout, axis lamps, and the 400 ms/four-frame observation window can expose current alignment and, for levels with coarse coast, its visible rail trajectory; no unbounded history is required for the candidate correction."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. A fast coarse rail proxy release does autonomously move the rail, but while model.inertia is set the rail, depth, rotation, and optical-lock handlers reject new outcome-affecting inputs. The coast therefore makes the current alignment move while only enabling controls after it settles; that is the explicitly excluded case of an action becoming enabled or more effective after a wait, not an action opportunity losing value within the delay. Before the release, waiting alone does not start the coast."
+      },
+      "common_visible_process": "The candidate common process is the visible frictional rail coast, shown by the moving fragment and COASTING readout. It is not a valid witness because the same process disables every useful outcome-affecting control until it ends; the scan timer is separate fixed-duration bookkeeping over stationary geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The configuration fails the mathematical conjunction at clause (iii), so the pre-run override is not needed.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/env.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/task.json",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+        "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "114-138",
+          "claim": "Difficulty 5 supplies the active rail/depth displacement, tolerances, hold/sample requirements, and inertial threshold/friction profile for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/controls.json",
+          "lines": "141-154",
+          "claim": "The simplified interaction surface is implemented, and the shared live/paused settings are a 400 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "72-123",
+          "claim": "The generator validates the supplied difficulty and interaction condition and copies its parameters into the generated challenge."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/jigsaw_slider_alignment.py",
+          "lines": "225-287",
+          "claim": "Generated public and ground-truth state expose the analytic target, scan tolerances, inertial contract, and the fast-release rail rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "381-425",
+          "claim": "Simplified mode uses fixed 200 ms rail proxies and depth buttons; a 50,000-milli coarse press computes 250,000 milli-units/s before the profile threshold check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "287-321",
+          "claim": "A proxy release that meets the threshold enters the same visible friction coast as a direct drag."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "337-478",
+          "claim": "Depth, rotation, and optical-lock starts are rejected while inertia is active; the optical-lock timer only records fixed-interval samples while the geometry remains unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/jigsaw_slider_alignment.js",
+          "lines": "583-668",
+          "claim": "Simplified mode wires the rail and depth proxy buttons and shares the orientation, optical-lock, and reset controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "134-214",
+          "claim": "The independent grader binds simplified to its expected input sources and checks the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "261-369",
+          "claim": "Replay enters an explicit inertia mode after a qualifying release, replays autonomous rail samples, and rejects new outcome controls until the inertia end event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/jigsaw_slider_alignment.py",
+          "lines": "437-505",
+          "claim": "The grader evaluates a stationary-geometry optical hold from sampled errors and requires stable samples, not a moving target."
+        },
+        {
+          "path": "weird_captcha_gym/environments/jigsaw_slider_alignment_env/tasks/jigsaw_slider_alignment_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "The task verifier loads the independent mechanic grader and bases the result on its replay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "83-120",
+          "claim": "The solver waits for inertia to become null before continuing rail corrections and uses fine proxy releases for open-loop adjustment."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/jigsaw_slider_alignment.py",
+          "lines": "139-173",
+          "claim": "The solver completes all alignment controls, waits for the fixed hold, and releases optical lock for certification."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

@@ -1,0 +1,1017 @@
+{
+  "case_index": 37,
+  "environment_id": "rotate_wrong_thing_upright_env",
+  "public_environment_name": "Rotate The Wrong Thing Upright",
+  "configuration_reports": [
+    {
+      "case_index": 361,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 2 generated projections and the CERTIFY button.",
+        "Full input uses direct pointer dragging on the active outer and inner gimbal rings; the inactive middle ring is ignored.",
+        "Level 1 static contract: active_axes=[outer, inner], initial angles 30-60 degrees, outer-to-inner coupling 0.05, tolerance 15 degrees, 0.28 degrees per pixel, target needle width 8."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the two generated projections.",
+        "Full gimbal_ring_drag events on the active outer and inner ring zones.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 1 has two active axes, two views, weak coupling, and a wide tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 362,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 2 generated projections and the CERTIFY button.",
+        "Simplified input uses axis_controls drags for the active outer and inner axes; the inactive middle control is disabled.",
+        "Level 1 static contract: active_axes=[outer, inner], initial angles 30-60 degrees, outer-to-inner coupling 0.05, tolerance 15 degrees, 0.28 degrees per pixel, target needle width 8."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the two generated projections.",
+        "Simplified axis_controls drag events on the active outer and inner axes.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 1 has two active axes, two views, weak coupling, and a wide tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 363,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Full input uses direct pointer dragging on the active outer, middle, and inner gimbal rings.",
+        "Level 2 static contract: active_axes=[outer, middle, inner], initial angles 30-80 degrees, couplings outer-to-inner 0.08, middle-to-outer 0, inner-to-middle 0.06, tolerance 12 degrees, 0.32 degrees per pixel, target needle width 6."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Full gimbal_ring_drag events on the active outer, middle, and inner ring zones.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 2 has three active axes, three views, weak coupling, and a 12 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 364,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Simplified input uses axis_controls drags for the active outer, middle, and inner axes.",
+        "Level 2 static contract: active_axes=[outer, middle, inner], initial angles 30-80 degrees, couplings outer-to-inner 0.08, middle-to-outer 0, inner-to-middle 0.06, tolerance 12 degrees, 0.32 degrees per pixel, target needle width 6."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Simplified axis_controls drag events on the active outer, middle, and inner axes.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 2 has three active axes, three views, weak coupling, and a 12 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 365,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Full input uses direct pointer dragging on the active outer, middle, and inner gimbal rings.",
+        "Level 3 static contract: active_axes=[outer, middle, inner], initial angles 30-100 degrees, couplings outer-to-inner 0.12, middle-to-outer -0.09, inner-to-middle 0.08, tolerance 9 degrees, 0.37 degrees per pixel, target needle width 5."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Full gimbal_ring_drag events on the active outer, middle, and inner ring zones.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 3 has three active axes, three views, coupled controls, and a 9 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 366,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Simplified input uses axis_controls drags for the active outer, middle, and inner axes.",
+        "Level 3 static contract: active_axes=[outer, middle, inner], initial angles 30-100 degrees, couplings outer-to-inner 0.12, middle-to-outer -0.09, inner-to-middle 0.08, tolerance 9 degrees, 0.37 degrees per pixel, target needle width 5."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Simplified axis_controls drag events on the active outer, middle, and inner axes.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 3 has three active axes, three views, coupled controls, and a 9 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 367,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Full input uses direct pointer dragging on the active outer, middle, and inner gimbal rings.",
+        "Level 4 static contract: active_axes=[outer, middle, inner], initial angles 30-115 degrees, couplings outer-to-inner 0.17, middle-to-outer -0.13, inner-to-middle 0.11, tolerance 6 degrees, 0.42 degrees per pixel, target needle width 4."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Full gimbal_ring_drag events on the active outer, middle, and inner ring zones.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 4 has three active axes, three views, stronger coupling, and a 6 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 368,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Simplified input uses axis_controls drags for the active outer, middle, and inner axes.",
+        "Level 4 static contract: active_axes=[outer, middle, inner], initial angles 30-115 degrees, couplings outer-to-inner 0.17, middle-to-outer -0.13, inner-to-middle 0.11, tolerance 6 degrees, 0.42 degrees per pixel, target needle width 4."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Simplified axis_controls drag events on the active outer, middle, and inner axes.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 4 has three active axes, three views, stronger coupling, and a 6 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 369,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Full input uses direct pointer dragging on the active outer, middle, and inner gimbal rings.",
+        "Level 5 static contract: active_axes=[outer, middle, inner], initial angles 60-145 degrees, couplings outer-to-inner 0.24, middle-to-outer -0.2, inner-to-middle 0.17, tolerance 3 degrees, 0.55 degrees per pixel, target needle width 2."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Full gimbal_ring_drag events on the active outer, middle, and inner ring zones.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 5 has three active axes, three views, strongest configured coupling, and a 3 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 370,
+      "public_environment_name": "Rotate The Wrong Thing Upright",
+      "environment_id": "rotate_wrong_thing_upright_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mouse view selectors for 3 generated projections and the CERTIFY button.",
+        "Simplified input uses axis_controls drags for the active outer, middle, and inner axes.",
+        "Level 5 static contract: active_axes=[outer, middle, inner], initial angles 60-145 degrees, couplings outer-to-inner 0.24, middle-to-outer -0.2, inner-to-middle 0.17, tolerance 3 degrees, 0.55 degrees per pixel, target needle width 2."
+      ],
+      "autonomous_processes": [
+        "No autonomous gimbal-angle or view evolution occurs between input events; the generated initial state is fixed.",
+        "After a drag, the target bead has a 100 ms CSS translate transition, which is visual-only and does not change the angle state or controls.",
+        "After a failed CERTIFY, the failure path can rerender a fresh challenge after 850 ms; this is a post-rejection reset, not an active opportunity in the rejected challenge."
+      ],
+      "grouped_control_modes": [
+        "View-selection events for the three generated projections.",
+        "Simplified axis_controls drag events on the active outer, middle, and inner axes.",
+        "CERTIFY is administrative and is not an outcome-affecting control mode for the real-time witness."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across randomized initial orientations, a correct next drag cannot be fixed from prior actions and task times alone; the current screenshot is needed for the static correction. This is static visual dependence, not dependence on an autonomously changing future state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current endpoint screenshot together with the prior view and drag history is sufficient to choose the next action because the gimbal remains fixed; no chronological frame sequence is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change makes an available action strictly less effective while success remains possible. Angles and views change only in synchronous input handlers; the bead transition is presentation-only and the failed-CERTIFY reset occurs after rejection."
+      },
+      "common_visible_process": "None qualifies. The only between-action visual change is the target-bead CSS transition after a drag, which does not alter gimbal angles, available controls, or the grader outcome; the failure reset follows a rejected certification.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), and this static task has no autonomous outcome phase whose pre-run fraction could override a Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/env.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/tasks/rotate_wrong_thing_upright_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotate_wrong_thing_upright_env/controls.json",
+          "lines": "9-23",
+          "claim": "Level 5 has three active axes, three views, strongest configured coupling, and a 3 degree tolerance; both interaction surfaces are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rotate_wrong_thing_upright.py",
+          "lines": "16-54",
+          "claim": "The generator samples initial angles and views once, then builds a fixed contract containing active axes, coupling, tolerance, and drag scale; it has no task-state update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.js",
+          "lines": "6-15",
+          "claim": "View changes and drag angle updates are synchronous input-handler effects; simplified controls use axis_controls, full controls use gimbal_ring_drag, and the only timer is the 850 ms post-failure rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rotate_wrong_thing_upright.css",
+          "lines": "1",
+          "claim": "The target bead alone has a 0.1 s CSS translate transition; the ring transforms reflect stored angles and no CSS animation changes the task contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rotate_wrong_thing_upright.py",
+          "lines": "20-70",
+          "claim": "The grader replays ordered view and drag events, enforces the interaction source and physical delta limit, and grades final angles and visited views without task-time state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotate_wrong_thing_upright.py",
+          "lines": "50-79",
+          "claim": "The supplied solver visits the fixed views, solves the static coupling matrix, performs finite drags through either surface, and certifies without waiting for an autonomous phase."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visibly evidenced autonomous process to both determine the delayed action and strictly degrade an available action within Delta; unrelated animation or post-failure reset does not qualify."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

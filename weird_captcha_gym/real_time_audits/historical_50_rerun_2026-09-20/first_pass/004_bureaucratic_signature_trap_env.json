@@ -1,0 +1,957 @@
+{
+  "case_index": 4,
+  "environment_id": "bureaucratic_signature_trap_env",
+  "public_environment_name": "Bureaucratic Signature Trap",
+  "configuration_reports": [
+    {
+      "case_index": 31,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "One carbon sheet (A) with a fixed registration tab that can be dragged with pointer down/move/up events; level 1 uses a 96 px aperture and 18 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after the sheet is aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "fixed_registration_tab: all registration-tab drag gestures for sheet A across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: even at level 1 the generated trace varies with random phases and rotation, which are not encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "10-35",
+          "claim": "Level 1 has one layer, a 96 px aperture, 18 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,53-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 32,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "One carbon sheet (A) with labelled left, up, down, and right nudge buttons; each normal click moves it 8 px, with level 1 using a 96 px aperture and 18 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after the sheet is aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "sheet_nudge_button: all labelled directional nudge clicks for sheet A across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: even at level 1 the generated trace varies with random phases and rotation, which are not encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "10-35",
+          "claim": "Level 1 has one layer, a 96 px aperture, 18 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,93-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 33,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Two carbon sheets (A and B), each moved by dragging its fixed registration tab with pointer down/move/up events; level 2 uses an 88 px aperture and 14 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after both sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "fixed_registration_tab: all registration-tab drag gestures for sheets A and B across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases and rotation, which are not encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "38-63",
+          "claim": "Level 2 has two layers, an 88 px aperture, 14 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,53-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 34,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Two carbon sheets (A and B), each moved by its labelled left, up, down, and right nudge buttons; each normal click moves 8 px, with level 2 using an 88 px aperture and 14 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after both sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "sheet_nudge_button: all labelled directional nudge clicks for sheets A and B across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases and rotation, which are not encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "38-63",
+          "claim": "Level 2 has two layers, an 88 px aperture, 14 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,93-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 35,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Three carbon sheets (A, B, and C), each moved by dragging its fixed registration tab with pointer down/move/up events; level 3 uses an 80 px aperture and 11 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after all three sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "fixed_registration_tab: all registration-tab drag gestures for sheets A, B, and C across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases, rotation, and the level's selected frequency pair, none of which is encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "66-91",
+          "claim": "Level 3 has three layers, an 80 px aperture, 11 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,53-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 36,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Three carbon sheets (A, B, and C), each moved by its labelled left, up, down, and right nudge buttons; each normal click moves 8 px, with level 3 using an 80 px aperture and 11 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after all three sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "sheet_nudge_button: all labelled directional nudge clicks for sheets A, B, and C across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases, rotation, and the level's selected frequency pair, none of which is encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "66-91",
+          "claim": "Level 3 has three layers, an 80 px aperture, 11 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,93-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 37,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Four carbon sheets (A, B, C, and D), each moved by dragging its fixed registration tab with pointer down/move/up events; level 4 uses a 72 px aperture and 8 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after all four sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "fixed_registration_tab: all registration-tab drag gestures for sheets A, B, C, and D across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases, rotation, and the level's selected frequency pair, none of which is encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "94-119",
+          "claim": "Level 4 has four layers, a 72 px aperture, 8 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,53-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 38,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Four carbon sheets (A, B, C, and D), each moved by its labelled left, up, down, and right nudge buttons; each normal click moves 8 px, with level 4 using a 72 px aperture and 8 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after all four sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "sheet_nudge_button: all labelled directional nudge clicks for sheets A, B, C, and D across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases, rotation, and the level's selected frequency pair, none of which is encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "94-119",
+          "claim": "Level 4 has four layers, a 72 px aperture, 8 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,93-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 39,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Five carbon sheets (A, B, C, D, and E), each moved by dragging its fixed registration tab with pointer down/move/up events; level 5 uses a 64 px aperture and 6 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after all five sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "fixed_registration_tab: all registration-tab drag gestures for sheets A, B, C, D, and E across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases, rotation, and the level's selected frequency pair, none of which is encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "122-147",
+          "claim": "Level 5 has five layers, a 64 px aperture, 6 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,53-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 40,
+      "public_environment_name": "Bureaucratic Signature Trap",
+      "environment_id": "bureaucratic_signature_trap_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Five carbon sheets (A, B, C, D, and E), each moved by its labelled left, up, down, and right nudge buttons; each normal click moves 8 px, with level 5 using a 64 px aperture and 6 px alignment tolerance.",
+        "A signature canvas that accepts one continuous pointer stroke only after all five sheets are aligned.",
+        "CLEAR INK to reset the current stroke and CERTIFY to submit it; no keyboard control is bound by the mechanic."
+      ],
+      "autonomous_processes": [
+        "No autonomous outcome-affecting task-state process runs while the agent supplies no input; sheet offsets, registration state, stroke, and event transcript remain fixed.",
+        "When registration becomes open, the already-generated polyline fades in through a fixed 180 ms CSS opacity transition; the canvas is enabled synchronously and the trace remains fixed and actionable.",
+        "After CERTIFY, the verdict request and any delayed fresh render are administrative and occur after the outcome-affecting actions."
+      ],
+      "grouped_control_modes": [
+        "sheet_nudge_button: all labelled directional nudge clicks for sheets A, B, C, D, and E across seeds and attempts.",
+        "signature_canvas: the continuous pointer stroke used to reproduce the exposed original.",
+        "clear_ink_button: optional stroke reset before certification.",
+        "certify_button: administrative terminal submission."
+      ],
+      "delta_ms": null,
+      "window_ms": 240,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the candidate D=signature_canvas after registration, an action-only q cannot choose the optimal stroke across seeds: the generated trace varies with random phases, rotation, and the level's selected frequency pair, none of which is encoded in I_t."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The exposed original polyline is visible in the registered stage, so a bounded window ending in the configured 240 ms observation can supply the target to a screenshot-based g; one captured endpoint frame is sufficient because the trace is displayed as a complete SVG polyline."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No eligible no-input interval makes a useful action worse. After the fixed reveal transition, the form is static, the signature canvas remains enabled, and the exact trace remains actionable indefinitely; thus waiting gives no strict loss in Q or action advantage."
+      },
+      "common_visible_process": "None qualifies. The only visible autonomous change is the fixed 180 ms opacity transition that reveals an already-fixed trace after registration; it does not change the trace, disable the canvas, or reduce the value of any available action, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/env.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/task.json",
+        "weird_captcha_gym/environments/bureaucratic_signature_trap_env/tasks/bureaucratic_signature_trap_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/bureaucratic_signature_trap.py",
+        "weird_captcha_gym/tools/incubator_solvers/reviewed_overhaul_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "122-147",
+          "claim": "Level 5 has five layers, a 64 px aperture, 6 px alignment tolerance, and the level-specific signature tolerances."
+        },
+        {
+          "path": "weird_captcha_gym/environments/bureaucratic_signature_trap_env/controls.json",
+          "lines": "151-165",
+          "claim": "Both simplified and full interaction modes are implemented, and the configured observation window is 240 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/bureaucratic_signature_trap.py",
+          "lines": "17-46,49-129",
+          "claim": "The generator creates a fixed original trace at task generation, with randomized phase/rotation and level-controlled geometry and acceptance thresholds; it does not define a clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.js",
+          "lines": "37-51,93-110,123-165,196-254",
+          "claim": "Layer positions change only in drag or nudge handlers; the signature is collected only from pointer events after alignment; rendering installs pointer/button listeners without a timer or animation loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/bureaucratic_signature_trap.css",
+          "lines": "1-2",
+          "claim": "The registered trace has only a fixed opacity transition, while canvas pointer-events switch on with the registered state; this is presentation and does not expire the trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bureaucratic_signature_trap.py",
+          "lines": "118-180,184-226",
+          "claim": "The grader evaluates the synchronous event transcript, stroke geometry, and certification state; it has no elapsed-time or moving-target requirement."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

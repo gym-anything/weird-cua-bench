@@ -1,0 +1,1057 @@
+{
+  "case_index": 1,
+  "environment_id": "forced_perspective_moving_day_env",
+  "public_environment_name": "Forced-Perspective Moving Day",
+  "configuration_reports": [
+    {
+      "case_index": 1,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full interaction: pointer-down on a projected crate or sign picks it and keeps it on the camera ray; pointer movement aims the ray, the wheel changes retained depth in 0.50-unit steps, and pointer-up releases the rigid footprint onto the floor.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.24-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: direct_canvas_drag pointer-down on the full canvas.",
+        "Held-depth adjustment: pointer wheel while the object remains held on the ray.",
+        "Floor placement: direct_canvas_drop pointer-up.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L1 yaw range of 0 radians, pure-forward lateral drift at the doorway is at most about 0.000 world units, below the 1.32-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its zero-yaw path stays centered over the generated bridge and through the wide doorway until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. At L1 its zero-yaw path stays centered over the generated bridge and through the wide doorway, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. yaw is 0, the gap is centered, and the door clearance is 1.60 - 0.28 = 1.32 world units. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "5-10, 37-41",
+          "claim": "L1 fixes focal length at 500, yaw at zero, gives a wide gap/slot/door, and defines full and simplified input profiles plus a 400 ms, four-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L1 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements full-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds full-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible full task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 2,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified interaction: click a projected crate or sign with the camera ray, use the visible nearer/farther depth buttons or wheel in 0.50-unit steps, aim the ray, and click RELEASE AGAINST FLOOR.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.24-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: ray_click canvas click.",
+        "Held-depth adjustment: depth_button or pointer_wheel.",
+        "Floor placement: release_button.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L1 yaw range of 0 radians, pure-forward lateral drift at the doorway is at most about 0.000 world units, below the 1.32-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its zero-yaw path stays centered over the generated bridge and through the wide doorway until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. At L1 its zero-yaw path stays centered over the generated bridge and through the wide doorway, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. yaw is 0, the gap is centered, and the door clearance is 1.60 - 0.28 = 1.32 world units. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "5-10, 37-41",
+          "claim": "L1 fixes focal length at 500, yaw at zero, gives a wide gap/slot/door, and defines full and simplified input profiles plus a 400 ms, four-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L1 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements simplified-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds simplified-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible simplified task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 3,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full interaction: pointer-down on a projected crate or sign picks it and keeps it on the camera ray; pointer movement aims the ray, the wheel changes retained depth in 0.50-unit steps, and pointer-up releases the rigid footprint onto the floor.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.27-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: direct_canvas_drag pointer-down on the full canvas.",
+        "Held-depth adjustment: pointer wheel while the object remains held on the ray.",
+        "Floor placement: direct_canvas_drop pointer-up.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L2 yaw range of 0.008-0.018 radians, pure-forward lateral drift at the doorway is at most about 0.295 world units, below the 1.15-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its small-yaw path remains within the generated bridge and doorway margins until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. L2 adds yaw and tighter geometry, but its entire range still admits a fixed forward crossing, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. the maximum L2 yaw drift at first doorway contact is about 0.295 world units versus 1.15 units of doorway clearance, and the generator asserts bridge and slot reachability. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "12-16, 37-41",
+          "claim": "L2 uses focal lengths 480/520, yaw magnitude 0.008-0.018, a wider bridge/slot/door profile, and the shared full/simplified interaction and 400 ms observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L2 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements full-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds full-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible full task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 4,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified interaction: click a projected crate or sign with the camera ray, use the visible nearer/farther depth buttons or wheel in 0.50-unit steps, aim the ray, and click RELEASE AGAINST FLOOR.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.27-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: ray_click canvas click.",
+        "Held-depth adjustment: depth_button or pointer_wheel.",
+        "Floor placement: release_button.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L2 yaw range of 0.008-0.018 radians, pure-forward lateral drift at the doorway is at most about 0.295 world units, below the 1.15-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its small-yaw path remains within the generated bridge and doorway margins until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. L2 adds yaw and tighter geometry, but its entire range still admits a fixed forward crossing, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. the maximum L2 yaw drift at first doorway contact is about 0.295 world units versus 1.15 units of doorway clearance, and the generator asserts bridge and slot reachability. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "12-16, 37-41",
+          "claim": "L2 uses focal lengths 480/520, yaw magnitude 0.008-0.018, a wider bridge/slot/door profile, and the shared full/simplified interaction and 400 ms observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L2 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements simplified-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds simplified-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible simplified task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 5,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full interaction: pointer-down on a projected crate or sign picks it and keeps it on the camera ray; pointer movement aims the ray, the wheel changes retained depth in 0.50-unit steps, and pointer-up releases the rigid footprint onto the floor.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.29-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: direct_canvas_drag pointer-down on the full canvas.",
+        "Held-depth adjustment: pointer wheel while the object remains held on the ray.",
+        "Floor placement: direct_canvas_drop pointer-up.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L3 yaw range of 0.014-0.030 radians, pure-forward lateral drift at the doorway is at most about 0.491 world units, below the 1.03-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its larger-yaw path still remains within the generated bridge and doorway margins until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. L3 adds yaw and tighter geometry, but its entire range still admits a fixed forward crossing, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. the maximum L3 yaw drift at first doorway contact is about 0.491 world units versus 1.03 units of doorway clearance, and the generator asserts bridge and slot reachability. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "18-22, 37-41",
+          "claim": "L3 uses three focal lengths, yaw magnitude 0.014-0.030, tighter bridge/slot/door geometry, a 0.29 movement step, and the shared full/simplified and observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L3 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements full-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds full-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible full task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 6,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified interaction: click a projected crate or sign with the camera ray, use the visible nearer/farther depth buttons or wheel in 0.50-unit steps, aim the ray, and click RELEASE AGAINST FLOOR.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.29-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: ray_click canvas click.",
+        "Held-depth adjustment: depth_button or pointer_wheel.",
+        "Floor placement: release_button.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L3 yaw range of 0.014-0.030 radians, pure-forward lateral drift at the doorway is at most about 0.491 world units, below the 1.03-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its larger-yaw path still remains within the generated bridge and doorway margins until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. L3 adds yaw and tighter geometry, but its entire range still admits a fixed forward crossing, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. the maximum L3 yaw drift at first doorway contact is about 0.491 world units versus 1.03 units of doorway clearance, and the generator asserts bridge and slot reachability. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "18-22, 37-41",
+          "claim": "L3 uses three focal lengths, yaw magnitude 0.014-0.030, tighter bridge/slot/door geometry, a 0.29 movement step, and the shared full/simplified and observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L3 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements simplified-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds simplified-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible simplified task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 7,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full interaction: pointer-down on a projected crate or sign picks it and keeps it on the camera ray; pointer movement aims the ray, the wheel changes retained depth in 0.50-unit steps, and pointer-up releases the rigid footprint onto the floor.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.32-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: direct_canvas_drag pointer-down on the full canvas.",
+        "Held-depth adjustment: pointer wheel while the object remains held on the ray.",
+        "Floor placement: direct_canvas_drop pointer-up.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L4 yaw range of 0.018-0.042 radians, pure-forward lateral drift at the doorway is at most about 0.686 world units, below the 0.91-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its tight oblique path still remains within the generated bridge and doorway margins until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. L4 adds yaw and tighter geometry, but its entire range still admits a fixed forward crossing, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. the maximum L4 yaw drift at first doorway contact is about 0.686 world units versus 0.91 units of doorway clearance, and the generator asserts bridge and slot reachability. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "24-28, 37-41",
+          "claim": "L4 is the current oblique profile: yaw magnitude 0.018-0.042, a 3.5-unit void, a 0.56 maximum key-slot scale, 0.91 units of doorway clearance after avatar radius, and the shared 400 ms observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L4 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements full-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds full-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible full task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 8,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified interaction: click a projected crate or sign with the camera ray, use the visible nearer/farther depth buttons or wheel in 0.50-unit steps, aim the ray, and click RELEASE AGAINST FLOOR.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.32-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: ray_click canvas click.",
+        "Held-depth adjustment: depth_button or pointer_wheel.",
+        "Floor placement: release_button.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": false,
+        "reason": "q can prepare the objects and then hold W until the exit without inspecting the observation window. Across the complete L4 yaw range of 0.018-0.042 radians, pure-forward lateral drift at the doorway is at most about 0.686 world units, below the 0.91-unit doorway clearance, so the same action schedule remains optimal for the generated route."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 400 ms, four-frame window is enough to show the projected room and current camera motion, and a visual policy can select the same forward action. It does not make the action observation-dependent at this level."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The camera advances autonomously, but its tight oblique path still remains within the generated bridge and doorway margins until completion. The source does not make that safe schedule lose an action opportunity through non-clock state evolution."
+      },
+      "common_visible_process": "Held-key camera motion is the only autonomous outcome-affecting process. L4 adds yaw and tighter geometry, but its entire range still admits a fixed forward crossing, so recent frames are not needed to choose the navigation action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After synchronous placement of the crate and sign, hold W with no later outcome-affecting action. the maximum L4 yaw drift at first doorway contact is about 0.686 world units versus 0.91 units of doorway clearance, and the generator asserts bridge and slot reachability. Thus the pre-run threshold is met and the catalog label is No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "24-28, 37-41",
+          "claim": "L4 is the current oblique profile: yaw magnitude 0.018-0.042, a 3.5-unit void, a 0.56 maximum key-slot scale, 0.91 units of doorway clearance after avatar radius, and the shared 400 ms observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L4 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements simplified-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds simplified-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "59-93, 96-131",
+          "claim": "The normal UI solver uses the mode-specific placement controls and then visibly navigates with W plus optional A/D input; its private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible simplified task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 9,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full interaction: pointer-down on a projected crate or sign picks it and keeps it on the camera ray; pointer movement aims the ray, the wheel changes retained depth in 0.25-unit steps, and pointer-up releases the rigid footprint onto the floor.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.38-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: direct_canvas_drag pointer-down on the full canvas.",
+        "Held-depth adjustment: pointer wheel while the object remains held on the ray.",
+        "Floor placement: direct_canvas_drop pointer-up.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera; this is the common real-time mode.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": 400,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "Take D to be the grouped held-key navigation mode across all seeds and attempts. In the L5 yaw range of plus or minus 0.030-0.060 radians, identical action history I_t can produce opposite visible lateral drift. A fixed q cannot choose the needed release or A/D correction for both signs and for the current doorway approach."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The same D supplies a bounded-window policy g: the four chronological frames in the 400 ms window show the camera's lateral/depth trajectory relative to the projected bridge and narrow doorway, so g can select release-forward or the appropriate left/right correction for delivery at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use H_t with forward held and the camera still inside the approach to the doorway, and let a be key-up-forward or the needed counter-steering transition. For 0 < tau < 400 ms, seven or more 50 ms ticks move the rigid camera body; at the high-yaw edge its lateral drift reaches the narrow door's nonpassing side. Success remains recoverable by a later back/strafe, but the same a delivered after the wall/void contact has strictly lower value because the non-clock collision state has consumed the safe opportunity."
+      },
+      "common_visible_process": "The common witness is held-key camera motion: every 50 ms the rigid camera advances according to W/A/S/D and the generated yaw, while the canvas visibly shows the changing grid, bridge alignment, and doorway position. The 400 ms window predicts whether the delayed correction lands before the narrow doorway or after a rigid contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After preparation, a pre-run phase can keep only a fixed set of keys down. W (or W with both opposing strafe keys, which cancels) is the only constant forward route that can plausibly reach the exit; a single held strafe adds a large lateral component. Pure W reaches the doorway with lateral drift tan(abs(yaw)) times the approach distance. L5 permits only about 0.55 units of lateral clearance and the safe yaw bound is about 0.033781 radians, while generated abs(yaw) spans 0.030-0.060. The safe portion is therefore less than half, so the pre-run threshold does not override the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "30-41",
+          "claim": "L5 uses five focal lengths, yaw magnitude 0.030-0.060, the longest gap, 0.54 maximum key-slot scale, 0.95 doorway half-gap, 0.40 avatar radius, 0.38 movement step, 0.25 depth step, and a 400 ms four-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L5 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements full-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds full-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "96-131",
+          "claim": "The normal solution visibly uses W and adaptive A/D corrections during navigation, demonstrating that the tight profile requires state-dependent steering; private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible full task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 10,
+      "public_environment_name": "Forced-Perspective Moving Day",
+      "environment_id": "forced_perspective_moving_day_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified interaction: click a projected crate or sign with the camera ray, use the visible nearer/farther depth buttons or wheel in 0.25-unit steps, aim the ray, and click RELEASE AGAINST FLOOR.",
+        "Navigation: W/A/S/D or arrow keys; the level uses a 0.38-unit movement step and a 50 ms movement tick.",
+        "Rewind Room resets the world, and Certify Impossible Move submits the replay after completion."
+      ],
+      "autonomous_processes": [
+        "While no object is held and a navigation key is down, movementTick runs every 50 ms, changes the camera position using the current key vector and yaw, and applies void, wall, object, and doorway collision rules.",
+        "requestAnimationFrame continuously redraws the projected room, objects, reticle, and held-object preview; it changes presentation only and does not change the outcome state.",
+        "No autonomous placement, depth, or scale transition runs while an object is held; pick, depth changes, release, reset, and submit are input-driven."
+      ],
+      "grouped_control_modes": [
+        "Object pick: ray_click canvas click.",
+        "Held-depth adjustment: depth_button or pointer_wheel.",
+        "Floor placement: release_button.",
+        "Keyboard navigation: key transitions maintain W/A/S/D or arrow-key state while 50 ms movement ticks advance the camera; this is the common real-time mode.",
+        "Rewind/reset and certify/submit administrative controls."
+      ],
+      "delta_ms": 400,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "Take D to be the grouped held-key navigation mode across all seeds and attempts. In the L5 yaw range of plus or minus 0.030-0.060 radians, identical action history I_t can produce opposite visible lateral drift. A fixed q cannot choose the needed release or A/D correction for both signs and for the current doorway approach."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The same D supplies a bounded-window policy g: the four chronological frames in the 400 ms window show the camera's lateral/depth trajectory relative to the projected bridge and narrow doorway, so g can select release-forward or the appropriate left/right correction for delivery at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use H_t with forward held and the camera still inside the approach to the doorway, and let a be key-up-forward or the needed counter-steering transition. For 0 < tau < 400 ms, seven or more 50 ms ticks move the rigid camera body; at the high-yaw edge its lateral drift reaches the narrow door's nonpassing side. Success remains recoverable by a later back/strafe, but the same a delivered after the wall/void contact has strictly lower value because the non-clock collision state has consumed the safe opportunity."
+      },
+      "common_visible_process": "The common witness is held-key camera motion: every 50 ms the rigid camera advances according to W/A/S/D and the generated yaw, while the canvas visibly shows the changing grid, bridge alignment, and doorway position. The 400 ms window predicts whether the delayed correction lands before the narrow doorway or after a rigid contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "After preparation, a pre-run phase can keep only a fixed set of keys down. W (or W with both opposing strafe keys, which cancels) is the only constant forward route that can plausibly reach the exit; a single held strafe adds a large lateral component. Pure W reaches the doorway with lateral drift tan(abs(yaw)) times the approach distance. L5 permits only about 0.55 units of lateral clearance and the safe yaw bound is about 0.033781 radians, while generated abs(yaw) spans 0.030-0.060. The safe portion is therefore less than half, so the pre-run threshold does not override the mathematical Yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/task.json",
+        "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+        "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/controls.json",
+          "lines": "30-41",
+          "claim": "L5 uses five focal lengths, yaw magnitude 0.030-0.060, the longest gap, 0.54 maximum key-slot scale, 0.95 doorway half-gap, 0.40 avatar radius, 0.38 movement step, 0.25 depth step, and a 400 ms four-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/forced_perspective_moving_day.py",
+          "lines": "19-29, 47-66, 94-105",
+          "claim": "The generator applies the active L5 yaw, gap, doorway, avatar, movement, and depth parameters, fixes tick_ms at 50, and derives the bridge and slot from the pinhole projection."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.js",
+          "lines": "35-47, 61-66",
+          "claim": "The browser implements simplified-mode object placement and the common W/A/S/D movementTick, collision handling, and completion logic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/forced_perspective_moving_day.py",
+          "lines": "107-129, 208-249",
+          "claim": "The grader binds simplified-mode input sources and replays every key transition and movement tick against the generated doorway and void geometry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/forced_perspective_moving_day.py",
+          "lines": "96-131",
+          "claim": "The normal solution visibly uses W and adaptive A/D corrections during navigation, demonstrating that the tight profile requires state-dependent steering; private reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/tasks/forced_perspective_moving_day_seed_0001/verifier.py",
+          "lines": "9-18",
+          "claim": "The task verifier grades the exported result through the authoritative perspective replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/forced_perspective_moving_day_env/env.json",
+          "lines": "5-5",
+          "claim": "The runner exposes mouse and keyboard actions and captures four chronological frames across each 400 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/forced_perspective_moving_day.css",
+          "lines": "1-1",
+          "claim": "The visible simplified task is a canvas room with the perspective console and mode-specific placement surface."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

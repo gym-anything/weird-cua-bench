@@ -1,0 +1,1247 @@
+{
+  "case_index": 49,
+  "environment_id": "wrong_number_env",
+  "public_environment_name": "Wrong Number",
+  "configuration_reports": [
+    {
+      "case_index": 481,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one visible incoming jack button from 3 carriers; selection is disabled during a lock trial.",
+        "Use the full PHASE slider over integer values 0-15 and the full SHAPE slider over integer values -2 to 2; tuning remains available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 1800 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 0.24 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 160 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 1800 ms for the 8-sample and final 3-of-4 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Full phase-slider tuning before and during every lock trial (the common witness mode D).",
+        "Full shape-slider tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial phase-slider value mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed phase-slider value that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction and choose the phase-slider value for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 0.24 phase steps per second during the 1800 ms trial. During a 300 ms no-action interval, a phase-slider value aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the phase-slider value remains active while sampling proceeds every 160 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The sole undistorted target has drift magnitude at most 0.24 steps per second, so its total shift over 1.8 seconds is at most 0.432 steps, below the 2.2-step phase tolerance. Preparing the exact target phase and skew therefore keeps every sample locked, satisfying 8 total samples and the final 3-of-4 requirement without any outcome-affecting action during the trial. This applies to every generated drift choice, so the pre-run threshold overrides the mathematical witness and yields label no.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "10-31",
+          "claim": "Difficulty 1 has 3 lines, nonzero drift values +/-240 milli-steps per second, 2.2-step phase tolerance, 1800 ms trial, and 8/3 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Full sliders and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes full slider tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 482,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one visible incoming jack button from 3 carriers; selection is disabled during a lock trial.",
+        "Use labelled PHASE minus/plus step buttons over the 16-step circular phase range and SHAPE minus/plus step buttons over -2 to 2; both remain available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 1800 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 0.24 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 160 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 1800 ms for the 8-sample and final 3-of-4 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Simplified phase step-proxy tuning before and during every lock trial (the common witness mode D).",
+        "Simplified shape step-proxy tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial labelled +/- phase step mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed labelled +/- phase step that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction and choose the labelled +/- phase step for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 0.24 phase steps per second during the 1800 ms trial. During a 300 ms no-action interval, a labelled +/- phase step aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the labelled +/- phase step remains active while sampling proceeds every 160 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The sole undistorted target has drift magnitude at most 0.24 steps per second, so its total shift over 1.8 seconds is at most 0.432 steps, below the 2.2-step phase tolerance. Preparing the exact target phase and skew therefore keeps every sample locked, satisfying 8 total samples and the final 3-of-4 requirement without any outcome-affecting action during the trial. This applies to every generated drift choice, so the pre-run threshold overrides the mathematical witness and yields label no.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "10-31",
+          "claim": "Difficulty 1 has 3 lines, nonzero drift values +/-240 milli-steps per second, 2.2-step phase tolerance, 1800 ms trial, and 8/3 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Simplified phase and shape step controls and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes simplified step-proxy tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 483,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one visible incoming jack button from 4 carriers; selection is disabled during a lock trial.",
+        "Use the full PHASE slider over integer values 0-19 and the full SHAPE slider over integer values -3 to 3; tuning remains available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 2800 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 0.44-0.52 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 140 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 2800 ms for the 16-sample and final 4-of-6 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Full phase-slider tuning before and during every lock trial (the common witness mode D).",
+        "Full shape-slider tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial phase-slider value mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed phase-slider value that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction and choose the phase-slider value for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 0.44-0.52 phase steps per second during the 2800 ms trial. During a 300 ms no-action interval, a phase-slider value aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the phase-slider value remains active while sampling proceeds every 140 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The target drift magnitude is at most 0.52 steps per second, giving at most 1.456 steps of shift over 2.8 seconds, below the 1.8-step phase tolerance. Preparing exact target phase and skew keeps all samples locked and satisfies 16 total samples plus the final 4-of-6 requirement with no outcome-affecting action during the trial. This applies to every generated drift choice, so the pre-run threshold overrides the mathematical witness and yields label no.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "34-55",
+          "claim": "Difficulty 2 has 4 lines, drift values +/-440 and +/-520 milli-steps per second, 1.8-step phase tolerance, 2800 ms trial, and 16/4 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Full sliders and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes full slider tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 484,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one visible incoming jack button from 4 carriers; selection is disabled during a lock trial.",
+        "Use labelled PHASE minus/plus step buttons over the 20-step circular phase range and SHAPE minus/plus step buttons over -3 to 3; both remain available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 2800 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 0.44-0.52 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 140 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 2800 ms for the 16-sample and final 4-of-6 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Simplified phase step-proxy tuning before and during every lock trial (the common witness mode D).",
+        "Simplified shape step-proxy tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial labelled +/- phase step mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed labelled +/- phase step that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction and choose the labelled +/- phase step for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 0.44-0.52 phase steps per second during the 2800 ms trial. During a 300 ms no-action interval, a labelled +/- phase step aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the labelled +/- phase step remains active while sampling proceeds every 140 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The target drift magnitude is at most 0.52 steps per second, giving at most 1.456 steps of shift over 2.8 seconds, below the 1.8-step phase tolerance. Preparing exact target phase and skew keeps all samples locked and satisfies 16 total samples plus the final 4-of-6 requirement with no outcome-affecting action during the trial. This applies to every generated drift choice, so the pre-run threshold overrides the mathematical witness and yields label no.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "34-55",
+          "claim": "Difficulty 2 has 4 lines, drift values +/-440 and +/-520 milli-steps per second, 1.8-step phase tolerance, 2800 ms trial, and 16/4 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Simplified phase and shape step controls and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes simplified step-proxy tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 485,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one visible incoming jack button from 5 carriers; selection is disabled during a lock trial.",
+        "Use the full PHASE slider over integer values 0-23 and the full SHAPE slider over integer values -4 to 4; tuning remains available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 3600 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 0.58-0.65 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 120 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 3600 ms for the 23-sample and final 5-of-8 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Full phase-slider tuning before and during every lock trial (the common witness mode D).",
+        "Full shape-slider tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial phase-slider value mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed phase-slider value that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction and choose the phase-slider value for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 0.58-0.65 phase steps per second during the 3600 ms trial. During a 300 ms no-action interval, a phase-slider value aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the phase-slider value remains active while sampling proceeds every 120 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A fixed prepared solution can center the monotone target trajectory by choosing one phase step in a chosen drift direction and the exact skew. For all listed target rates (0.58-0.65 steps per second), the 3.6-second displacement is 2.088-2.34 steps, so the centered integer phase has maximum error at most 1.34, below the 1.45-step tolerance. The symmetric positive/negative drift choices mean that one fixed bias succeeds for at least half of generated instances, satisfying 23 total samples and the final 5-of-8 requirement without any outcome-affecting action during the trial. The pre-run threshold overrides the mathematical witness and yields label no.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "58-79",
+          "claim": "Difficulty 3 has 5 lines, drift values +/-580 and +/-650 milli-steps per second, 1.45-step phase tolerance, 3600 ms trial, and 23/5 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Full sliders and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes full slider tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 486,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one visible incoming jack button from 5 carriers; selection is disabled during a lock trial.",
+        "Use labelled PHASE minus/plus step buttons over the 24-step circular phase range and SHAPE minus/plus step buttons over -4 to 4; both remain available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 3600 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 0.58-0.65 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 120 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 3600 ms for the 23-sample and final 5-of-8 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Simplified phase step-proxy tuning before and during every lock trial (the common witness mode D).",
+        "Simplified shape step-proxy tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial labelled +/- phase step mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed labelled +/- phase step that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction and choose the labelled +/- phase step for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 0.58-0.65 phase steps per second during the 3600 ms trial. During a 300 ms no-action interval, a labelled +/- phase step aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the labelled +/- phase step remains active while sampling proceeds every 120 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A fixed prepared solution can center the monotone target trajectory by choosing one phase step in a chosen drift direction and the exact skew. For all listed target rates (0.58-0.65 steps per second), the 3.6-second displacement is 2.088-2.34 steps, so the centered integer phase has maximum error at most 1.34, below the 1.45-step tolerance. The symmetric positive/negative drift choices mean that one fixed bias succeeds for at least half of generated instances, and the step controls can then satisfy 23 total samples plus the final 5-of-8 requirement without any outcome-affecting action during the trial. The pre-run threshold overrides the mathematical witness and yields label no.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "58-79",
+          "claim": "Difficulty 3 has 5 lines, drift values +/-580 and +/-650 milli-steps per second, 1.45-step phase tolerance, 3600 ms trial, and 23/5 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Simplified phase and shape step controls and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes simplified step-proxy tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 487,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Select one visible incoming jack button from 7 carriers; selection is disabled during a lock trial.",
+        "Use the full PHASE slider over integer values 0-31 and the full SHAPE slider over integer values -6 to 6; tuning remains available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 4800 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 1.18-1.68 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 120 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 4800 ms for the 30-sample and final 7-of-10 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Full phase-slider tuning before and during every lock trial (the common witness mode D).",
+        "Full shape-slider tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial phase-slider value mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed phase-slider value that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction/magnitude and choose the phase-slider value for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 1.18-1.68 phase steps per second during the 4800 ms trial. During a 300 ms no-action interval, a phase-slider value aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the phase-slider value remains active while sampling proceeds every 120 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Only the zero-distortion target can lock. With the exact skew and any fixed phase, the continuous interval inside the 1.15-step phase tolerance has length at most 2*1.15/1.18 = 1.95 seconds, because every target drift magnitude is at least 1.18 steps per second. Sampling every 120 ms can therefore yield at most about 17 locked samples, below the required 30, so a no-update trial cannot succeed for any generated instance. The pre-run threshold is not met and the mathematical witness remains label yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "82-104",
+          "claim": "Difficulty 4 has 7 lines, drift magnitudes 1.18-1.68 steps per second, 1.15-step phase tolerance, 4800 ms trial, and 30/7 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Full sliders and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes full slider tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/wrong_number.py",
+          "lines": "137-174",
+          "claim": "The implementation solver repeatedly estimates elapsed target phase and corrects it through the full slider during the live trial; this is implementation evidence of active tracking."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 488,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Select one visible incoming jack button from 7 carriers; selection is disabled during a lock trial.",
+        "Use labelled PHASE minus/plus step buttons over the 32-step circular phase range and SHAPE minus/plus step buttons over -6 to 6; both remain available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 4800 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 1.18-1.68 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 120 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 4800 ms for the 30-sample and final 7-of-10 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Simplified phase step-proxy tuning before and during every lock trial (the common witness mode D).",
+        "Simplified shape step-proxy tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial labelled +/- phase step mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed labelled +/- phase step that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction/magnitude and choose the labelled +/- phase step for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 1.18-1.68 phase steps per second during the 4800 ms trial. During a 300 ms no-action interval, a labelled +/- phase step aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the labelled +/- phase step remains active while sampling proceeds every 120 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Only the zero-distortion target can lock. With the exact skew and any fixed phase, the continuous interval inside the 1.15-step phase tolerance has length at most 2*1.15/1.18 = 1.95 seconds, because every target drift magnitude is at least 1.18 steps per second. Sampling every 120 ms can therefore yield at most about 17 locked samples, below the required 30, so a no-update trial cannot succeed for any generated instance. The pre-run threshold is not met and the mathematical witness remains label yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "82-104",
+          "claim": "Difficulty 4 has 7 lines, drift magnitudes 1.18-1.68 steps per second, 1.15-step phase tolerance, 4800 ms trial, and 30/7 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Simplified phase and shape step controls and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes simplified step-proxy tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/wrong_number.py",
+          "lines": "137-174",
+          "claim": "The implementation solver repeatedly estimates elapsed target phase and corrects it through the simplified phase buttons during the live trial; this is implementation evidence of active tracking."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 489,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Select one visible incoming jack button from 8 carriers; selection is disabled during a lock trial.",
+        "Use the full PHASE slider over integer values 0-39 and the full SHAPE slider over integer values -8 to 8; tuning remains available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 6400 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 2.0-2.2 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 100 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 6400 ms for the 45-sample and final 12-of-14 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Full phase-slider tuning before and during every lock trial (the common witness mode D).",
+        "Full shape-slider tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial phase-slider value mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed phase-slider value that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction/magnitude and choose the phase-slider value for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 2.0-2.2 phase steps per second during the 6400 ms trial. During a 300 ms no-action interval, a phase-slider value aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the phase-slider value remains active while sampling proceeds every 100 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Only the zero-distortion target can lock. With the exact skew and any fixed phase, the continuous interval inside the 0.85-step phase tolerance has length at most 2*0.85/2.0 = 0.85 seconds, because every target drift magnitude is at least 2.0 steps per second. Sampling every 100 ms can therefore yield at most 9 locked samples, far below the required 45, so a no-update trial cannot succeed for any generated instance. The pre-run threshold is not met and the mathematical witness remains label yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "106-128",
+          "claim": "Difficulty 5 has 8 lines, drift magnitudes 2.0-2.2 steps per second, 0.85-step phase tolerance, 6400 ms trial, and 45/12 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Full sliders and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes full slider tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/wrong_number.py",
+          "lines": "137-174",
+          "claim": "The implementation solver repeatedly estimates elapsed target phase and corrects it through the full slider during the live trial; this is implementation evidence of active tracking."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 490,
+      "public_environment_name": "Wrong Number",
+      "environment_id": "wrong_number_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Select one visible incoming jack button from 8 carriers; selection is disabled during a lock trial.",
+        "Use labelled PHASE minus/plus step buttons over the 40-step circular phase range and SHAPE minus/plus step buttons over -8 to 8; both remain available during a lock trial.",
+        "Press TEST THIS LINE to start the selected carrier's 6400 ms lock trial.",
+        "Press REISSUE SWITCHBOARD to abandon the current attempt and obtain a fresh switchboard."
+      ],
+      "autonomous_processes": [
+        "Outside a trial, the oscilloscope is redrawn continuously and its scanline and jack signal bars animate without changing the qualification state.",
+        "After TEST THIS LINE, the selected carrier's target phase drifts continuously at a generated rate of 2.0-2.2 phase steps per second; the amber candidate waveform changes relative to the cyan reference.",
+        "A 100 ms sampling timer records alignment and lock history, updates the visible lock/progress state, and ends the trial at 6400 ms for the 45-sample and final 12-of-14 checks."
+      ],
+      "grouped_control_modes": [
+        "Incoming-jack selection across all generated switchboards and attempts.",
+        "Simplified phase step-proxy tuning before and during every lock trial (the common witness mode D).",
+        "Simplified shape step-proxy tuning before and during every lock trial.",
+        "Lock-test start and administrative reissue after a failed attempt."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common within-trial labelled +/- phase step mode, identical action histories can lead to different generated phase offsets or drift signs. The delayed labelled +/- phase step that maximizes lock differs across those visible states, so no q(I_t) works for every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame, 600 ms window visibly records the changing amber/cyan phase relation. A bounded-window policy can infer the current error and drift direction/magnitude and choose the labelled +/- phase step for the state at delayed delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The selected carrier drifts at 2.0-2.2 phase steps per second during the 6400 ms trial. During a 300 ms no-action interval, a labelled +/- phase step aligned at t is stale at t+300 ms and has lower alignment/lock advantage, while enough trial remains for a corrective action. The loss is caused by carrier-state drift, not a deadline or the decorative idle animation."
+      },
+      "common_visible_process": "The common witness is the selected carrier during its lock trial: elapsed drift shifts the amber waveform against the cyan reference, and the labelled +/- phase step remains active while sampling proceeds every 100 ms. That one drift process supplies the bounded visual prediction problem and makes a stale phase action lose value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Only the zero-distortion target can lock. With the exact skew and any fixed phase, the continuous interval inside the 0.85-step phase tolerance has length at most 2*0.85/2.0 = 0.85 seconds, because every target drift magnitude is at least 2.0 steps per second. Sampling every 100 ms can therefore yield at most 9 locked samples, far below the required 45, so a no-update trial cannot succeed for any generated instance. The pre-run threshold is not met and the mathematical witness remains label yes.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/wrong_number_env/controls.json",
+        "weird_captcha_gym/environments/wrong_number_env/env.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/task.json",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/wrong_number_env/tasks/wrong_number_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/wrong_number.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "106-128",
+          "claim": "Difficulty 5 has 8 lines, drift magnitudes 2.0-2.2 steps per second, 0.85-step phase tolerance, 6400 ms trial, and 45/12 lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/environments/wrong_number_env/controls.json",
+          "lines": "131-144",
+          "claim": "Simplified phase and shape step controls and the shared 600 ms, 5-frame observation schedule are configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "103-120",
+          "claim": "Each generated line receives a phase offset, skew offset, nonzero selected drift value, and exactly one line receives zero distortion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/wrong_number.py",
+          "lines": "124-177",
+          "claim": "The generated target is the zero-distortion line, and qualification exposes phase tolerance, trial duration, sampling, and lock quotas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "45-68",
+          "claim": "Target phase depends on elapsed trial time and drift, and lock residual combines phase, skew, and distortion errors."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "104-128",
+          "claim": "The visible amber candidate waveform is rendered with elapsed drift against the cyan reference on the live canvas."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "147-205",
+          "claim": "Jack and test controls are disabled during a trial while tuning still updates phase or skew and records the input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/wrong_number.js",
+          "lines": "208-251",
+          "claim": "The trial samples alignment on the configured interval and checks total and final lock quotas at the configured duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "40-56",
+          "claim": "The authoritative replay uses the same elapsed-time drift and residual threshold."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "96-107",
+          "claim": "The controlled grader distinguishes simplified step-proxy tuning input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/wrong_number.py",
+          "lines": "186-236",
+          "claim": "The grader replays sample timing and requires the configured total and final lock quotas on the target line."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/wrong_number.py",
+          "lines": "137-174",
+          "claim": "The implementation solver repeatedly estimates elapsed target phase and corrects it through the simplified phase buttons during the live trial; this is implementation evidence of active tracking."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

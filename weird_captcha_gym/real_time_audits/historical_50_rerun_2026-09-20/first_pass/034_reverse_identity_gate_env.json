@@ -1,0 +1,1227 @@
+{
+  "case_index": 34,
+  "environment_id": "reverse_identity_gate_env",
+  "public_environment_name": "Four-Tab Robot Handshake",
+  "configuration_reports": [
+    {
+      "case_index": 331,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Deploy 1 real same-origin station tab sequentially and focus the active station tab.",
+        "Full input: focus the active real station tab, hold A/D or ArrowLeft/ArrowRight to set receiver direction, and hold pointer contact on the phase-contact control; release returns direction/contact as implemented.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 1 required station tab are deployed, 75 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 8°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 1.",
+        "At 8 charge the relay is emitted automatically; for direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: full-mode active-relay pointer_hold contact control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Full active-relay receiver-drive keyboard control (A/D or arrows; keydown/keyup transitions).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 375,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-1 or +1) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate pointer_hold action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=375 ms and choose the optimal keyboard/pointer action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the pointer_hold control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=7. Choose a generated stage with |speed|=1; receiver/pulse relative drift is 7°/tick. If no new action arrives for 5 ticks (Delta=375 ms), the visible error becomes 35° > the 30° aperture and contact-off ticks reduce charge to 2. At H_t, pointerdown/held pointer contact reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 420-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 75 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the pointer_hold contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run witness: this profile has exactly one stage. After tab deployment, a solver can prepare the correct keyboard direction and held pointer contact from the visible initial phase; with |speed|=1, receiver control 8°/tick, tolerance 30°, and hold 8, the relative drift is 7°/tick, so every separated generated receiver phase reaches and remains within the aperture before the 420-tick stage limit. No further outcome-affecting action is needed before the single relay ends, and VERIFY IDENTITY is administrative. At least half is therefore met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 activates 1 station(s), relay counts [1], pulse speeds -1 or +1, 75 ms ticks, 8° receiver control per tick, 30° tolerance, 8 hold ticks, 1 charge decay, and 420 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The full interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 8 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "303-334",
+          "claim": "The full surface maps A/D or arrow keydown/keyup to receiver direction and pointerdown/up or lost capture to pointer_hold contact."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 332,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Deploy 1 real same-origin station tab sequentially and focus the active station tab.",
+        "Simplified input: use the active station tab's visible CCW, NEUTRAL, and CW buttons and click the visible contact control to toggle contact.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 1 required station tab are deployed, 75 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 8°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 1.",
+        "At 8 charge the relay is emitted automatically; for direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: simplified-mode active-relay contact_toggle control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Simplified active-relay receiver-drive direction-button control (CCW/NEUTRAL/CW clicks).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 375,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-1 or +1) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate contact_toggle action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=375 ms and choose the optimal direction-button/contact-toggle action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the contact_toggle control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=7. Choose a generated stage with |speed|=1; receiver/pulse relative drift is 7°/tick. If no new action arrives for 5 ticks (Delta=375 ms), the visible error becomes 35° > the 30° aperture and contact-off ticks reduce charge to 2. At H_t, contact-toggle click reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 420-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 75 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the contact_toggle contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run witness: this profile has exactly one stage. After tab deployment, a solver can prepare the correct direction-button state and contact-toggle state from the visible initial phase; with |speed|=1, receiver control 8°/tick, tolerance 30°, and hold 8, the relative drift is 7°/tick, so every separated generated receiver phase reaches and remains within the aperture before the 420-tick stage limit. No further outcome-affecting action is needed before the single relay ends, and VERIFY IDENTITY is administrative. At least half is therefore met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 activates 1 station(s), relay counts [1], pulse speeds -1 or +1, 75 ms ticks, 8° receiver control per tick, 30° tolerance, 8 hold ticks, 1 charge decay, and 420 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The simplified interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 8 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "298-302",
+          "claim": "The simplified surface maps visible CCW/NEUTRAL/CW button clicks to receiver direction and the contact click to contact_toggle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 333,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 2 real same-origin station tabs sequentially and focus the active station tab.",
+        "Full input: focus the active real station tab, hold A/D or ArrowLeft/ArrowRight to set receiver direction, and hold pointer contact on the phase-contact control; release returns direction/contact as implemented.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 2 required station tabs are deployed, 65 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 6°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 1.",
+        "At 10 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: full-mode active-relay pointer_hold contact control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Full active-relay receiver-drive keyboard control (A/D or arrows; keydown/keyup transitions).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 455,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-2, -1, +1, or +2) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate pointer_hold action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=455 ms and choose the optimal keyboard/pointer action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the pointer_hold control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=9. Choose a generated stage with |speed|=2; receiver/pulse relative drift is 4°/tick. If no new action arrives for 7 ticks (Delta=455 ms), the visible error becomes 28° > the 24° aperture and contact-off ticks reduce charge to 2. At H_t, pointerdown/held pointer contact reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 560-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 65 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the pointer_hold contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 2 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting keyboard and pointer inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "26-40",
+          "claim": "Difficulty 2 activates 2 station(s), relay counts [1, 1], pulse speeds -2, -1, +1, or +2, 65 ms ticks, 6° receiver control per tick, 24° tolerance, 10 hold ticks, 1 charge decay, and 560 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The full interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 10 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "303-334",
+          "claim": "The full surface maps A/D or arrow keydown/keyup to receiver direction and pointerdown/up or lost capture to pointer_hold contact."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 334,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 2 real same-origin station tabs sequentially and focus the active station tab.",
+        "Simplified input: use the active station tab's visible CCW, NEUTRAL, and CW buttons and click the visible contact control to toggle contact.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 2 required station tabs are deployed, 65 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 6°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 1.",
+        "At 10 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: simplified-mode active-relay contact_toggle control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Simplified active-relay receiver-drive direction-button control (CCW/NEUTRAL/CW clicks).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 455,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-2, -1, +1, or +2) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate contact_toggle action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=455 ms and choose the optimal direction-button/contact-toggle action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the contact_toggle control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=9. Choose a generated stage with |speed|=2; receiver/pulse relative drift is 4°/tick. If no new action arrives for 7 ticks (Delta=455 ms), the visible error becomes 28° > the 24° aperture and contact-off ticks reduce charge to 2. At H_t, contact-toggle click reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 560-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 65 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the contact_toggle contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 2 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting direction-button and contact-toggle inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "26-40",
+          "claim": "Difficulty 2 activates 2 station(s), relay counts [1, 1], pulse speeds -2, -1, +1, or +2, 65 ms ticks, 6° receiver control per tick, 24° tolerance, 10 hold ticks, 1 charge decay, and 560 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The simplified interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 10 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "298-302",
+          "claim": "The simplified surface maps visible CCW/NEUTRAL/CW button clicks to receiver direction and the contact click to contact_toggle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 335,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 3 real same-origin station tabs sequentially and focus the active station tab.",
+        "Full input: focus the active real station tab, hold A/D or ArrowLeft/ArrowRight to set receiver direction, and hold pointer contact on the phase-contact control; release returns direction/contact as implemented.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 3 required station tabs are deployed, 55 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 5°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 2.",
+        "At 13 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: full-mode active-relay pointer_hold contact control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Full active-relay receiver-drive keyboard control (A/D or arrows; keydown/keyup transitions).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 385,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-2 or +2) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate pointer_hold action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=385 ms and choose the optimal keyboard/pointer action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the pointer_hold control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=12. Choose a generated stage with |speed|=2; receiver/pulse relative drift is 3°/tick. If no new action arrives for 7 ticks (Delta=385 ms), the visible error becomes 21° > the 18° aperture and contact-off ticks reduce charge to 0. At H_t, pointerdown/held pointer contact reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 720-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 55 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the pointer_hold contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 4 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting keyboard and pointer inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "42-56",
+          "claim": "Difficulty 3 activates 3 station(s), relay counts [2, 1, 1], pulse speeds -2 or +2, 55 ms ticks, 5° receiver control per tick, 18° tolerance, 13 hold ticks, 2 charge decay, and 720 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The full interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 13 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "303-334",
+          "claim": "The full surface maps A/D or arrow keydown/keyup to receiver direction and pointerdown/up or lost capture to pointer_hold contact."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 336,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 3 real same-origin station tabs sequentially and focus the active station tab.",
+        "Simplified input: use the active station tab's visible CCW, NEUTRAL, and CW buttons and click the visible contact control to toggle contact.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 3 required station tabs are deployed, 55 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 5°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 2.",
+        "At 13 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: simplified-mode active-relay contact_toggle control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Simplified active-relay receiver-drive direction-button control (CCW/NEUTRAL/CW clicks).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 385,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-2 or +2) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate contact_toggle action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=385 ms and choose the optimal direction-button/contact-toggle action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the contact_toggle control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=12. Choose a generated stage with |speed|=2; receiver/pulse relative drift is 3°/tick. If no new action arrives for 7 ticks (Delta=385 ms), the visible error becomes 21° > the 18° aperture and contact-off ticks reduce charge to 0. At H_t, contact-toggle click reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 720-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 55 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the contact_toggle contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 4 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting direction-button and contact-toggle inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "42-56",
+          "claim": "Difficulty 3 activates 3 station(s), relay counts [2, 1, 1], pulse speeds -2 or +2, 55 ms ticks, 5° receiver control per tick, 18° tolerance, 13 hold ticks, 2 charge decay, and 720 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The simplified interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 13 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "298-302",
+          "claim": "The simplified surface maps visible CCW/NEUTRAL/CW button clicks to receiver direction and the contact click to contact_toggle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 337,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 4 real same-origin station tabs sequentially and focus the active station tab.",
+        "Full input: focus the active real station tab, hold A/D or ArrowLeft/ArrowRight to set receiver direction, and hold pointer contact on the phase-contact control; release returns direction/contact as implemented.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 4 required station tabs are deployed, 50 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 5°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 2.",
+        "At 16 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: full-mode active-relay pointer_hold contact control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Full active-relay receiver-drive keyboard control (A/D or arrows; keydown/keyup transitions).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 350,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-3, -2, +2, or +3) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate pointer_hold action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=350 ms and choose the optimal keyboard/pointer action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the pointer_hold control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=15. Choose a generated stage with |speed|=3; receiver/pulse relative drift is 2°/tick. If no new action arrives for 7 ticks (Delta=350 ms), the visible error becomes 14° > the 13° aperture and contact-off ticks reduce charge to 1. At H_t, pointerdown/held pointer contact reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 900-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 50 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the pointer_hold contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 8 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting keyboard and pointer inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "58-72",
+          "claim": "Difficulty 4 activates 4 station(s), relay counts [2, 2, 2, 2], pulse speeds -3, -2, +2, or +3, 50 ms ticks, 5° receiver control per tick, 13° tolerance, 16 hold ticks, 2 charge decay, and 900 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The full interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 16 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "303-334",
+          "claim": "The full surface maps A/D or arrow keydown/keyup to receiver direction and pointerdown/up or lost capture to pointer_hold contact."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 338,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 4 real same-origin station tabs sequentially and focus the active station tab.",
+        "Simplified input: use the active station tab's visible CCW, NEUTRAL, and CW buttons and click the visible contact control to toggle contact.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 4 required station tabs are deployed, 50 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 5°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 2.",
+        "At 16 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: simplified-mode active-relay contact_toggle control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Simplified active-relay receiver-drive direction-button control (CCW/NEUTRAL/CW clicks).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 350,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-3, -2, +2, or +3) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate contact_toggle action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=350 ms and choose the optimal direction-button/contact-toggle action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the contact_toggle control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=15. Choose a generated stage with |speed|=3; receiver/pulse relative drift is 2°/tick. If no new action arrives for 7 ticks (Delta=350 ms), the visible error becomes 14° > the 13° aperture and contact-off ticks reduce charge to 1. At H_t, contact-toggle click reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 900-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 50 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the contact_toggle contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 8 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting direction-button and contact-toggle inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "58-72",
+          "claim": "Difficulty 4 activates 4 station(s), relay counts [2, 2, 2, 2], pulse speeds -3, -2, +2, or +3, 50 ms ticks, 5° receiver control per tick, 13° tolerance, 16 hold ticks, 2 charge decay, and 900 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The simplified interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 16 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "298-302",
+          "claim": "The simplified surface maps visible CCW/NEUTRAL/CW button clicks to receiver direction and the contact click to contact_toggle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 339,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 4 real same-origin station tabs sequentially and focus the active station tab.",
+        "Full input: focus the active real station tab, hold A/D or ArrowLeft/ArrowRight to set receiver direction, and hold pointer contact on the phase-contact control; release returns direction/contact as implemented.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 4 required station tabs are deployed, 45 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 5°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 3.",
+        "At 22 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: full-mode active-relay pointer_hold contact control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Full active-relay receiver-drive keyboard control (A/D or arrows; keydown/keyup transitions).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 450,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-4, -3, +3, or +4) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate pointer_hold action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=450 ms and choose the optimal keyboard/pointer action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the pointer_hold control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=21. Choose a generated stage with |speed|=4; receiver/pulse relative drift is 1°/tick. If no new action arrives for 10 ticks (Delta=450 ms), the visible error becomes 10° > the 9° aperture and contact-off ticks reduce charge to 0. At H_t, pointerdown/held pointer contact reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 1080-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 45 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the pointer_hold contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 8 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting keyboard and pointer inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "74-88",
+          "claim": "Difficulty 5 activates 4 station(s), relay counts [2, 2, 2, 2], pulse speeds -4, -3, +3, or +4, 45 ms ticks, 5° receiver control per tick, 9° tolerance, 22 hold ticks, 3 charge decay, and 1080 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The full interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 22 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "303-334",
+          "claim": "The full surface maps A/D or arrow keydown/keyup to receiver direction and pointerdown/up or lost capture to pointer_hold contact."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 340,
+      "public_environment_name": "Four-Tab Robot Handshake",
+      "environment_id": "reverse_identity_gate_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Deploy 4 real same-origin station tabs sequentially and focus the active station tab.",
+        "Simplified input: use the active station tab's visible CCW, NEUTRAL, and CW buttons and click the visible contact control to toggle contact.",
+        "Use the master VERIFY IDENTITY control after all relays; this final certification is administrative."
+      ],
+      "autonomous_processes": [
+        "After all 4 required station tabs are deployed, 45 ms task ticks run without a new agent action; during each active-relay tick, the direction and contact controls remain available on the active tab while inactive tabs are disabled.",
+        "Each autonomous tick moves the pulse by the generated signed speed and the receiver by direction × 5°; visible phase error determines lock, lock increments charge, and a non-lock decays charge by 3.",
+        "At 22 charge the relay is emitted automatically; for the next stage, direction, contact, and charge reset and the next generated pulse/receiver state is loaded.",
+        "The master glyph and active-station blink also animate in CSS, but those presentation-only changes do not affect the outcome."
+      ],
+      "grouped_control_modes": [
+        "D witness: simplified-mode active-relay contact_toggle control, including every occurrence across all stages, stations, seeds, and attempts.",
+        "Simplified active-relay receiver-drive direction-button control (CCW/NEUTRAL/CW clicks).",
+        "Sequential station deployment and active-tab focus controls.",
+        "Master VERIFY IDENTITY certification control."
+      ],
+      "delta_ms": 450,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator varies signed pulse speed (-4, -3, +3, or +4) and the initial pulse/receiver phases across instances. An observation-free q using only I_t and task times cannot select the sign- and phase-appropriate contact_toggle action for every history in the grouped active-relay mode."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the bounded 500 ms window visibly expose pulse/receiver positions, their motion direction, active stage, phase error, contact, and charge. Given I_t and the fixed profile physics, g can predict the state after Delta=450 ms and choose the optimal direction-button/contact-toggle action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness inside the contact_toggle control mode: take H_t just after a locked tick with direction=sign(speed), receiver=pulse, contact=false, and charge=21. Choose a generated stage with |speed|=4; receiver/pulse relative drift is 1°/tick. If no new action arrives for 10 ticks (Delta=450 ms), the visible error becomes 10° > the 9° aperture and contact-off ticks reduce charge to 0. At H_t, contact-toggle click reaches the aperture on the next tick and supplies the final charge unit; at H_t^Delta the same action is outside the aperture and has strictly lower immediate relay/charge advantage. The stage remains recoverable within its 1080-tick limit, so the strict loss is caused by visible phase/charge evolution, not merely a deadline."
+      },
+      "common_visible_process": "The common process is the active relay phase bus: the visible pulse marker rotates every 45 ms, the receiver marker advances under the selected drive, and phase loss visibly drains charge. The same process supplies the recent-frame evidence for delayed action selection and makes the contact_toggle contact opportunity degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural pre-run result: this profile has 8 stages. The relay handler resets direction and contact to neutral/off and loads a new stage pulse/receiver state; therefore after the first autonomous relay, later stages require new outcome-affecting direction-button and contact-toggle inputs. A no-new-outcome-action pre-run cannot solve the episode, so at least half is not met; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/env.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/task.json",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+        "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "74-88",
+          "claim": "Difficulty 5 activates 4 station(s), relay counts [2, 2, 2, 2], pulse speeds -4, -3, +3, or +4, 45 ms ticks, 5° receiver control per tick, 9° tolerance, 22 hold ticks, 3 charge decay, and 1080 maximum ticks per stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/controls.json",
+          "lines": "91-104",
+          "claim": "The simplified interaction is implemented, and the shared schedule is a 500 ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reverse_identity_gate.py",
+          "lines": "111-145",
+          "claim": "Each generated stage randomizes pulse start, pulse speed, and a receiver initial angle at least 90° from the pulse; the public rules identify the moving phase and charge-loss recovery mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "195-247",
+          "claim": "Without new input, fixed task ticks advance pulse and receiver angles, test direction/contact/aperture, increment or decay charge, and can continue through the shared clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "155-190",
+          "claim": "Contact is an outcome-affecting control, and an automatic relay at 22 charge resets direction, contact, charge, and the next stage's pulse/receiver state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.js",
+          "lines": "298-302",
+          "claim": "The simplified surface maps visible CCW/NEUTRAL/CW button clicks to receiver direction and the contact click to contact_toggle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reverse_identity_gate.css",
+          "lines": "82-117",
+          "claim": "The pulse marker, receiver marker, contact state, lock state, phase error, tick counter, and charge bar are visibly rendered in the station tab."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "71-74",
+          "claim": "The grader binds full key/contact and simplified direction/contact transcripts to their respective input sources."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reverse_identity_gate.py",
+          "lines": "131-185",
+          "claim": "The independent replay advances the same tick physics, requires the aperture/charge condition, and resets controls and phase state at each relay."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reverse_identity_gate.py",
+          "lines": "88-110",
+          "claim": "The reference UI solver must operate each generated stage separately, choosing direction from pulse speed and then applying the mode-specific contact action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reverse_identity_gate_env/tasks/reverse_identity_gate_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The task verifier loads the exported result and independently invokes the reverse-identity replay grader; verification is administrative after the interaction transcript."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

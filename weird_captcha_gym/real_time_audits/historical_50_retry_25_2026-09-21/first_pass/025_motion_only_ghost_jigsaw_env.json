@@ -1,0 +1,1092 @@
+{
+  "case_index": 25,
+  "environment_id": "motion_only_ghost_jigsaw_env",
+  "public_environment_name": "Motion-Only Ghost Jigsaw",
+  "configuration_reports": [
+    {
+      "case_index": 241,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A 2x2 stationary slot board and a bank of 4 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.3 and a configured scroll speed from [0.8, 1]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "full",
+          "controls": [
+            "pointerdown",
+            "pointermove",
+            "pointerup"
+          ],
+          "action_effect": "Dragging a visible piece into a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_drag action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_drag control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "6-13",
+          "claim": "This level uses a 2x2 board with 4 pieces, frame_count 72, fps 24, frame_step 0.3, configured scroll speeds [0.8, 1]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2434-2452, 2464-2500, 2528-2534",
+          "claim": "Full mode uses pointer drag-and-drop into stationary ghost slots; a successful drop records a placement and remains available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_drag interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 242,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 2x2 stationary slot board and a bank of 4 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.3 and a configured scroll speed from [0.8, 1]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "simplified",
+          "controls": [
+            "piece click",
+            "slot click"
+          ],
+          "action_effect": "Clicking a visible piece and then a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_slot_clicks action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_slot_clicks control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "6-13",
+          "claim": "This level uses a 2x2 board with 4 pieces, frame_count 72, fps 24, frame_step 0.3, configured scroll speeds [0.8, 1]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2458-2462, 2528-2543",
+          "claim": "Simplified mode selects a piece and then a stationary slot by clicks; the selected piece and placement remain available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_slot_clicks interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 243,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A 2x3 stationary slot board and a bank of 6 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.38 and a configured scroll speed from [1.1, 1.3]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "full",
+          "controls": [
+            "pointerdown",
+            "pointermove",
+            "pointerup"
+          ],
+          "action_effect": "Dragging a visible piece into a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_drag action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_drag control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "7-13",
+          "claim": "This level uses a 2x3 board with 6 pieces, frame_count 80, fps 26, frame_step 0.38, configured scroll speeds [1.1, 1.3]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2434-2452, 2464-2500, 2528-2534",
+          "claim": "Full mode uses pointer drag-and-drop into stationary ghost slots; a successful drop records a placement and remains available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_drag interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 244,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 2x3 stationary slot board and a bank of 6 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.38 and a configured scroll speed from [1.1, 1.3]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "simplified",
+          "controls": [
+            "piece click",
+            "slot click"
+          ],
+          "action_effect": "Clicking a visible piece and then a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_slot_clicks action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_slot_clicks control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "7-13",
+          "claim": "This level uses a 2x3 board with 6 pieces, frame_count 80, fps 26, frame_step 0.38, configured scroll speeds [1.1, 1.3]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2458-2462, 2528-2543",
+          "claim": "Simplified mode selects a piece and then a stationary slot by clicks; the selected piece and placement remain available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_slot_clicks interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 245,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A 3x3 stationary slot board and a bank of 9 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.43 and a configured scroll speed from [1.3, 1.5, 1.7]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "full",
+          "controls": [
+            "pointerdown",
+            "pointermove",
+            "pointerup"
+          ],
+          "action_effect": "Dragging a visible piece into a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_drag action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_drag control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "8-13",
+          "claim": "This level uses a 3x3 board with 9 pieces, frame_count 90, fps 30, frame_step 0.43, configured scroll speeds [1.3, 1.5, 1.7]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2434-2452, 2464-2500, 2528-2534",
+          "claim": "Full mode uses pointer drag-and-drop into stationary ghost slots; a successful drop records a placement and remains available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_drag interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 246,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 3x3 stationary slot board and a bank of 9 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.43 and a configured scroll speed from [1.3, 1.5, 1.7]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "simplified",
+          "controls": [
+            "piece click",
+            "slot click"
+          ],
+          "action_effect": "Clicking a visible piece and then a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_slot_clicks action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_slot_clicks control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "8-13",
+          "claim": "This level uses a 3x3 board with 9 pieces, frame_count 90, fps 30, frame_step 0.43, configured scroll speeds [1.3, 1.5, 1.7]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2458-2462, 2528-2543",
+          "claim": "Simplified mode selects a piece and then a stationary slot by clicks; the selected piece and placement remain available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_slot_clicks interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 247,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A 3x3 stationary slot board and a bank of 9 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.48 and a configured scroll speed from [1.6, 1.8, 2, 2.2]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "full",
+          "controls": [
+            "pointerdown",
+            "pointermove",
+            "pointerup"
+          ],
+          "action_effect": "Dragging a visible piece into a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_drag action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_drag control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "9-13",
+          "claim": "This level uses a 3x3 board with 9 pieces, frame_count 90, fps 30, frame_step 0.48, configured scroll speeds [1.6, 1.8, 2, 2.2]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2434-2452, 2464-2500, 2528-2534",
+          "claim": "Full mode uses pointer drag-and-drop into stationary ghost slots; a successful drop records a placement and remains available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_drag interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 248,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 3x3 stationary slot board and a bank of 9 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.48 and a configured scroll speed from [1.6, 1.8, 2, 2.2]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "simplified",
+          "controls": [
+            "piece click",
+            "slot click"
+          ],
+          "action_effect": "Clicking a visible piece and then a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_slot_clicks action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_slot_clicks control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "9-13",
+          "claim": "This level uses a 3x3 board with 9 pieces, frame_count 90, fps 30, frame_step 0.48, configured scroll speeds [1.6, 1.8, 2, 2.2]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2458-2462, 2528-2543",
+          "claim": "Simplified mode selects a piece and then a stationary slot by clicks; the selected piece and placement remain available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_slot_clicks interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 249,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A 4x4 stationary slot board and a bank of 16 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.65 and a configured scroll speed from [2.4, 2.7, 3]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "full",
+          "controls": [
+            "pointerdown",
+            "pointermove",
+            "pointerup"
+          ],
+          "action_effect": "Dragging a visible piece into a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_drag action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_drag control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "10-13",
+          "claim": "This level uses a 4x4 board with 16 pieces, frame_count 120, fps 36, frame_step 0.65, configured scroll speeds [2.4, 2.7, 3]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2434-2452, 2464-2500, 2528-2534",
+          "claim": "Full mode uses pointer drag-and-drop into stationary ghost slots; a successful drop records a placement and remains available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_drag interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 250,
+      "environment_id": "motion_only_ghost_jigsaw_env",
+      "public_environment_name": "Motion-Only Ghost Jigsaw",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A 4x4 stationary slot board and a bank of 16 visible draggable/selectable pieces",
+        "A continuously animated reference canvas and animated piece canvases",
+        "A VERIFY control"
+      ],
+      "autonomous_processes": [
+        "The reference and piece canvases continuously redraw a seed-specific grayscale noise field while the virtual task clock runs, using frame_step 0.65 and a configured scroll speed from [2.4, 2.7, 3]."
+      ],
+      "grouped_control_modes": [
+        {
+          "interaction_mode": "simplified",
+          "controls": [
+            "piece click",
+            "slot click"
+          ],
+          "action_effect": "Clicking a visible piece and then a stationary visible slot records its source-to-slot placement."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy receives no current visual evidence. The generator independently shuffles piece order for different instances, so two instances can have the same prior action history and task-clock state while requiring different first placements."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded chronological visual window is sufficient in principle to observe the moving reference and piece patterns and match their motion/source relationship before choosing a piece_slot_clicks action. The configured observation schedule supplies a 640 ms window containing six frames."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "During autonomous waiting, only canvas pixels change. The piece_slot_clicks control, stationary slot geometry, piece identity, selected/dragged placement state, and exact-placement verifier outcome do not change. Therefore waiting does not make the correct action expire or strictly reduce its value; any loss caused by a deadline would be excluded by the definition."
+      },
+      "common_visible_process": "A grayscale noise pattern scrolls continuously in the reference canvas and in each piece canvas, with the reference and pieces using opposite motion. The board slots and piece positions remain stationary.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run override cannot change this configuration's No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/env.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/task.json",
+        "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/tasks/motion_only_ghost_jigsaw_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/motion_only_ghost_jigsaw.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/motion_only_ghost_jigsaw_env/controls.json",
+          "lines": "10-13",
+          "claim": "This level uses a 4x4 board with 16 pieces, frame_count 120, fps 36, frame_step 0.65, configured scroll speeds [2.4, 2.7, 3]; both full and simplified interaction modes are declared, with the shared observation window set to 640 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1192-1248",
+          "claim": "The generator creates the level-specific shuffled pieces, preserves each piece's source_index as the hidden expected placement, and publishes the animated reference and piece visual parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2391-2431",
+          "claim": "The reference and every piece continuously redraw a grayscale noise pattern with opposite motion; the animation changes canvas pixels as frame advances."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2458-2462, 2528-2543",
+          "claim": "Simplified mode selects a piece and then a stationary slot by clicks; the selected piece and placement remain available after the moving pixels change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "130-165",
+          "claim": "The board slots and piece bank are ordinary stationary layout elements; the motion-specific presentation is in the canvases rather than in moving hit targets."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "414-435",
+          "claim": "The verifier checks the exact expected placement map and the piece_slot_clicks interaction source, but it does not check animation frame, elapsed time, or action expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+          "lines": "807-816",
+          "claim": "The server-side submission path likewise grades the expected placements without a motion-frame or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "15-24, 548-576",
+          "claim": "The runtime exposes live and paused virtual task-clock modes and advances the clock only for the requested observation window, so the visible animation can be observed in bounded chronological frames while inference is paused."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

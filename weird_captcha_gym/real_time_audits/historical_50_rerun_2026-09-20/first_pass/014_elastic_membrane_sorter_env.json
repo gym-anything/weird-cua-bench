@@ -1,0 +1,1367 @@
+{
+  "case_index": 14,
+  "environment_id": "elastic_membrane_sorter_env",
+  "public_environment_name": "Elastic Membrane Sorter",
+  "configuration_reports": [
+    {
+      "case_index": 131,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "One round contains one ordered inspection ring; slope_accel=0.07, drag=0.965, checkpoint_radius=50, well_radius=40, capture_speed=4.0, max_ticks=720, and each initial post height is in [0.48, 0.52].",
+        "Full interaction exposes four glowing membrane-post markers. A pointer drag on a marker changes that post height directly while the marble is in flight; the grader requires input_source=membrane_post_drag.",
+        "RELEASE MARBLE starts the current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered ring, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round when one exists, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses direct membrane-post dragging here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The post change that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed post adjustment on the same direct-drag surface."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to the ring or low-speed well, waiting moves the marble and preserves velocity so a post correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered ring, highlighted well, speed, and tick count are visible while direct post dragging remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator shuffles three fixed target courses and selects one for this one-round profile. The exact constant-force recurrence from the browser and grader admits fixed post heights that complete either lateral course (target wells 0 or 1) through its single ring and into its well, without any in-flight adjustment; the lower course (target well 2) cannot be completed by a constant force within its configured geometry and limits. Thus at least half of generated one-round instances can prepare the posts, release the marble, and send no further outcome-affecting action. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 activates one round and one checkpoint with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the full-mode post surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds full post events to membrane_post_drag and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 132,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "One round contains one ordered inspection ring; slope_accel=0.07, drag=0.965, checkpoint_radius=50, well_radius=40, capture_speed=4.0, max_ticks=720, and each initial post height is in [0.48, 0.52].",
+        "Simplified interaction exposes four labelled P1-P4 tension sliders with 0-100 values, mapping to post heights in [0,1]; slider input remains active while the marble is in flight and the grader requires input_source=tension_slider.",
+        "RELEASE MARBLE starts the current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered ring, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round when one exists, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses labelled tension sliders here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The slider setting that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed slider adjustment."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to the ring or low-speed well, waiting moves the marble and preserves velocity so a slider correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered ring, highlighted well, speed, and tick count are visible while slider post control remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator shuffles three fixed target courses and selects one for this one-round profile. The exact constant-force recurrence from the browser and grader admits fixed post heights that complete either lateral course (target wells 0 or 1) through its single ring and into its well, without any in-flight adjustment; the lower course (target well 2) cannot be completed by a constant force within its configured geometry and limits. Thus at least half of generated one-round instances can prepare the posts, release the marble, and send no further outcome-affecting action. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 activates one round and one checkpoint with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the simplified slider surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds simplified post events to tension_slider and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 133,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "One round contains two ordered inspection rings; slope_accel=0.08, drag=0.96, checkpoint_radius=42, well_radius=36, capture_speed=3.5, max_ticks=720, and each initial post height is in [0.45, 0.55].",
+        "Full interaction exposes four glowing membrane-post markers. A pointer drag on a marker changes that post height directly while the marble is in flight; the grader requires input_source=membrane_post_drag.",
+        "RELEASE MARBLE starts the current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round when one exists, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses direct membrane-post dragging here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The post change that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed post adjustment on the same direct-drag surface."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a post correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while direct post dragging remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator shuffles three fixed target courses and selects one for this one-round profile. The exact constant-force recurrence from the browser and grader admits fixed post heights that complete either lateral course (target wells 0 or 1) through both ordered rings and into its well, without any in-flight adjustment; the lower course (target well 2) cannot be completed by a constant force within its configured geometry and limits. Thus at least half of generated one-round instances can prepare the posts, release the marble, and send no further outcome-affecting action. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "27-41",
+          "claim": "Difficulty 2 activates one round and two ordered checkpoints with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the full-mode post surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds full post events to membrane_post_drag and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 134,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "One round contains two ordered inspection rings; slope_accel=0.08, drag=0.96, checkpoint_radius=42, well_radius=36, capture_speed=3.5, max_ticks=720, and each initial post height is in [0.45, 0.55].",
+        "Simplified interaction exposes four labelled P1-P4 tension sliders with 0-100 values, mapping to post heights in [0,1]; slider input remains active while the marble is in flight and the grader requires input_source=tension_slider.",
+        "RELEASE MARBLE starts the current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round when one exists, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses labelled tension sliders here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The slider setting that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed slider adjustment."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a slider correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while slider post control remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator shuffles three fixed target courses and selects one for this one-round profile. The exact constant-force recurrence from the browser and grader admits fixed post heights that complete either lateral course (target wells 0 or 1) through both ordered rings and into its well, without any in-flight adjustment; the lower course (target well 2) cannot be completed by a constant force within its configured geometry and limits. Thus at least half of generated one-round instances can prepare the posts, release the marble, and send no further outcome-affecting action. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "27-41",
+          "claim": "Difficulty 2 activates one round and two ordered checkpoints with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the simplified slider surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds simplified post events to tension_slider and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 135,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Two rounds each contain two ordered inspection rings; slope_accel=0.09, drag=0.958, checkpoint_radius=37, well_radius=33, capture_speed=3.1, max_ticks=720, and each initial post height is in [0.43, 0.57].",
+        "Full interaction exposes four glowing membrane-post markers. A pointer drag on a marker changes that post height directly while the marble is in flight; the grader requires input_source=membrane_post_drag.",
+        "RELEASE MARBLE starts each current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses direct membrane-post dragging here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The post change that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed post adjustment on the same direct-drag surface."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a post correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while direct post dragging remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "This profile takes the first two entries of a shuffled three-course order. The lower target course (target well 2) cannot be completed by any constant post-induced force through its ordered route and capture limits, so every two-round order containing that course lacks a pre-run solution even if posts may be prepared between round phases. The only order subset that omits it is less than half of the shuffled orders; the threshold is therefore not met. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "44-58",
+          "claim": "Difficulty 3 activates two rounds and two ordered checkpoints with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the full-mode post surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds full post events to membrane_post_drag and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 136,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Two rounds each contain two ordered inspection rings; slope_accel=0.09, drag=0.958, checkpoint_radius=37, well_radius=33, capture_speed=3.1, max_ticks=720, and each initial post height is in [0.43, 0.57].",
+        "Simplified interaction exposes four labelled P1-P4 tension sliders with 0-100 values, mapping to post heights in [0,1]; slider input remains active while the marble is in flight and the grader requires input_source=tension_slider.",
+        "RELEASE MARBLE starts each current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses labelled tension sliders here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The slider setting that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed slider adjustment."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a slider correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while slider post control remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "This profile takes the first two entries of a shuffled three-course order. The lower target course (target well 2) cannot be completed by any constant post-induced force through its ordered route and capture limits, so every two-round order containing that course lacks a pre-run solution even if posts may be prepared between round phases. The only order subset that omits it is less than half of the shuffled orders; the threshold is therefore not met. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "44-58",
+          "claim": "Difficulty 3 activates two rounds and two ordered checkpoints with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the simplified slider surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds simplified post events to tension_slider and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 137,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Three rounds each contain two ordered inspection rings; slope_accel=0.10, drag=0.955, checkpoint_radius=34, well_radius=30, capture_speed=2.8, max_ticks=720, and each initial post height is in [0.42, 0.58].",
+        "Full interaction exposes four glowing membrane-post markers. A pointer drag on a marker changes that post height directly while the marble is in flight; the grader requires input_source=membrane_post_drag.",
+        "RELEASE MARBLE starts each current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses direct membrane-post dragging here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The post change that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed post adjustment on the same direct-drag surface."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a post correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while direct post dragging remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "All three rounds are the complete shuffled course set, so every generated instance includes the lower target course. That course cannot be completed by any constant post-induced force through its ordered route and capture limits; fixed posts therefore cannot solve the full episode without an in-flight outcome-affecting action. The pre-run threshold is not met. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "61-75",
+          "claim": "Difficulty 4 activates three rounds and two ordered checkpoints with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the full-mode post surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds full post events to membrane_post_drag and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 138,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Three rounds each contain two ordered inspection rings; slope_accel=0.10, drag=0.955, checkpoint_radius=34, well_radius=30, capture_speed=2.8, max_ticks=720, and each initial post height is in [0.42, 0.58].",
+        "Simplified interaction exposes four labelled P1-P4 tension sliders with 0-100 values, mapping to post heights in [0,1]; slider input remains active while the marble is in flight and the grader requires input_source=tension_slider.",
+        "RELEASE MARBLE starts each current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses labelled tension sliders here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The slider setting that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed slider adjustment."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a slider correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while slider post control remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "All three rounds are the complete shuffled course set, so every generated instance includes the lower target course. That course cannot be completed by any constant post-induced force through its ordered route and capture limits; fixed posts therefore cannot solve the full episode without an in-flight outcome-affecting action. The pre-run threshold is not met. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "61-75",
+          "claim": "Difficulty 4 activates three rounds and two ordered checkpoints with the stated slope, damping, acceptance radii, speed limit, tick limit, and initial-height range."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the simplified slider surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds simplified post events to tension_slider and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 139,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Three rounds each contain three ordered inspection rings; slope_accel=0.112, drag=0.95, checkpoint_radius=27, well_radius=28, capture_speed=2.4, max_ticks=660, and each initial post height is in [0.38, 0.62].",
+        "Full interaction exposes four glowing membrane-post markers. A pointer drag on a marker changes that post height directly while the marble is in flight; the grader requires input_source=membrane_post_drag.",
+        "RELEASE MARBLE starts each current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses direct membrane-post dragging here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The post change that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed post adjustment on the same direct-drag surface."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a post correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while direct post dragging remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "All three rounds are the complete shuffled course set, so every generated instance includes the lower target course. That course cannot be completed by any constant post-induced force through its ordered route and capture limits; fixed posts therefore cannot solve the full episode without an in-flight outcome-affecting action. The pre-run threshold is not met. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "78-92",
+          "claim": "Difficulty 5 activates three rounds and three ordered checkpoints with the stated stronger slope, lower damping, narrower acceptance regions, speed limit, and 660-tick limit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the full-mode post surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds full post events to membrane_post_drag and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 140,
+      "public_environment_name": "Elastic Membrane Sorter",
+      "environment_id": "elastic_membrane_sorter_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Three rounds each contain three ordered inspection rings; slope_accel=0.112, drag=0.95, checkpoint_radius=27, well_radius=28, capture_speed=2.4, max_ticks=660, and each initial post height is in [0.38, 0.62].",
+        "Simplified interaction exposes four labelled P1-P4 tension sliders with 0-100 values, mapping to post heights in [0,1]; slider input remains active while the marble is in flight and the grader requires input_source=tension_slider.",
+        "RELEASE MARBLE starts each current marble, RESET THIS MARBLE restarts it, and the canvas visibly shows the highlighted well, ordered rings, post markers, marble position, speed, and tick counter."
+      ],
+      "autonomous_processes": [
+        "After release, a 35-ms interval advances the marble without a new action: current post heights produce the membrane force, velocity is updated with drag, position advances, and boundary contact reverses velocity with restitution.",
+        "The same interval checks the next ordered ring and then low-speed entry into the highlighted well; capture stops the interval and resets the next round, while max_ticks stops a stalled marble.",
+        "Before release and after reset, the marble is not advancing; canvas redraws do not change the task state."
+      ],
+      "grouped_control_modes": [
+        "D_post: all outcome-affecting in-flight post-height changes, grouped across rounds, seeds, and attempts; this mode uses labelled tension sliders here.",
+        "D_release: release of a prepared marble into the autonomous physics interval.",
+        "D_reset: reset of the current marble before another release; abandon and certification are administrative controls."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "Within D_post, the same prior action transcript and task time can lead to different generated target courses and different current marble positions and velocities. The slider setting that maximizes outcome after a 600-ms delay therefore depends on the current task state; no policy using only I_t and its action clock can choose it for every recoverable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in the configured 600-ms observation window show successive marble positions, the persistent direction and speed implied by that motion, the post markers, and the fixed ring and well geometry. Those visible quantities determine the delayed physics under the known deterministic recurrence, so a bounded-window policy can select the delayed slider adjustment."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "The same released-marble process changes position and retains momentum during 0<tau<600 ms without a new action. For a recoverable approach to an ordered ring or low-speed well, waiting moves the marble and preserves velocity so a slider correction that would redirect or capture it at t has strictly lower value when delivered at t+600; another live correction can still recover the marble. The loss is caused by membrane physics and geometry, not by a deadline."
+      },
+      "common_visible_process": "A released marble moves across the visibly deformed four-post membrane on each 35-ms physics tick. The post markers, marble position, ordered rings, highlighted well, speed, and tick count are visible while slider post control remains available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "All three rounds are the complete shuffled course set, so every generated instance includes the lower target course. That course cannot be completed by any constant post-induced force through its ordered route and capture limits; fixed posts therefore cannot solve the full episode without an in-flight outcome-affecting action. The pre-run threshold is not met. No empirical rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/task.json",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/elastic_membrane_sorter_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/elastic_membrane_sorter.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/elastic_membrane_sorter.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "78-92",
+          "claim": "Difficulty 5 activates three rounds and three ordered checkpoints with the stated stronger slope, lower damping, narrower acceptance regions, speed limit, and 660-tick limit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction modes are implemented and the task uses a 600-ms observation window with five frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "797-853",
+          "claim": "The generator shuffles target rounds, uses the three fixed courses and wells, and emits 35-ms membrane physics with the difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "578-615",
+          "claim": "The browser creates the live membrane model, exposes the simplified slider surface, and records each post-height change while the task is active."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "627-694",
+          "claim": "The canvas renders visible ring, well, post, marble, speed, and tick state; release starts the autonomous interval that integrates force, drag, motion, boundaries, crossings, capture, and stall."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "696-726",
+          "claim": "Simplified sliders and full post dragging both remain usable during flight, and release/reset are separate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "20-25",
+          "claim": "The grader computes the same constant membrane force from the four post heights."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "112-144",
+          "claim": "The independent replay advances the damped trajectory only while running, applies boundaries, records ordered crossings, and detects low-speed well capture."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/elastic_membrane_sorter.py",
+          "lines": "164-197",
+          "claim": "The grader binds simplified post events to tension_slider and replays post, release, checkpoint, capture, stall, and reset events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "390-455",
+          "claim": "The normal UI solver repeatedly observes the running marble and changes posts using current checkpoint/ball position and velocity, demonstrating the screenshot-only control loop."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/env.json",
+          "lines": "20-45",
+          "claim": "The environment exposes chronological frame windows plus mouse and keyboard actions and uses the same 600-ms, five-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/elastic_membrane_sorter_env/tasks/elastic_membrane_sorter_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Authoritative verification grades the exported physical outcome through the independent membrane grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "175-180",
+          "claim": "The membrane UI has the four-slider simplified surface and the full-mode direct-drag instruction styling."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

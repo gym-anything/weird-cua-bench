@@ -1,0 +1,1148 @@
+{
+  "case_index": 10,
+  "environment_id": "crash_deadline_hovercar_env",
+  "public_environment_name": "Crash-Deadline Hovercar",
+  "configuration_reports": [
+    {
+      "case_index": 91,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 1 activates 2 moving checks and 2 barriers. Check windows start at tick 20, last 70 ticks, and stride by 85 ticks; each check needs 7 or 8 contiguous dwell ticks. The target radius is 36, road half-width is 136, finish progress is 700, and the deadline is tick 360.",
+        "Full drive input is held W/ArrowUp for throttle, S/ArrowDown for brake, A/ArrowLeft for steering left, and D/ArrowRight for steering right; key transitions persist until release.",
+        "Full inspection input is direct pointer movement on the 980x480 canvas; the last pointer position is retained between pointer events and must stay within the active moving sigil.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_full_drive: all keyboard drive transitions during every active course, grouped across all ticks, barriers, checks, seeds, and retries.",
+        "D_full_inspection: all direct canvas pointer placements during every active check window, grouped across all checks and seeds.",
+        "D_full_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right keyboard transition for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding keyboard steering transition."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative keyboard steering transition, but the same selected keyboard steering transition delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A qualifying full-mode pre-run cannot cover at least half of generated instances: after preparation the pointer would remain at one canvas position, while every profile has at least two checks at distinct target base positions and the grader requires per-tick containment during each moving check. The randomized target phases and nonzero orbits add further variation. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "6-12",
+          "claim": "Difficulty 1 activates 2 moving checks and 2 barriers. Check windows start at tick 20, last 70 ticks, and stride by 85 ticks; each check needs 7 or 8 contiguous dwell ticks. The target radius is 36, road half-width is 136, finish progress is 700, and the deadline is tick 360."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "117-129",
+          "claim": "Full mode renders keyboard controls and direct canvas pointer input; key transitions and pointer moves are recorded with their input sources while the physics interval runs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "1-2",
+          "claim": "The full interface visibly renders the canvas stage, road scene, inspection console, and keyboard-control presentation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 92,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 1 activates 2 moving checks and 2 barriers. Check windows start at tick 20, last 70 ticks, and stride by 85 ticks; each check needs 7 or 8 contiguous dwell ticks. The target radius is 36, road half-width is 136, finish progress is 700, and the deadline is tick 360.",
+        "Simplified drive input is provided by visible toggle buttons for throttle, brake, left, and right; each button holds the same persistent drive state as the corresponding key.",
+        "Simplified inspection input is LOCK ACTIVE SIGIL; when enabled, the browser proxy moves the pointer to the current active sigil on each physics tick, so no direct pointer movement is exposed.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_drive: all proxy toggle transitions for throttle, brake, left, and right during every active course, grouped across all ticks, barriers, checks, seeds, and retries; lateral steering is the witness mode.",
+        "D_simplified_proxy: all LOCK ACTIVE SIGIL toggles across every active course; pointer motion after enabling is autonomous browser behavior.",
+        "D_simplified_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right proxy toggle for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding proxy steering toggle."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative proxy steering toggle, but the same selected proxy steering toggle delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Although LOCK ACTIVE SIGIL can be enabled during preparation, a no-action outcome phase leaves the throttle, brake, and steering key states fixed. Every profile has at least two barriers with alternating lane offsets, and the physics applies constant held steering with road curvature and collision geometry, so a fixed drive state cannot handle at least half of the generated courses. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "6-12",
+          "claim": "Difficulty 1 activates 2 moving checks and 2 barriers. Check windows start at tick 20, last 70 ticks, and stride by 85 ticks; each check needs 7 or 8 contiguous dwell ticks. The target radius is 36, road half-width is 136, finish progress is 700, and the deadline is tick 360."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "120-129",
+          "claim": "Simplified mode renders toggle drive buttons and LOCK ACTIVE SIGIL; proxy tracking updates the pointer to the active target on physics ticks, while drive toggles remain agent actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "4-5",
+          "claim": "The simplified interface visibly renders the proxy controls and orders them with the inspection manifest."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 93,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 2 activates 3 moving checks and 3 barriers. Check windows start at tick 18, last 64 ticks, and stride by 72 ticks; each check needs 8 or 9 contiguous dwell ticks. The target radius is 34, road half-width is 126, finish progress is 1000, and the deadline is tick 350.",
+        "Full drive input is held W/ArrowUp for throttle, S/ArrowDown for brake, A/ArrowLeft for steering left, and D/ArrowRight for steering right; key transitions persist until release.",
+        "Full inspection input is direct pointer movement on the 980x480 canvas; the last pointer position is retained between pointer events and must stay within the active moving sigil.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_full_drive: all keyboard drive transitions during every active course, grouped across all ticks, barriers, checks, seeds, and retries.",
+        "D_full_inspection: all direct canvas pointer placements during every active check window, grouped across all checks and seeds.",
+        "D_full_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right keyboard transition for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding keyboard steering transition."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative keyboard steering transition, but the same selected keyboard steering transition delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A qualifying full-mode pre-run cannot cover at least half of generated instances: after preparation the pointer would remain at one canvas position, while every profile has at least two checks at distinct target base positions and the grader requires per-tick containment during each moving check. The randomized target phases and nonzero orbits add further variation. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "14-20",
+          "claim": "Difficulty 2 activates 3 moving checks and 3 barriers. Check windows start at tick 18, last 64 ticks, and stride by 72 ticks; each check needs 8 or 9 contiguous dwell ticks. The target radius is 34, road half-width is 126, finish progress is 1000, and the deadline is tick 350."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "117-129",
+          "claim": "Full mode renders keyboard controls and direct canvas pointer input; key transitions and pointer moves are recorded with their input sources while the physics interval runs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "1-2",
+          "claim": "The full interface visibly renders the canvas stage, road scene, inspection console, and keyboard-control presentation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 94,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 2 activates 3 moving checks and 3 barriers. Check windows start at tick 18, last 64 ticks, and stride by 72 ticks; each check needs 8 or 9 contiguous dwell ticks. The target radius is 34, road half-width is 126, finish progress is 1000, and the deadline is tick 350.",
+        "Simplified drive input is provided by visible toggle buttons for throttle, brake, left, and right; each button holds the same persistent drive state as the corresponding key.",
+        "Simplified inspection input is LOCK ACTIVE SIGIL; when enabled, the browser proxy moves the pointer to the current active sigil on each physics tick, so no direct pointer movement is exposed.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_drive: all proxy toggle transitions for throttle, brake, left, and right during every active course, grouped across all ticks, barriers, checks, seeds, and retries; lateral steering is the witness mode.",
+        "D_simplified_proxy: all LOCK ACTIVE SIGIL toggles across every active course; pointer motion after enabling is autonomous browser behavior.",
+        "D_simplified_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right proxy toggle for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding proxy steering toggle."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative proxy steering toggle, but the same selected proxy steering toggle delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Although LOCK ACTIVE SIGIL can be enabled during preparation, a no-action outcome phase leaves the throttle, brake, and steering key states fixed. Every profile has at least two barriers with alternating lane offsets, and the physics applies constant held steering with road curvature and collision geometry, so a fixed drive state cannot handle at least half of the generated courses. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "14-20",
+          "claim": "Difficulty 2 activates 3 moving checks and 3 barriers. Check windows start at tick 18, last 64 ticks, and stride by 72 ticks; each check needs 8 or 9 contiguous dwell ticks. The target radius is 34, road half-width is 126, finish progress is 1000, and the deadline is tick 350."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "120-129",
+          "claim": "Simplified mode renders toggle drive buttons and LOCK ACTIVE SIGIL; proxy tracking updates the pointer to the active target on physics ticks, while drive toggles remain agent actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "4-5",
+          "claim": "The simplified interface visibly renders the proxy controls and orders them with the inspection manifest."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 95,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 3 activates 4 moving checks and 4 barriers. Check windows start at tick 18, last 56 ticks, and stride by 64 ticks; each check needs 10 or 11 contiguous dwell ticks. The target radius is 31, road half-width is 118, finish progress is 1200, and the deadline is tick 340.",
+        "Full drive input is held W/ArrowUp for throttle, S/ArrowDown for brake, A/ArrowLeft for steering left, and D/ArrowRight for steering right; key transitions persist until release.",
+        "Full inspection input is direct pointer movement on the 980x480 canvas; the last pointer position is retained between pointer events and must stay within the active moving sigil.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_full_drive: all keyboard drive transitions during every active course, grouped across all ticks, barriers, checks, seeds, and retries.",
+        "D_full_inspection: all direct canvas pointer placements during every active check window, grouped across all checks and seeds.",
+        "D_full_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right keyboard transition for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding keyboard steering transition."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative keyboard steering transition, but the same selected keyboard steering transition delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A qualifying full-mode pre-run cannot cover at least half of generated instances: after preparation the pointer would remain at one canvas position, while every profile has at least two checks at distinct target base positions and the grader requires per-tick containment during each moving check. The randomized target phases and nonzero orbits add further variation. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "22-28",
+          "claim": "Difficulty 3 activates 4 moving checks and 4 barriers. Check windows start at tick 18, last 56 ticks, and stride by 64 ticks; each check needs 10 or 11 contiguous dwell ticks. The target radius is 31, road half-width is 118, finish progress is 1200, and the deadline is tick 340."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "117-129",
+          "claim": "Full mode renders keyboard controls and direct canvas pointer input; key transitions and pointer moves are recorded with their input sources while the physics interval runs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "1-2",
+          "claim": "The full interface visibly renders the canvas stage, road scene, inspection console, and keyboard-control presentation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 96,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 3 activates 4 moving checks and 4 barriers. Check windows start at tick 18, last 56 ticks, and stride by 64 ticks; each check needs 10 or 11 contiguous dwell ticks. The target radius is 31, road half-width is 118, finish progress is 1200, and the deadline is tick 340.",
+        "Simplified drive input is provided by visible toggle buttons for throttle, brake, left, and right; each button holds the same persistent drive state as the corresponding key.",
+        "Simplified inspection input is LOCK ACTIVE SIGIL; when enabled, the browser proxy moves the pointer to the current active sigil on each physics tick, so no direct pointer movement is exposed.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_drive: all proxy toggle transitions for throttle, brake, left, and right during every active course, grouped across all ticks, barriers, checks, seeds, and retries; lateral steering is the witness mode.",
+        "D_simplified_proxy: all LOCK ACTIVE SIGIL toggles across every active course; pointer motion after enabling is autonomous browser behavior.",
+        "D_simplified_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right proxy toggle for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding proxy steering toggle."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative proxy steering toggle, but the same selected proxy steering toggle delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Although LOCK ACTIVE SIGIL can be enabled during preparation, a no-action outcome phase leaves the throttle, brake, and steering key states fixed. Every profile has at least two barriers with alternating lane offsets, and the physics applies constant held steering with road curvature and collision geometry, so a fixed drive state cannot handle at least half of the generated courses. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "22-28",
+          "claim": "Difficulty 3 activates 4 moving checks and 4 barriers. Check windows start at tick 18, last 56 ticks, and stride by 64 ticks; each check needs 10 or 11 contiguous dwell ticks. The target radius is 31, road half-width is 118, finish progress is 1200, and the deadline is tick 340."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "120-129",
+          "claim": "Simplified mode renders toggle drive buttons and LOCK ACTIVE SIGIL; proxy tracking updates the pointer to the active target on physics ticks, while drive toggles remain agent actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "4-5",
+          "claim": "The simplified interface visibly renders the proxy controls and orders them with the inspection manifest."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 97,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 4 activates 5 moving checks and 6 barriers on the current profile. The checks use the generated 18–62, 59–107, 104–152, 149–198, and 195–248 tick windows and need 11, 12, or 13 contiguous dwell ticks; the road half-width is 110, finish progress is 1400, and the deadline is tick 330.",
+        "Full drive input is held W/ArrowUp for throttle, S/ArrowDown for brake, A/ArrowLeft for steering left, and D/ArrowRight for steering right; key transitions persist until release.",
+        "Full inspection input is direct pointer movement on the 980x480 canvas; the last pointer position is retained between pointer events and must stay within the active moving sigil.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_full_drive: all keyboard drive transitions during every active course, grouped across all ticks, barriers, checks, seeds, and retries.",
+        "D_full_inspection: all direct canvas pointer placements during every active check window, grouped across all checks and seeds.",
+        "D_full_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right keyboard transition for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding keyboard steering transition."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative keyboard steering transition, but the same selected keyboard steering transition delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A qualifying full-mode pre-run cannot cover at least half of generated instances: after preparation the pointer would remain at one canvas position, while every profile has at least two checks at distinct target base positions and the grader requires per-tick containment during each moving check. The randomized target phases and nonzero orbits add further variation. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "30-35",
+          "claim": "Difficulty 4 activates 5 moving checks and 6 barriers on the current profile. The checks use the generated 18–62, 59–107, 104–152, 149–198, and 195–248 tick windows and need 11, 12, or 13 contiguous dwell ticks; the road half-width is 110, finish progress is 1400, and the deadline is tick 330."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "117-129",
+          "claim": "Full mode renders keyboard controls and direct canvas pointer input; key transitions and pointer moves are recorded with their input sources while the physics interval runs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "1-2",
+          "claim": "The full interface visibly renders the canvas stage, road scene, inspection console, and keyboard-control presentation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 98,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 4 activates 5 moving checks and 6 barriers on the current profile. The checks use the generated 18–62, 59–107, 104–152, 149–198, and 195–248 tick windows and need 11, 12, or 13 contiguous dwell ticks; the road half-width is 110, finish progress is 1400, and the deadline is tick 330.",
+        "Simplified drive input is provided by visible toggle buttons for throttle, brake, left, and right; each button holds the same persistent drive state as the corresponding key.",
+        "Simplified inspection input is LOCK ACTIVE SIGIL; when enabled, the browser proxy moves the pointer to the current active sigil on each physics tick, so no direct pointer movement is exposed.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_drive: all proxy toggle transitions for throttle, brake, left, and right during every active course, grouped across all ticks, barriers, checks, seeds, and retries; lateral steering is the witness mode.",
+        "D_simplified_proxy: all LOCK ACTIVE SIGIL toggles across every active course; pointer motion after enabling is autonomous browser behavior.",
+        "D_simplified_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right proxy toggle for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding proxy steering toggle."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative proxy steering toggle, but the same selected proxy steering toggle delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Although LOCK ACTIVE SIGIL can be enabled during preparation, a no-action outcome phase leaves the throttle, brake, and steering key states fixed. Every profile has at least two barriers with alternating lane offsets, and the physics applies constant held steering with road curvature and collision geometry, so a fixed drive state cannot handle at least half of the generated courses. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "30-35",
+          "claim": "Difficulty 4 activates 5 moving checks and 6 barriers on the current profile. The checks use the generated 18–62, 59–107, 104–152, 149–198, and 195–248 tick windows and need 11, 12, or 13 contiguous dwell ticks; the road half-width is 110, finish progress is 1400, and the deadline is tick 330."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "120-129",
+          "claim": "Simplified mode renders toggle drive buttons and LOCK ACTIVE SIGIL; proxy tracking updates the pointer to the active target on physics ticks, while drive toggles remain agent actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "4-5",
+          "claim": "The simplified interface visibly renders the proxy controls and orders them with the inspection manifest."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 99,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 5 activates 6 moving checks and 8 barriers. Check windows start at tick 18, last 52 ticks, and stride by 44 ticks, so late windows overlap; each check needs 13 or 14 contiguous dwell ticks. The target radius is 27, road half-width is 102, finish progress is 1760, and the deadline is tick 360.",
+        "Full drive input is held W/ArrowUp for throttle, S/ArrowDown for brake, A/ArrowLeft for steering left, and D/ArrowRight for steering right; key transitions persist until release.",
+        "Full inspection input is direct pointer movement on the 980x480 canvas; the last pointer position is retained between pointer events and must stay within the active moving sigil.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_full_drive: all keyboard drive transitions during every active course, grouped across all ticks, barriers, checks, seeds, and retries.",
+        "D_full_inspection: all direct canvas pointer placements during every active check window, grouped across all checks and seeds.",
+        "D_full_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right keyboard transition for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding keyboard steering transition."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative keyboard steering transition, but the same selected keyboard steering transition delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A qualifying full-mode pre-run cannot cover at least half of generated instances: after preparation the pointer would remain at one canvas position, while every profile has at least two checks at distinct target base positions and the grader requires per-tick containment during each moving check. The randomized target phases and nonzero orbits add further variation. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "37-43",
+          "claim": "Difficulty 5 activates 6 moving checks and 8 barriers. Check windows start at tick 18, last 52 ticks, and stride by 44 ticks, so late windows overlap; each check needs 13 or 14 contiguous dwell ticks. The target radius is 27, road half-width is 102, finish progress is 1760, and the deadline is tick 360."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "117-129",
+          "claim": "Full mode renders keyboard controls and direct canvas pointer input; key transitions and pointer moves are recorded with their input sources while the physics interval runs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "1-2",
+          "claim": "The full interface visibly renders the canvas stage, road scene, inspection console, and keyboard-control presentation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 100,
+      "public_environment_name": "Crash-Deadline Hovercar",
+      "environment_id": "crash_deadline_hovercar_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 5 activates 6 moving checks and 8 barriers. Check windows start at tick 18, last 52 ticks, and stride by 44 ticks, so late windows overlap; each check needs 13 or 14 contiguous dwell ticks. The target radius is 27, road half-width is 102, finish progress is 1760, and the deadline is tick 360.",
+        "Simplified drive input is provided by visible toggle buttons for throttle, brake, left, and right; each button holds the same persistent drive state as the corresponding key.",
+        "Simplified inspection input is LOCK ACTIVE SIGIL; when enabled, the browser proxy moves the pointer to the current active sigil on each physics tick, so no direct pointer movement is exposed.",
+        "Retry Course is available after a crash. TRANSMIT FLIGHT RECORD is administrative and does not affect the outcome phase."
+      ],
+      "autonomous_processes": [
+        "In live play, the 50 ms physics tick advances speed from held throttle/brake state, inertial lateral velocity and position from held steering, forward progress, and course tick without a new agent action.",
+        "The curved road and fixed-world barriers change the visible clearance as progress advances; each tick checks road departure, barrier collision, deadline, and finish conditions.",
+        "Each uncompleted sigil follows a tick-dependent sinusoidal position and is visible only during its configured inspection window. Full mode changes the pointer only on canvas pointer events; simplified mode can update it automatically through the active-sigil proxy."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_drive: all proxy toggle transitions for throttle, brake, left, and right during every active course, grouped across all ticks, barriers, checks, seeds, and retries; lateral steering is the witness mode.",
+        "D_simplified_proxy: all LOCK ACTIVE SIGIL toggles across every active course; pointer motion after enabling is autonomous browser behavior.",
+        "D_simplified_retry: crash-retry transitions; submission is administrative."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_drive, at a fixed task time and identical I_t, randomized road phase, amplitude, and period can place the same visible barrier and car lateral state on different sides of the safe steering corridor. A q using only I_t therefore cannot select the optimal left/right proxy toggle for every H_t in C_Delta(D); the needed action depends on the current visible state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five chronological frames in W_t^500 show the car's lateral displacement and bank, the curved road boundaries and centerline, and the approaching barrier. A g using that recent visual trajectory and I_t can predict the road/barrier clearance at t+500 and select the corresponding proxy steering toggle."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t while a visible barrier is still ahead and a turn toward its open side is safe. With no new action, ten 50 ms ticks advance progress and retain inertial lateral motion; at some 0 < tau < 500 ms the collision envelope is narrower. Success remains possible with a timely or alternative proxy steering toggle, but the same selected proxy steering toggle delivered after the delay has lower Q. This strict loss comes from road/barrier geometry, not only from the deadline."
+      },
+      "common_visible_process": "The common witness is the visible vehicle/road/barrier process: every 50 ms, progress and lateral inertia advance, fixed-world barriers approach, and the safe steering corridor changes. The car, curved road, centerline, barriers, and HUD provide this evidence across the five chronological frames.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Although LOCK ACTIVE SIGIL can be enabled during preparation, a no-action outcome phase leaves the throttle, brake, and steering key states fixed. Every profile has at least two barriers with alternating lane offsets, and the physics applies constant held steering with road curvature and collision geometry, so a fixed drive state cannot handle at least half of the generated courses. No percentage is estimated.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/env.json",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+        "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/crash_deadline_hovercar.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "37-43",
+          "claim": "Difficulty 5 activates 6 moving checks and 8 barriers. Check windows start at tick 18, last 52 ticks, and stride by 44 ticks, so late windows overlap; each check needs 13 or 14 contiguous dwell ticks. The target radius is 27, road half-width is 102, finish progress is 1760, and the deadline is tick 360."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/controls.json",
+          "lines": "46-50",
+          "claim": "Both full and simplified interfaces are implemented; the real-time settings are a 500 ms observation window with 5 frames and a 150 second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "44-84",
+          "claim": "The seeded generator randomizes road phase/amplitude/period, target phases/orbits, windows, and the selected number of fixed-world barriers for the active difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crash_deadline_hovercar.py",
+          "lines": "89-103",
+          "claim": "The generated physics uses a 50 ms tick, held-input acceleration/braking/drag, inertial steering, progress, and road geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "34-65",
+          "claim": "The browser physics tick updates speed, lateral state, progress, moving-target dwell, collisions, and finish state without an action between ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.js",
+          "lines": "120-129",
+          "claim": "Simplified mode renders toggle drive buttons and LOCK ACTIVE SIGIL; proxy tracking updates the pointer to the active target on physics ticks, while drive toggles remain agent actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crash_deadline_hovercar.css",
+          "lines": "4-5",
+          "claim": "The simplified interface visibly renders the proxy controls and orders them with the inspection manifest."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "26-48",
+          "claim": "The authoritative replay applies the same held-key physics, road departure, fixed-world barrier collision, progress, and deadline checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crash_deadline_hovercar.py",
+          "lines": "133-167",
+          "claim": "The grader evaluates every physics tick and only preserves a check when the pointer is inside the moving target during its active window while the vehicle keeps moving."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crash_deadline_hovercar_env/tasks/crash_deadline_hovercar_seed_0001/verifier.py",
+          "lines": "15-24",
+          "claim": "The task verifier loads the exported UI result and sends it through the mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

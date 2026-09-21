@@ -1,0 +1,1017 @@
+{
+  "case_index": 43,
+  "environment_id": "three_camera_claw_machine_env",
+  "public_environment_name": "Three-Camera Claw Machine",
+  "configuration_reports": [
+    {
+      "case_index": 421,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 uses zero distractors, an open cage, camera delays [0, 0, 0], camera scale 22.0, acceleration 0.32, damping 0.72, and capture distance 0.95.",
+        "Full keyboard teleoperation: A/D move X-/X+, W/S move Y+/Y-, Q/E move Z-/Z+, C coasts one physics tick, Space brakes, F closes or releases the gripper, and R rewinds the gantry.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A keyboard axis, coast, or brake event synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard_teleoperation: every outcome-affecting A/D, W/S, Q/E, C, Space, F, and R event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target and chute coordinates vary even in the open, no-distractor profile, so an observation-free policy using only its own action history cannot choose the correct route and release point across occurrences."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, chute, and claw for ordinary next-control selection; the zero camera delays do not create hidden autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "9-21",
+          "claim": "The exact level-1 profile is open and has no distractors, zero camera delays, low inertia, and a 0.95 capture distance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Both interaction surfaces are implemented, with the full keyboard mapping and a 0 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "17-25",
+          "claim": "Generation validates the difficulty and interaction condition and receives the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "37-56",
+          "claim": "Seeded target, chute, objects, obstacles, camera history, and inertial world state are generated before controls are applied."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames read model.history at tick minus camera delay, while applyControl synchronously changes velocity and calls exactly one physicsTick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "514-552",
+          "claim": "The full-mode keyboard handlers are the only bindings for the teleoperation and gripper/reset actions; no background physics loop is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader requires each control to be paired with its fixed physics tick, replays the synchronous state, and grades delivery from the replayed outcome."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The task verifier loads the exported result and the mechanic grader; it does not add a clock-driven task transition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 422,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 uses zero distractors, an open cage, camera delays [0, 0, 0], camera scale 22.0, acceleration 0.32, damping 0.72, and capture distance 0.95.",
+        "Simplified visible controls: labelled X-/X+, Y-/Y+, and Z-/Z+ buttons, COAST ONE PHYSICS TICK, BRAKE / DAMP INERTIA, CLOSE GRIPPER or OPEN / RELEASE, and REWIND GANTRY.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A visible axis, coast, or brake button synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_control_buttons: every outcome-affecting X/Y/Z, coast, brake, gripper, and rewind button event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target and chute coordinates vary even in the open, no-distractor profile, so an observation-free policy using only its own action history cannot choose the correct route and release point across occurrences."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, chute, and claw for ordinary next-control selection; the zero camera delays do not create hidden autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "9-21",
+          "claim": "The exact level-1 profile is open and has no distractors, zero camera delays, low inertia, and a 0.95 capture distance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Both interaction surfaces are implemented, with the simplified button mapping and a 0 ms observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "17-25",
+          "claim": "Generation validates the difficulty and interaction condition and receives the selected difficulty parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "37-56",
+          "claim": "Seeded target, chute, objects, obstacles, camera history, and inertial world state are generated before controls are applied."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames read model.history at tick minus camera delay, while button controls synchronously change velocity and call exactly one physicsTick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "464-527",
+          "claim": "Simplified mode renders button controls and binds each button directly to control, gripper, reset, or administrative submit handlers; no background physics loop is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader requires each control to be paired with its fixed physics tick, replays the synchronous state, and grades delivery from the replayed outcome."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The task verifier loads the exported result and the mechanic grader; it does not add a clock-driven task transition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 423,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 uses one decoy, a crossbar, camera delays [0, 1, 2], camera scale 22.0, acceleration 0.30, damping 0.76, and capture distance 0.88.",
+        "Full keyboard teleoperation: A/D move X-/X+, W/S move Y+/Y-, Q/E move Z-/Z+, C coasts one physics tick, Space brakes, F closes or releases the gripper, and R rewinds the gantry.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A keyboard axis, coast, or brake event synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard_teleoperation: every outcome-affecting A/D, W/S, Q/E, C, Space, F, and R event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target and chute, one-decoy identity, and crossbar geometry vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, target, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoy, crossbar, chute, and claw for ordinary next-control selection; the [0, 1, 2] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "23-34",
+          "claim": "The exact level-2 profile adds one decoy and a crossbar, staggers feeds by [0, 1, 2] ticks, and sets the listed inertial and capture parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Full keyboard teleoperation is implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "58-101",
+          "claim": "For non-level-4 conditions, the generator applies the exact supplied distractor, obstacle, camera-delay, scale, acceleration, damping, and capture-distance parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "102-129",
+          "claim": "The generated public and private contracts share the initial claw, target, obstacle, chute, camera, and world state; full versus simplified is not inserted into the world challenge token."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit control event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "514-552",
+          "claim": "Full-mode keyboard events are explicitly bound to the control, gripper, and reset functions; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 424,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 uses one decoy, a crossbar, camera delays [0, 1, 2], camera scale 22.0, acceleration 0.30, damping 0.76, and capture distance 0.88.",
+        "Simplified visible controls: labelled X-/X+, Y-/Y+, and Z-/Z+ buttons, COAST ONE PHYSICS TICK, BRAKE / DAMP INERTIA, CLOSE GRIPPER or OPEN / RELEASE, and REWIND GANTRY.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A visible axis, coast, or brake button synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_control_buttons: every outcome-affecting X/Y/Z, coast, brake, gripper, and rewind button event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target and chute, one-decoy identity, and crossbar geometry vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, target, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoy, crossbar, chute, and claw for ordinary next-control selection; the [0, 1, 2] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "23-34",
+          "claim": "The exact level-2 profile adds one decoy and a crossbar, staggers feeds by [0, 1, 2] ticks, and sets the listed inertial and capture parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Simplified button controls are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "58-101",
+          "claim": "For non-level-4 conditions, the generator applies the exact supplied distractor, obstacle, camera-delay, scale, acceleration, damping, and capture-distance parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "102-129",
+          "claim": "The generated public and private contracts share the initial claw, target, obstacle, chute, camera, and world state; full versus simplified is not inserted into the world challenge token."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit button event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "464-527",
+          "claim": "Simplified mode renders button controls and binds them directly to control, gripper, reset, or administrative submit handlers; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 425,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 uses two decoys, a crossbar-plus-post cage, camera delays [0, 1, 3], camera scale 21.0, acceleration 0.28, damping 0.80, and capture distance 0.82.",
+        "Full keyboard teleoperation: A/D move X-/X+, W/S move Y+/Y-, Q/E move Z-/Z+, C coasts one physics tick, Space brakes, F closes or releases the gripper, and R rewinds the gantry.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A keyboard axis, coast, or brake event synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard_teleoperation: every outcome-affecting A/D, W/S, Q/E, C, Space, F, and R event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target, two decoy identities, crossbar-plus-post geometry, and chute vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, target, braking, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoys, cage, chute, and claw for ordinary next-control selection; the [0, 1, 3] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "36-47",
+          "claim": "The exact level-3 profile has two decoys, a crossbar-plus-post cage, [0, 1, 3] camera delays, and the listed moderate inertial and capture parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Full keyboard teleoperation is implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "58-101",
+          "claim": "For non-level-4 conditions, the generator applies the exact supplied distractor, obstacle, camera-delay, scale, acceleration, damping, and capture-distance parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "102-129",
+          "claim": "The generated public and private contracts share the initial claw, target, obstacle, chute, camera, and world state; full versus simplified is not inserted into the world challenge token."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit control event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "514-552",
+          "claim": "Full-mode keyboard events are explicitly bound to the control, gripper, and reset functions; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 426,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 uses two decoys, a crossbar-plus-post cage, camera delays [0, 1, 3], camera scale 21.0, acceleration 0.28, damping 0.80, and capture distance 0.82.",
+        "Simplified visible controls: labelled X-/X+, Y-/Y+, and Z-/Z+ buttons, COAST ONE PHYSICS TICK, BRAKE / DAMP INERTIA, CLOSE GRIPPER or OPEN / RELEASE, and REWIND GANTRY.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A visible axis, coast, or brake button synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_control_buttons: every outcome-affecting X/Y/Z, coast, brake, gripper, and rewind button event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target, two decoy identities, crossbar-plus-post geometry, and chute vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, target, braking, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoys, cage, chute, and claw for ordinary next-control selection; the [0, 1, 3] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "36-47",
+          "claim": "The exact level-3 profile has two decoys, a crossbar-plus-post cage, [0, 1, 3] camera delays, and the listed moderate inertial and capture parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Simplified button controls are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "58-101",
+          "claim": "For non-level-4 conditions, the generator applies the exact supplied distractor, obstacle, camera-delay, scale, acceleration, damping, and capture-distance parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "102-129",
+          "claim": "The generated public and private contracts share the initial claw, target, obstacle, chute, camera, and world state; full versus simplified is not inserted into the world challenge token."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit button event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "464-527",
+          "claim": "Simplified mode renders button controls and binds them directly to control, gripper, reset, or administrative submit handlers; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 427,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 is the original profile: two decoys, the three-part obstacle cage, camera delays [0, 2, 4], seeded base camera scale and acceleration/damping choices, and capture distance 0.78.",
+        "Full keyboard teleoperation: A/D move X-/X+, W/S move Y+/Y-, Q/E move Z-/Z+, C coasts one physics tick, Space brakes, F closes or releases the gripper, and R rewinds the gantry.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A keyboard axis, coast, or brake event synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard_teleoperation: every outcome-affecting A/D, W/S, Q/E, C, Space, F, and R event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target, two decoy identities, three-part cage, delayed views, base inertial choices, and chute vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, braking, target, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoys, cage, chute, and claw for ordinary next-control selection; the [0, 2, 4] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "49-52",
+          "claim": "The exact level-4 profile is the original two-decoy, three-obstacle configuration with [0, 2, 4] feed delays and a 0.78 capture distance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Full keyboard teleoperation is implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "27-29",
+          "claim": "The generator preserves the original sequence for the level-4 reference rather than applying a new controlled profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "30-56",
+          "claim": "The level-4 world is seeded with varying target, chute, camera scale, acceleration, damping, and full obstacle state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit control event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "514-552",
+          "claim": "Full-mode keyboard events are explicitly bound to the control, gripper, and reset functions; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 428,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 is the original profile: two decoys, the three-part obstacle cage, camera delays [0, 2, 4], seeded base camera scale and acceleration/damping choices, and capture distance 0.78.",
+        "Simplified visible controls: labelled X-/X+, Y-/Y+, and Z-/Z+ buttons, COAST ONE PHYSICS TICK, BRAKE / DAMP INERTIA, CLOSE GRIPPER or OPEN / RELEASE, and REWIND GANTRY.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A visible axis, coast, or brake button synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_control_buttons: every outcome-affecting X/Y/Z, coast, brake, gripper, and rewind button event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target, two decoy identities, three-part cage, delayed views, base inertial choices, and chute vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, braking, target, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoys, cage, chute, and claw for ordinary next-control selection; the [0, 2, 4] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "49-52",
+          "claim": "The exact level-4 profile is the original two-decoy, three-obstacle configuration with [0, 2, 4] feed delays and a 0.78 capture distance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Simplified button controls are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "27-29",
+          "claim": "The generator preserves the original sequence for the level-4 reference rather than applying a new controlled profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "30-56",
+          "claim": "The level-4 world is seeded with varying target, chute, camera scale, acceleration, damping, and full obstacle state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit button event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "464-527",
+          "claim": "Simplified mode renders button controls and binds them directly to control, gripper, reset, or administrative submit handlers; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 429,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 uses four decoys, the dense cage with the added midrail, camera delays [0, 3, 6], camera scale 19.0, acceleration 0.26, damping 0.87, and capture distance 0.70.",
+        "Full keyboard teleoperation: A/D move X-/X+, W/S move Y+/Y-, Q/E move Z-/Z+, C coasts one physics tick, Space brakes, F closes or releases the gripper, and R rewinds the gantry.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A keyboard axis, coast, or brake event synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_full_keyboard_teleoperation: every outcome-affecting A/D, W/S, Q/E, C, Space, F, and R event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target, four decoy identities, dense cage and midrail, delayed views, higher retained inertia, narrow capture range, and chute vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, braking, target, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoys, dense cage, chute, and claw for ordinary next-control selection; the [0, 3, 6] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "54-65",
+          "claim": "The exact level-5 profile has four decoys, the dense obstacle profile, [0, 3, 6] camera delays, smaller projections, higher damping, and a 0.70 capture distance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Full keyboard teleoperation is implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "58-101",
+          "claim": "For non-level-4 conditions, the generator applies the exact supplied distractor, dense-obstacle, camera-delay, scale, acceleration, damping, and capture-distance parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "102-129",
+          "claim": "The generated public and private contracts share the initial claw, target, obstacle, chute, camera, and world state; full versus simplified is not inserted into the world challenge token."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit control event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "514-552",
+          "claim": "Full-mode keyboard events are explicitly bound to the control, gripper, and reset functions; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 430,
+      "public_environment_name": "Three-Camera Claw Machine",
+      "environment_id": "three_camera_claw_machine_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 uses four decoys, the dense cage with the added midrail, camera delays [0, 3, 6], camera scale 19.0, acceleration 0.26, damping 0.87, and capture distance 0.70.",
+        "Simplified visible controls: labelled X-/X+, Y-/Y+, and Z-/Z+ buttons, COAST ONE PHYSICS TICK, BRAKE / DAMP INERTIA, CLOSE GRIPPER or OPEN / RELEASE, and REWIND GANTRY.",
+        "The CERTIFY CCTV RETRIEVAL control submits the current transcript administratively. The runner allows 180 seconds with a 0 ms observation window and one captured frame."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs while the agent supplies no new input: position, velocity, gripper, object state, physics tick, and camera history remain fixed.",
+        "A visible axis, coast, or brake button synchronously invokes one physics tick; the camera delays then read action-produced history rather than advancing it independently.",
+        "After a failed certification, a 1.8-second timer only removes the failure overlay and restores a readout; it does not change the physical task state or an outcome-affecting opportunity."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_control_buttons: every outcome-affecting X/Y/Z, coast, brake, gripper, and rewind button event across seeds, rounds, and attempts.",
+        "The certification submission is administrative and is excluded from D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The seeded target, four decoy identities, dense cage and midrail, delayed views, higher retained inertia, narrow capture range, and chute vary across occurrences, so an observation-free policy using only its own action history cannot choose the correct route, braking, target, and release point."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible three-feed state exposes the marked artifact, decoys, dense cage, chute, and claw for ordinary next-control selection; the [0, 3, 6] camera offsets do not create autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No 0 < tau < Delta autonomous task-state transition exists. The only physics tick is executed synchronously after an input, and waiting leaves the claw and feeds unchanged, so no available action strictly loses value through non-clock task-state evolution."
+      },
+      "common_visible_process": "None. The feeds change only after an input has invoked a synchronous physics tick; while waiting, the current canvases and tick labels remain fixed. The delayed-feed display is a lookup into action-produced history, not a moving scene.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already returns No because clause (iii) fails; this configuration has no autonomous outcome phase for a pre-run-rate calculation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/env.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/task.json",
+        "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "54-65",
+          "claim": "The exact level-5 profile has four decoys, the dense obstacle profile, [0, 3, 6] camera delays, smaller projections, higher damping, and a 0.70 capture distance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/controls.json",
+          "lines": "68-81",
+          "claim": "Simplified button controls are implemented and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "58-101",
+          "claim": "For non-level-4 conditions, the generator applies the exact supplied distractor, dense-obstacle, camera-delay, scale, acceleration, damping, and capture-distance parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py",
+          "lines": "102-129",
+          "claim": "The generated public and private contracts share the initial claw, target, obstacle, chute, camera, and world state; full versus simplified is not inserted into the world challenge token."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "78-180",
+          "claim": "Camera frames are history lookups and each physics tick is reached synchronously from an explicit button event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/three_camera_claw_machine.js",
+          "lines": "464-527",
+          "claim": "Simplified mode renders button controls and binds them directly to control, gripper, reset, or administrative submit handlers; no autonomous physics scheduler is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/three_camera_claw_machine.py",
+          "lines": "71-145",
+          "claim": "The grader replays only submitted control, physics-tick, gripper, and reset events and evaluates the final delivery."
+        },
+        {
+          "path": "weird_captcha_gym/environments/three_camera_claw_machine_env/tasks/three_camera_claw_machine_seed_0001/verifier.py",
+          "lines": "1-18",
+          "claim": "The verifier delegates to the exported-result loader and claw grader, with no additional autonomous task process."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

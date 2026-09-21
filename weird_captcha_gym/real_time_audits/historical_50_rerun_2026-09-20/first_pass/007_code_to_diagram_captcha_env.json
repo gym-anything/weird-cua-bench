@@ -1,0 +1,1047 @@
+{
+  "case_index": 7,
+  "environment_id": "code_to_diagram_captcha_env",
+  "public_environment_name": "Live Control-Flow Wiring Lab",
+  "configuration_reports": [
+    {
+      "case_index": 61,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Two visible probe selectors",
+        "STEP DEBUGGER: five state-advancing clicks for each selected probe",
+        "Direct-drag each of six output ports to a destination node input",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 1400 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-full-drag",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-full-drag, the correct destination for each of the six generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final six wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 1400 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every drag target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 1400 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a drag connection. The six drag connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire drags; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "10-22; 81-94",
+          "claim": "Difficulty 1 has two probes, five trace steps per run, six edges, and a 1400 ms transient erase; full mode is direct dragging and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-214; 275-330",
+          "claim": "The controlled topology contract fixes the six-node, one-decision, two-probe, five-step, six-edge profile and exports visible nodes separately from private transitions while retaining the transient erase value."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "123-167; 191-260; 319-405",
+          "claim": "Full mode starts a drag, simplified mode is rejected by the drag handler, debugger steps are stored before the timeout, wiring remains available, and the full-mode pointer-up handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 62,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Two visible probe selectors",
+        "STEP DEBUGGER: five state-advancing clicks for each selected probe",
+        "Click an output port, then click a destination node input for each of six directed wires",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 1400 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-simplified-click-pair",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-simplified-click-pair, the correct destination for each of the six generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final six wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 1400 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every click target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 1400 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a click-pair connection. The six click-pair connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire click pairs; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "10-22; 81-94",
+          "claim": "Difficulty 1 has two probes, five trace steps per run, six edges, and a 1400 ms transient erase; simplified mode is the output-port click followed by destination-input click and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-214; 275-330",
+          "claim": "The controlled topology contract fixes the six-node, one-decision, two-probe, five-step, six-edge profile and exports visible nodes separately from private transitions while retaining the transient erase value."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "141-167; 191-260; 319-405",
+          "claim": "Simplified mode selects a port and completes on an input click, debugger steps are stored before the timeout, wiring remains available, and the click-pair handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 63,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Two visible probe selectors",
+        "STEP DEBUGGER: six state-advancing clicks for each selected probe",
+        "Direct-drag each of seven output ports to a destination node input",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 1100 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-full-drag",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-full-drag, the correct destination for each of the seven generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final seven wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 1100 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every drag target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 1100 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a drag connection. The seven drag connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire drags; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "24-36; 81-94",
+          "claim": "Difficulty 2 has two probes, six trace steps per run, seven edges, and a 1100 ms transient erase; full mode is direct dragging and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-214; 275-330",
+          "claim": "The controlled topology contract fixes the seven-node, one-decision, two-probe, six-step, seven-edge profile and exports visible nodes separately from private transitions while retaining the transient erase value."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "123-167; 191-260; 319-405",
+          "claim": "Full mode starts a drag, debugger steps are stored before the timeout, wiring remains available, and the full-mode pointer-up handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 64,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Two visible probe selectors",
+        "STEP DEBUGGER: six state-advancing clicks for each selected probe",
+        "Click an output port, then click a destination node input for each of seven directed wires",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 1100 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-simplified-click-pair",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-simplified-click-pair, the correct destination for each of the seven generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final seven wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 1100 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every click target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 1100 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a click-pair connection. The seven click-pair connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire click pairs; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "24-36; 81-94",
+          "claim": "Difficulty 2 has two probes, six trace steps per run, seven edges, and a 1100 ms transient erase; simplified mode is the output-port click followed by destination-input click and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-214; 275-330",
+          "claim": "The controlled topology contract fixes the seven-node, one-decision, two-probe, six-step, seven-edge profile and exports visible nodes separately from private transitions while retaining the transient erase value."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "141-167; 191-260; 319-405",
+          "claim": "Simplified mode selects a port and completes on an input click, debugger steps are stored before the timeout, wiring remains available, and the click-pair handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 65,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Four visible probe selectors",
+        "STEP DEBUGGER: six state-advancing clicks for each selected probe",
+        "Direct-drag each of nine output ports to a destination node input",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 900 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-full-drag",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-full-drag, the correct destination for each of the nine generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final nine wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 900 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every drag target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 900 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a drag connection. The nine drag connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire drags; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "38-50; 81-94",
+          "claim": "Difficulty 3 has four probes, six trace steps per run, nine edges, and a 900 ms transient erase; full mode is direct dragging and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-176; 215-239; 275-330",
+          "claim": "The controlled topology contract fixes the eight-node, two-decision, four-probe, six-step, nine-edge profile and exports visible nodes separately from private transitions while retaining the transient erase value."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "123-167; 191-260; 319-405",
+          "claim": "Full mode starts a drag, debugger steps are stored before the timeout, wiring remains available, and the full-mode pointer-up handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 66,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Four visible probe selectors",
+        "STEP DEBUGGER: six state-advancing clicks for each selected probe",
+        "Click an output port, then click a destination node input for each of nine directed wires",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 900 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-simplified-click-pair",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-simplified-click-pair, the correct destination for each of the nine generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final nine wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 900 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every click target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 900 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a click-pair connection. The nine click-pair connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire click pairs; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "38-50; 81-94",
+          "claim": "Difficulty 3 has four probes, six trace steps per run, nine edges, and a 900 ms transient erase; simplified mode is the output-port click followed by destination-input click and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-176; 215-239; 275-330",
+          "claim": "The controlled topology contract fixes the eight-node, two-decision, four-probe, six-step, nine-edge profile and exports visible nodes separately from private transitions while retaining the transient erase value."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "141-167; 191-260; 319-405",
+          "claim": "Simplified mode selects a port and completes on an input click, debugger steps are stored before the timeout, wiring remains available, and the click-pair handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 67,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Four visible probe selectors",
+        "STEP DEBUGGER: seven state-advancing clicks for each selected probe",
+        "Direct-drag each of ten output ports to a destination node input",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 720 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-full-drag",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-full-drag, the correct destination for each of the ten generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final ten wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 720 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every drag target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 720 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a drag connection. The ten drag connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire drags; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "52-64; 81-94",
+          "claim": "Difficulty 4 preserves the baseline nine-node, two-decision, four-probe, seven-step, ten-edge controller with a 720 ms transient erase; full mode is direct dragging and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "335-350; 351-448",
+          "claim": "The baseline branch validates the exact level-4 contract, generates the nine-node/two-gate graph, records four seven-step probe runs, and exports the private transition graph for independent grading."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "123-167; 191-260; 319-405",
+          "claim": "Full mode starts a drag, debugger steps are stored before the timeout, wiring remains available, and the full-mode pointer-up handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 68,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Four visible probe selectors",
+        "STEP DEBUGGER: seven state-advancing clicks for each selected probe",
+        "Click an output port, then click a destination node input for each of ten directed wires",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 720 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-simplified-click-pair",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-simplified-click-pair, the correct destination for each of the ten generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final ten wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 720 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every click target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 720 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a click-pair connection. The ten click-pair connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire click pairs; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "52-64; 81-94",
+          "claim": "Difficulty 4 preserves the baseline nine-node, two-decision, four-probe, seven-step, ten-edge controller with a 720 ms transient erase; simplified mode is the output-port click followed by destination-input click and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "335-350; 351-448",
+          "claim": "The baseline branch validates the exact level-4 contract, generates the nine-node/two-gate graph, records four seven-step probe runs, and exports the private transition graph for independent grading."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "141-167; 191-260; 319-405",
+          "claim": "Simplified mode selects a port and completes on an input click, debugger steps are stored before the timeout, wiring remains available, and the click-pair handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 250-253",
+          "claim": "The visible bus blink, tape presentation, active-node transition, and failure flash are CSS presentation effects; the tape is visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 69,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Eight visible probe selectors",
+        "STEP DEBUGGER: eight state-advancing clicks for each selected probe",
+        "Direct-drag each of thirteen output ports to a destination node input",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 500 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-full-drag",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-full-drag, the correct destination for each of the thirteen generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, equal to the erase delay, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final thirteen wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 500 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every drag target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 500 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a drag connection. The thirteen drag connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire drags; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "66-79; 81-94",
+          "claim": "Difficulty 5 has eight probes, eight trace steps per run, thirteen edges, and a 500 ms transient erase; full mode is direct dragging and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-176; 241-295; 275-330",
+          "claim": "The controlled topology contract fixes the eleven-node, three-decision, eight-probe, eight-step, thirteen-edge profile, verifies all decision combinations, and exports visible nodes separately from private transitions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "123-167; 191-260; 319-405",
+          "claim": "Full mode starts a drag, debugger steps are stored before the timeout, wiring remains available, and the full-mode pointer-up handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 233; 250-253",
+          "claim": "The thirteen-edge layout adjustment and visible bus/tape/active-node animations are presentation effects; the tape remains visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 70,
+      "public_environment_name": "Live Control-Flow Wiring Lab",
+      "environment_id": "code_to_diagram_captcha_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Eight visible probe selectors",
+        "STEP DEBUGGER: eight state-advancing clicks for each selected probe",
+        "Click an output port, then click a destination node input for each of thirteen directed wires",
+        "Patch-ledger remove controls for disconnecting or reconnecting wires",
+        "VALIDATE HARNESS submission"
+      ],
+      "autonomous_processes": [
+        "After each debugger step, a task-clock timeout fires after 500 ms and changes the active-node highlight, current register, and that tape row to an erased presentation; the recorded step remains in the model.",
+        "Each later debugger step synchronously marks prior tape rows STATE ERASED and the visible tape keeps at most seven rows; this change is caused by the new step action, not by waiting.",
+        "The transient-bus indicator blinks on a 1.1 s CSS loop and the active-node styles transition for 0.15 s; neither changes the controller or wire state.",
+        "With no new task action, there is no autonomous program transition, physics, cursor movement, wire movement, deadline, or action lockout."
+      ],
+      "grouped_control_modes": [
+        "probe-selection",
+        "debugger-step",
+        "wire-connect-simplified-click-pair",
+        "wire-disconnect",
+        "validate-harness"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D = wire-connect-simplified-click-pair, the correct destination for each of the thirteen generated ports varies with the private transition graph. The public node projection removes transitions, so an I_t-only policy cannot choose the correct destination across generated histories. The debugger-step mode has the fixed action STEP DEBUGGER and is not an alternative observation-dependent witness."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The configured observation bound is 500 ms, equal to the erase delay, while the visible step display and tape expose only the current node, branch, and accumulator. Earlier rows are rewritten as STATE ERASED and the tape is capped at seven rows; the complete source-to-destination mapping needed for the final thirteen wires is therefore outside a bounded recent window in still-solvable histories. A policy would need retained visual history."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The 500 ms timeout changes only the DOM presentation. stepProbe appends the step before scheduling the timeout, and the callback does not change currentRun, run.steps, probeRuns, coverage, wires, or the wire controls. STEP DEBUGGER remains available before HALT and every click target remains available throughout, so waiting does not strictly reduce the value or advantage of an outcome-affecting action."
+      },
+      "common_visible_process": "The only candidate common process is the 500 ms transient-register timeout after STEP DEBUGGER. It is visibly evidenced by the node highlight and current/tape text changing to STATE ERASED, but it hides a recorded step rather than changing the generated controller or closing a click-pair connection. The thirteen click-pair connections remain actionable indefinitely; the 1.1 s header blink is unrelated and cannot witness clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because the transient timeout does not degrade an outcome-affecting action, so no pre-run percentage is needed. The successful route remains action-driven through probe steps and wire click pairs; no autonomous outcome phase is defined.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+        "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+          "lines": "66-79; 81-94",
+          "claim": "Difficulty 5 has eight probes, eight trace steps per run, thirteen edges, and a 500 ms transient erase; simplified mode is the output-port click followed by destination-input click and the observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+          "lines": "159-176; 241-295; 275-330",
+          "claim": "The controlled topology contract fixes the eleven-node, three-decision, eight-probe, eight-step, thirteen-edge profile, verifies all decision combinations, and exports visible nodes separately from private transitions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+          "lines": "141-167; 191-260; 319-405",
+          "claim": "Simplified mode selects a port and completes on an input click, debugger steps are stored before the timeout, wiring remains available, and the click-pair handler connects the selected port to an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+          "lines": "90; 159-203; 233; 250-253",
+          "claim": "The thirteen-edge layout adjustment and visible bus/tape/active-node animations are presentation effects; the tape remains visually bounded and old rows are not persistent evidence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-312",
+          "claim": "setTimeout is task-clock scheduled and timers drain only while the task is running; paused evaluation queues the timer rather than creating a separate mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+          "lines": "25-37; 139-226",
+          "claim": "The grader enforces the selected input source, independently replays every probe, and grades the exact persistent wire transcript and final wire inventory."
+        },
+        {
+          "path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+          "lines": "21-42",
+          "claim": "The verifier loads the exported result and invokes the independent debugger/wiring replay grader."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

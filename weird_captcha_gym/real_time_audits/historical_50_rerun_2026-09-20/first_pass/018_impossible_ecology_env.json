@@ -1,0 +1,757 @@
+{
+  "case_index": 18,
+  "environment_id": "impossible_ecology_env",
+  "public_environment_name": "Impossible Ecology",
+  "configuration_reports": [
+    {
+      "case_index": 171,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE and FOOD field buttons; two organisms and their matching sanctuary rings are visible.",
+        "Full arena-pointer input: select a field, then pointer-down/move/up on the 1000x430 arena; both uncaptured organisms respond to the shared lure.",
+        "Optional 2-field calibration film at 850 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1550-tick budget, damping 0.80, max speed 4.3, capture speed 5.5, sanctuary radius 48, obstacle radius 34."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 850 ms; positions are not advanced and controls are disabled.",
+        "Active drag: every 50 ms, the selected field accelerates both uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE or FOOD while inactive",
+        "witness D: active held arena-pointer drag, with pointer_down/move setting the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The arena visibly supplies organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and up to 26 trail points. Six chronological frames across the 800 ms window expose the current displacement and velocity trend, so g can choose the next lure adjustment or release for the state at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between pointer events. The same process supplies the recent-frame evidence for prediction and makes a near-capture release opportunity degrade during the delay.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "10-31; 128-141", "claim": "Difficulty 1 activates two fields and two organisms; full interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 171-210; 247-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, full pointer events control the lure, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the full arena_pointer input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."},
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py", "lines": "21-37", "claim": "The task verifier loads the exported UI result and applies the independent ecology grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 172,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE and FOOD field buttons; two organisms and their matching sanctuary rings are visible.",
+        "Simplified coordinate-pad input: select a field, then pointer-down/move/up on the visible scaled pad; each pad position maps directly to the same 1000x430 lure coordinate as the arena.",
+        "Optional 2-field calibration film at 850 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1550-tick budget, damping 0.80, max speed 4.3, capture speed 5.5, sanctuary radius 48, obstacle radius 34."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 850 ms; positions are not advanced and controls are disabled.",
+        "Active coordinate-pad drag: every 50 ms, the selected field accelerates both uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE or FOOD while inactive",
+        "witness D: active held coordinate-pad drag mapped to the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The screenshot shows the arena, organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and trails; the coordinate pad visibly exposes the same lure coordinates. Six chronological frames across the 800 ms window expose motion, so g can choose the next pad lure adjustment or release for t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up on the coordinate pad. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between coordinate-pad events. The pad preserves the full arena lure trajectory, so the same recent-frame evidence and degrading release opportunity apply.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "10-31; 128-141", "claim": "Difficulty 1 activates two fields and two organisms; simplified interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 163-179; 212-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, the simplified pad is converted to arena coordinates and supplies pointer events, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css", "lines": "108-149", "claim": "The simplified coordinate pad is a visible 1000:430 scaled surface with an active lure marker."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the coordinate_pad input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 173,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE and FOOD field buttons; three organisms and their matching sanctuary rings are visible.",
+        "Full arena-pointer input: select a field, then pointer-down/move/up on the 1000x430 arena; all uncaptured organisms respond to the shared lure.",
+        "Optional 2-field calibration film at 760 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1500-tick budget, damping 0.81, max speed 4.5, capture speed 5.2, sanctuary radius 44, obstacle radius 40."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 760 ms; positions are not advanced and controls are disabled.",
+        "Active drag: every 50 ms, the selected field accelerates all three uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE or FOOD while inactive",
+        "witness D: active held arena-pointer drag, with pointer_down/move setting the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The arena visibly supplies organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and up to 26 trail points. Six chronological frames across the 800 ms window expose the current displacement and velocity trend, so g can choose the next lure adjustment or release for the state at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between pointer events. The same process supplies the recent-frame evidence for prediction and makes a near-capture release opportunity degrade during the delay.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "33-54; 128-141", "claim": "Difficulty 2 activates two fields and three organisms; full interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 171-210; 247-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, full pointer events control the lure, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the full arena_pointer input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."},
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py", "lines": "21-37", "claim": "The task verifier loads the exported UI result and applies the independent ecology grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 174,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE and FOOD field buttons; three organisms and their matching sanctuary rings are visible.",
+        "Simplified coordinate-pad input: select a field, then pointer-down/move/up on the visible scaled pad; each pad position maps directly to the same 1000x430 lure coordinate as the arena.",
+        "Optional 2-field calibration film at 760 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1500-tick budget, damping 0.81, max speed 4.5, capture speed 5.2, sanctuary radius 44, obstacle radius 40."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 760 ms; positions are not advanced and controls are disabled.",
+        "Active coordinate-pad drag: every 50 ms, the selected field accelerates all three uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE or FOOD while inactive",
+        "witness D: active held coordinate-pad drag mapped to the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The screenshot shows the arena, organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and trails; the coordinate pad visibly exposes the same lure coordinates. Six chronological frames across the 800 ms window expose motion, so g can choose the next pad lure adjustment or release for t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up on the coordinate pad. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between coordinate-pad events. The pad preserves the full arena lure trajectory, so the same recent-frame evidence and degrading release opportunity apply.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "33-54; 128-141", "claim": "Difficulty 2 activates two fields and three organisms; simplified interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 163-179; 212-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, the simplified pad is converted to arena coordinates and supplies pointer events, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css", "lines": "108-149", "claim": "The simplified coordinate pad is a visible 1000:430 scaled surface with an active lure marker."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the coordinate_pad input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 175,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE, FOOD, and LIGHT field buttons; four organisms and their matching sanctuary rings are visible.",
+        "Full arena-pointer input: select a field, then pointer-down/move/up on the 1000x430 arena; all uncaptured organisms respond to the shared lure.",
+        "Optional 3-field calibration film at 690 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1450-tick budget, damping 0.82, max speed 4.65, capture speed 5.0, sanctuary radius 41, obstacle radius 44."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 690 ms; positions are not advanced and controls are disabled.",
+        "Active drag: every 50 ms, the selected field accelerates all four uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE, FOOD, or LIGHT while inactive",
+        "witness D: active held arena-pointer drag, with pointer_down/move setting the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The arena visibly supplies organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and up to 26 trail points. Six chronological frames across the 800 ms window expose the current displacement and velocity trend, so g can choose the next lure adjustment or release for the state at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between pointer events. The same process supplies the recent-frame evidence for prediction and makes a near-capture release opportunity degrade during the delay.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "56-77; 128-141", "claim": "Difficulty 3 activates three fields and four organisms; full interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 171-210; 247-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, full pointer events control the lure, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the full arena_pointer input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."},
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py", "lines": "21-37", "claim": "The task verifier loads the exported UI result and applies the independent ecology grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 176,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE, FOOD, and LIGHT field buttons; four organisms and their matching sanctuary rings are visible.",
+        "Simplified coordinate-pad input: select a field, then pointer-down/move/up on the visible scaled pad; each pad position maps directly to the same 1000x430 lure coordinate as the arena.",
+        "Optional 3-field calibration film at 690 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1450-tick budget, damping 0.82, max speed 4.65, capture speed 5.0, sanctuary radius 41, obstacle radius 44."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 690 ms; positions are not advanced and controls are disabled.",
+        "Active coordinate-pad drag: every 50 ms, the selected field accelerates all four uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE, FOOD, or LIGHT while inactive",
+        "witness D: active held coordinate-pad drag mapped to the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The screenshot shows the arena, organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and trails; the coordinate pad visibly exposes the same lure coordinates. Six chronological frames across the 800 ms window expose motion, so g can choose the next pad lure adjustment or release for t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up on the coordinate pad. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between coordinate-pad events. The pad preserves the full arena lure trajectory, so the same recent-frame evidence and degrading release opportunity apply.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "56-77; 128-141", "claim": "Difficulty 3 activates three fields and four organisms; simplified interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 163-179; 212-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, the simplified pad is converted to arena coordinates and supplies pointer events, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css", "lines": "108-149", "claim": "The simplified coordinate pad is a visible 1000:430 scaled surface with an active lure marker."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the coordinate_pad input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 177,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE, FOOD, and LIGHT field buttons; five organisms and their matching sanctuary rings are visible.",
+        "Full arena-pointer input: select a field, then pointer-down/move/up on the 1000x430 arena; all uncaptured organisms respond to the shared lure.",
+        "Optional 3-field calibration film at 620 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1400-tick budget, damping 0.83, max speed 4.8, capture speed 5.0, sanctuary radius 38, obstacle radius 48."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 620 ms; positions are not advanced and controls are disabled.",
+        "Active drag: every 50 ms, the selected field accelerates all five uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE, FOOD, or LIGHT while inactive",
+        "witness D: active held arena-pointer drag, with pointer_down/move setting the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The arena visibly supplies organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and up to 26 trail points. Six chronological frames across the 800 ms window expose the current displacement and velocity trend, so g can choose the next lure adjustment or release for the state at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between pointer events. The same process supplies the recent-frame evidence for prediction and makes a near-capture release opportunity degrade during the delay.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "79-100; 128-141", "claim": "Difficulty 4 activates three fields and five organisms; full interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 171-210; 247-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, full pointer events control the lure, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the full arena_pointer input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."},
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py", "lines": "21-37", "claim": "The task verifier loads the exported UI result and applies the independent ecology grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 178,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE, FOOD, and LIGHT field buttons; five organisms and their matching sanctuary rings are visible.",
+        "Simplified coordinate-pad input: select a field, then pointer-down/move/up on the visible scaled pad; each pad position maps directly to the same 1000x430 lure coordinate as the arena.",
+        "Optional 3-field calibration film at 620 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1400-tick budget, damping 0.83, max speed 4.8, capture speed 5.0, sanctuary radius 38, obstacle radius 48."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 620 ms; positions are not advanced and controls are disabled.",
+        "Active coordinate-pad drag: every 50 ms, the selected field accelerates all five uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE, FOOD, or LIGHT while inactive",
+        "witness D: active held coordinate-pad drag mapped to the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The screenshot shows the arena, organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and trails; the coordinate pad visibly exposes the same lure coordinates. Six chronological frames across the 800 ms window expose motion, so g can choose the next pad lure adjustment or release for t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up on the coordinate pad. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between coordinate-pad events. The pad preserves the full arena lure trajectory, so the same recent-frame evidence and degrading release opportunity apply.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "79-100; 128-141", "claim": "Difficulty 4 activates three fields and five organisms; simplified interaction and the 800 ms/6-frame observation schedule are enabled."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 163-179; 212-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, the simplified pad is converted to arena coordinates and supplies pointer events, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css", "lines": "108-149", "claim": "The simplified coordinate pad is a visible 1000:430 scaled surface with an active lure marker."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the coordinate_pad input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 179,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE, FOOD, and LIGHT field buttons; six organisms and their matching sanctuary rings are visible.",
+        "Full arena-pointer input: select a field, then pointer-down/move/up on the 1000x430 arena; all uncaptured organisms respond to the shared lure.",
+        "Optional 3-field calibration film at 520 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1250-tick budget, damping 0.87, max speed 5.2, capture speed 3.8, sanctuary radius 34, obstacle radius 56."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 520 ms; positions are not advanced and controls are disabled.",
+        "Active drag: every 50 ms, the selected field accelerates all six uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE, FOOD, or LIGHT while inactive",
+        "witness D: active held arena-pointer drag, with pointer_down/move setting the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The arena visibly supplies organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and up to 26 trail points. Six chronological frames across the 800 ms window expose the current displacement and velocity trend, so g can choose the next lure adjustment or release for the state at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between pointer events. The same process supplies the recent-frame evidence for prediction and makes a near-capture release opportunity degrade during the delay.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "102-125; 128-141", "claim": "Difficulty 5 activates three fields and six organisms, tighter capture and obstacle parameters, full interaction, and the 800 ms/6-frame observation schedule."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 171-210; 247-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, full pointer events control the lure, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the full arena_pointer input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."},
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py", "lines": "21-37", "claim": "The task verifier loads the exported UI result and applies the independent ecology grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 180,
+      "public_environment_name": "Impossible Ecology",
+      "environment_id": "impossible_ecology_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "CLIMATE, FOOD, and LIGHT field buttons; six organisms and their matching sanctuary rings are visible.",
+        "Simplified coordinate-pad input: select a field, then pointer-down/move/up on the visible scaled pad; each pad position maps directly to the same 1000x430 lure coordinate as the arena.",
+        "Optional 3-field calibration film at 520 ms per field, RESET ECOSYSTEM, and CERTIFY STABLE ECOLOGY.",
+        "Active profile: 50 ms physics ticks, 1250-tick budget, damping 0.87, max speed 5.2, capture speed 3.8, sanctuary radius 34, obstacle radius 56."
+      ],
+      "autonomous_processes": [
+        "Idle with no selected field and zero velocity: physicsTick returns, so no task state changes.",
+        "Calibration film: requestAnimationFrame shows each field's signed visual offset for 520 ms; positions are not advanced and controls are disabled.",
+        "Active coordinate-pad drag: every 50 ms, the selected field accelerates all six uncaptured organisms and damping, speed limits, obstacle collision, trails, and sanctuary capture update without a new action.",
+        "After pointer_up: field acceleration stops, but residual inertia continues 50 ms ticks until motion decays; positions, trails, and possible captures can still change.",
+        "After all captures, active motion stops; certification submits the recorded result and is administrative."
+      ],
+      "grouped_control_modes": [
+        "field selection: CLIMATE, FOOD, or LIGHT while inactive",
+        "witness D: active held coordinate-pad drag mapped to the global lure",
+        "pointer release: pointer_up ends field acceleration and leaves inertia to decay",
+        "RESET ECOSYSTEM",
+        "calibration film: visual-only and not outcome-affecting",
+        "CERTIFY STABLE ECOLOGY: administrative submission"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator randomizes rotation, initial radii and tangential offsets, sanctuary positions, signed field assignments, and response magnitudes. A policy q using only its own actions and times cannot choose the field-lure correction or release timing that is optimal for every resulting visible position and velocity in D."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The screenshot shows the arena, organism labels and positions, matching sanctuary rings, the solid nursery, the selected field, and trails; the coordinate pad visibly exposes the same lure coordinates. Six chronological frames across the 800 ms window expose motion, so g can choose the next pad lure adjustment or release for t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D while an organism is near its sanctuary and below the capture-speed threshold while the held lure still accelerates it, with a equal to pointer_up on the coordinate pad. If no new action arrives, 50 ms physics ticks change its position and speed; for some H_t and 0<tau<400 it leaves the capture band or becomes too fast while success remains possible, reducing Q for pointer_up or its advantage over no-op."
+      },
+      "common_visible_process": "The common process is active held-lure physics: visible organisms move under the selected global field, leave trails, collide with the solid nursery, and can enter or leave their sanctuary capture bands between coordinate-pad events. The pad preserves the full arena lure trajectory, so the same recent-frame evidence and degrading release opportunity apply.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The calibration film is visual-only and restores positions. The outcome phase is the 50 ms field physics, and the generated organisms have distinct signed primary responses and separate sanctuary centers; a fixed selected field and lure cannot provide the continuing state-dependent corrections required for at least half of instances. No percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_ecology_env/controls.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/env.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_ecology_env/tasks/impossible_ecology_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_ecology_env/controls.json", "lines": "102-125; 128-141", "claim": "Difficulty 5 activates three fields and six organisms, tighter capture and obstacle parameters, simplified interaction, and the 800 ms/6-frame observation schedule."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_ecology.py", "lines": "43-143; 196-201", "claim": "The selected profile controls the field/organism counts and physics parameters; seeded geometry and distinct signed primary responses are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.js", "lines": "76-153; 163-179; 212-268; 300-321; 361-397", "claim": "Held-field physics advances organisms and captures them, the simplified pad is converted to arena coordinates and supplies pointer events, calibration only renders a film, trails are drawn, and the 50 ms timer runs the ticks."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_ecology.css", "lines": "108-149", "claim": "The simplified coordinate pad is a visible 1000:430 scaled surface with an active lure marker."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_ecology.py", "lines": "63-95; 117-244", "claim": "The independent replay applies the same acceleration, damping, collision, speed, and capture rules and requires the coordinate_pad input source."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/impossible_ecology.py", "lines": "51-86; 89-121", "claim": "The implementation solver repeatedly reads live organism state and moves the held pointer every 105 ms before releasing, corroborating continuous state-dependent correction."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

@@ -1,0 +1,727 @@
+{
+  "case_index": 15,
+  "environment_id": "flat_prisoner_env",
+  "public_environment_name": "The Flat Prisoner",
+  "configuration_reports": [
+    {
+      "case_index": 141,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: continuous canvas pointer drag in ORBIT DRAG or PAN DRAG, mouse-wheel dolly, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 1 parameters: 20 ms physics ticks; move_speed=90, gravity=650, jump_velocity=-330, exit_radius=36, maximum_deaths=6, minimum_traversal_ticks=80, maximum_traversal_ticks=2400, minimum_key_transitions=3, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: full-mode canvas orbit/pan drags and mouse-wheel dolly while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 90 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least three transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "6-6", "claim": "Difficulty 1 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "14-16", "claim": "Full interaction is implemented as drag-orbit/pan plus wheel dolly, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py", "lines": "123-145", "claim": "The normal visible workflow holds right and inserts two jumps during the live fixed-step traversal after freezing."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 142,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: discrete orbit buttons in 6° steps, pan buttons in 0.8-unit steps, dolly − NEAR/+ FAR buttons in 1.0-unit steps, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 1 parameters: 20 ms physics ticks; move_speed=90, gravity=650, jump_velocity=-330, exit_radius=36, maximum_deaths=6, minimum_traversal_ticks=80, maximum_traversal_ticks=2400, minimum_key_transitions=3, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: simplified-mode discrete orbit, pan, and dolly buttons while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 90 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least three transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "6-6", "claim": "Difficulty 1 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "13-16", "claim": "Simplified interaction is discrete camera buttons, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "153-157", "claim": "Simplified mode renders discrete camera controls and installs their button handlers while retaining the shared keyboard traversal."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 143,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: continuous canvas pointer drag in ORBIT DRAG or PAN DRAG, mouse-wheel dolly, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 2 parameters: 20 ms physics ticks; move_speed=100, gravity=700, jump_velocity=-334, exit_radius=30, maximum_deaths=5, minimum_traversal_ticks=100, maximum_traversal_ticks=2200, minimum_key_transitions=4, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: full-mode canvas orbit/pan drags and mouse-wheel dolly while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 100 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least four transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "7-7", "claim": "Difficulty 2 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "14-16", "claim": "Full interaction is implemented as drag-orbit/pan plus wheel dolly, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py", "lines": "123-145", "claim": "The normal visible workflow holds right and inserts two jumps during the live fixed-step traversal after freezing."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 144,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: discrete orbit buttons in 4.5° steps, pan buttons in 0.6-unit steps, dolly − NEAR/+ FAR buttons in 0.75-unit steps, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 2 parameters: 20 ms physics ticks; move_speed=100, gravity=700, jump_velocity=-334, exit_radius=30, maximum_deaths=5, minimum_traversal_ticks=100, maximum_traversal_ticks=2200, minimum_key_transitions=4, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: simplified-mode discrete orbit, pan, and dolly buttons while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 100 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least four transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "7-7", "claim": "Difficulty 2 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "13-16", "claim": "Simplified interaction is discrete camera buttons, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "153-157", "claim": "Simplified mode renders discrete camera controls and installs their button handlers while retaining the shared keyboard traversal."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 145,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: continuous canvas pointer drag in ORBIT DRAG or PAN DRAG, mouse-wheel dolly, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 3 parameters: 20 ms physics ticks; move_speed=108, gravity=740, jump_velocity=-336, exit_radius=27, maximum_deaths=4, minimum_traversal_ticks=115, maximum_traversal_ticks=2000, minimum_key_transitions=4, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: full-mode canvas orbit/pan drags and mouse-wheel dolly while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 108 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least four transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "8-8", "claim": "Difficulty 3 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "14-16", "claim": "Full interaction is implemented as drag-orbit/pan plus wheel dolly, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py", "lines": "123-145", "claim": "The normal visible workflow holds right and inserts two jumps during the live fixed-step traversal after freezing."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 146,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: discrete orbit buttons in 3.75° steps, pan buttons in 0.5-unit steps, dolly − NEAR/+ FAR buttons in 0.625-unit steps, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 3 parameters: 20 ms physics ticks; move_speed=108, gravity=740, jump_velocity=-336, exit_radius=27, maximum_deaths=4, minimum_traversal_ticks=115, maximum_traversal_ticks=2000, minimum_key_transitions=4, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: simplified-mode discrete orbit, pan, and dolly buttons while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 108 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least four transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "8-8", "claim": "Difficulty 3 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "13-16", "claim": "Simplified interaction is discrete camera buttons, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "153-157", "claim": "Simplified mode renders discrete camera controls and installs their button handlers while retaining the shared keyboard traversal."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 147,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: continuous canvas pointer drag in ORBIT DRAG or PAN DRAG, mouse-wheel dolly, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 4 parameters: 20 ms physics ticks; move_speed=116, gravity=780, jump_velocity=-338, exit_radius=24, maximum_deaths=3, minimum_traversal_ticks=130, maximum_traversal_ticks=1800, minimum_key_transitions=5, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: full-mode canvas orbit/pan drags and mouse-wheel dolly while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 116 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least five transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "9-9", "claim": "Difficulty 4 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "14-16", "claim": "Full interaction is implemented as drag-orbit/pan plus wheel dolly, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py", "lines": "123-145", "claim": "The normal visible workflow holds right and inserts two jumps during the live fixed-step traversal after freezing."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 148,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: discrete orbit buttons in 3° steps, pan buttons in 0.4-unit steps, dolly − NEAR/+ FAR buttons in 0.5-unit steps, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 4 parameters: 20 ms physics ticks; move_speed=116, gravity=780, jump_velocity=-338, exit_radius=24, maximum_deaths=3, minimum_traversal_ticks=130, maximum_traversal_ticks=1800, minimum_key_transitions=5, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: simplified-mode discrete orbit, pan, and dolly buttons while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 116 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least five transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "9-9", "claim": "Difficulty 4 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "13-16", "claim": "Simplified interaction is discrete camera buttons, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "153-157", "claim": "Simplified mode renders discrete camera controls and installs their button handlers while retaining the shared keyboard traversal."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 149,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: continuous canvas pointer drag in ORBIT DRAG or PAN DRAG, mouse-wheel dolly, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 5 parameters: 20 ms physics ticks; move_speed=132, gravity=860, jump_velocity=-344, exit_radius=18, maximum_deaths=2, minimum_traversal_ticks=80, maximum_traversal_ticks=1400, minimum_key_transitions=5, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: full-mode canvas orbit/pan drags and mouse-wheel dolly while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 132 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least five transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "10-10", "claim": "Difficulty 5 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "14-16", "claim": "Full interaction is implemented as drag-orbit/pan plus wheel dolly, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py", "lines": "123-145", "claim": "The normal visible workflow holds right and inserts two jumps during the live fixed-step traversal after freezing."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 150,
+      "public_environment_name": "The Flat Prisoner",
+      "environment_id": "flat_prisoner_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Before freezing: discrete orbit buttons in 2° steps, pan buttons in 0.3-unit steps, dolly − NEAR/+ FAR buttons in 0.35-unit steps, and RESET CAMERA.",
+        "FREEZE VIEW → 2D, then A/D or ArrowLeft/ArrowRight for held horizontal movement and Space/ArrowUp/KeyW for jumping.",
+        "After traversal: THAW / REFRAME, CERTIFY ESCAPE after reaching the exit, or ABANDON / NEW CELLBLOCK.",
+        "Difficulty 5 parameters: 20 ms physics ticks; move_speed=132, gravity=860, jump_velocity=-344, exit_radius=18, maximum_deaths=2, minimum_traversal_ticks=80, maximum_traversal_ticks=1400, minimum_key_transitions=5, minimum_jumps=2."
+      ],
+      "autonomous_processes": [
+        "After FREEZE VIEW, a 20 ms interval advances the flat physics state without a new event. Held horizontal input advances x; when support is lost, gravity advances y and vy; collision, death, exit reach, and the physics tick are updated by the interval.",
+        "The camera phase is static between input events, and THAW clears the physics interval; the post-freeze traversal is the outcome-affecting autonomous period."
+      ],
+      "grouped_control_modes": [
+        "camera_reframing: simplified-mode discrete orbit, pan, and dolly buttons while the 3D camera is live.",
+        "freeze_to_flat: FREEZE VIEW, which creates the prisoner and starts the fixed-step traversal.",
+        "flat_keyboard_traversal: every left/right/jump key transition and held-key interval in flat mode across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 100,
+      "window_ms": 400,
+      "clause_i": {
+        "holds": true,
+        "reason": "No policy q using only I_t can be optimal across generated variants: the same prior keyboard transcript can leave a held-right prisoner at different visible platform edges or airborne phases because layout, depth stack, mirror, and camera construction vary. A jump or steering transition is optimal in one current state and not in another, while q sees neither state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A policy g can use I_t and the four chronological frames in the configured 400 ms window to read the visible platform graph, prisoner position, grounded/airborne status, and recent trajectory. Those observations determine whether the next delayed traversal action must jump, steer, release, or wait under the deterministic 20 ms replay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use flat_keyboard_traversal with Delta=100 ms, five 20 ms ticks. With RIGHT already held, choose a live grounded edge-approach history where recovery remains possible. During the no-new-action interval x advances at 132 px/s and support can be lost while gravity changes y; SPACE key-down triggers a jump at t only when grounded, but after the visible edge crossing at t+Delta it is ineffective, so its value or advantage strictly drops while success remains possible."
+      },
+      "common_visible_process": "The post-freeze fixed-step traversal is the common process: the visible prisoner advances under held horizontal input, leaves a visible ledge, and follows a changing vertical trajectory under gravity. The 400 ms frame window shows that process, which both selects the delayed jump/steering action and makes a jump opportunity expire.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful pre-run is structurally unavailable: FREEZE starts with left, right, and jump false; keyboard input is ignored until flat mode; after freezing, movement and the required two jumps require new key transitions, and the grader also requires at least five transitions. The threshold is therefore not met without assigning a numeric rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flat_prisoner_env/controls.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/env.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/task.json",
+        "weird_captcha_gym/environments/flat_prisoner_env/tasks/flat_prisoner_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/flat_prisoner.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "10-10", "claim": "Difficulty 5 supplies the active camera, physics, death, and traversal parameters."},
+        {"path": "weird_captcha_gym/environments/flat_prisoner_env/controls.json", "lines": "13-16", "claim": "Simplified interaction is discrete camera buttons, and the observation window is 400 ms with four frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "260-284", "claim": "Generated instances vary layout, depth stack, mirror, palette, camera, and decoy geometry."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/flat_prisoner.py", "lines": "296-315", "claim": "The generated task activates 20 ms physics with level-specific movement, gravity, jump, exit, and transition requirements."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "104-109", "claim": "Each physics tick advances held horizontal motion, gravity, collision, death, and exit reach."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "131-137", "claim": "FREEZE starts the interval, key events are accepted only in flat mode, and jump takes effect only while grounded."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/flat_prisoner.js", "lines": "153-157", "claim": "Simplified mode renders discrete camera controls and installs their button handlers while retaining the shared keyboard traversal."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "434-455", "claim": "The independent replay advances to event ticks and applies the grounded-only jump transition."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flat_prisoner.py", "lines": "500-510", "claim": "Passing requires a reached exit plus the active level's traversal, transition, and jump minima."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

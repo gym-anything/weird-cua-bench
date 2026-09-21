@@ -1,0 +1,1262 @@
+{
+  "case_index": 33,
+  "environment_id": "reload_interruption_env",
+  "public_environment_name": "Reload Interruption",
+  "configuration_reports": [
+    {
+      "case_index": 321,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a three-direction gesture sequence at 560 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, full mode uses a native mouse drag on the reload lever. A drag of at least 38 px is reduced to up, right, down, or left by its dominant axis; the expected three-direction sequence is random per seed and has no adjacent duplicate directions.",
+        "After the gesture at interruption step 2, full mode exposes a visible spark moving on a generated ellipse. The agent must pointer-down on the spark, keep the pointer on its moving path, hold for at least 900 ms, provide at least 8 samples with no gap over 220 ms, and release; generated spark rates are 0.0027-0.0032 radians/ms, center jitter is 16 by 12 px, radii are 110-134 by 62-84 px, and tracking tolerance is 52 px."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all three generated directions and waits 560 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because attemptGesture returns while model.ready is false."
+        },
+        {
+          "period": "interruption reveal",
+          "behavior": "After the accepted gesture at step 2, showInterruption is scheduled 300 ms later, then the machine is obscured and the overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after the overlay appears, the valid outcome-affecting control is the full moving-spark hold."
+        },
+        {
+          "period": "active overload",
+          "behavior": "While the overlay is active, requestAnimationFrame repeatedly recomputes the spark position from performance.now on the ellipse. Full-mode pointer samples are recorded during the hold, and the grader checks the recorded path against the same moving-spark equation.",
+          "outcome_affecting_control_available": "Yes. The moving-spark pointer hold remains available, but a pointer action that is not updated as the spark moves loses alignment."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "A valid hold removes the overlay synchronously; the next gesture becomes available. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next lever gesture is available after the interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "full_gesture_replay",
+          "scope": "All correct full-mode lever drags at every sequence position across seeds and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "full_overload_tracking_hold",
+          "scope": "All full-mode overload holds at the configured interruption step across seeds and attempts.",
+          "witness_for_real_time": true
+        }
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q can choose the full-surface pointer-down and tracking path across all seeds: the generator varies overload phase and rate, while I_t contains the gesture index but not the visible spark phase or velocity. A fixed cursor path therefore misses some generated spark trajectories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured bounded window is 800 ms with 6 chronological frames. Those frames visibly show the spark on its ellipse and supply phase and motion information from which g can extrapolate the spark position at delivery, then track it during the hold."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For an early active hold, success remains possible after a 400 ms no-action delay, but the same pointer location or precomputed tracking path is displaced by the autonomous spark motion; at a suitable visible phase, a shorter tau below 400 ms moves it beyond the 52 px tolerance. The strict loss is caused by the moving task state and the grader validates every full-mode sample against that path, not by a deadline alone."
+      },
+      "common_visible_process": "The common witness is the full-mode overload spark: requestAnimationFrame moves it continuously on the visible ellipse, six frames over the 800 ms window expose its recent trajectory, and the full-mode hold must keep the pointer on that moving target. I use D=full_overload_tracking_hold, Delta=400 ms, and w=800 ms; q lacks phase/rate, g can extrapolate from the frames, and waiting makes the same pointer action stale while the hold remains salvageable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful full-mode overload requires continued pointer movement: beginFullHold records only pointerdown, pointermove, and pointerup samples, while the grader requires at least 8 continuous samples and checks each sample against the moving spark. After starting the hold, no-action pre-run execution cannot supply those samples or track the spark. The mathematical Yes is therefore not overridden.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "10-30; 129-132",
+          "claim": "Difficulty 1 sets sequence_length=3, interruption_steps=[2], preview_step_ms=560, overload rate 0.0027-0.0032, hold_ms=900, tolerance=52, min_samples=8, and max_gap_ms=220; the observation window is 800 ms with 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+          "lines": "75-129",
+          "claim": "The generated sequence has no adjacent duplicate directions, and each overload receives randomized phase, rate, center, radii, hold, tolerance, sample, and gap parameters that are copied into public and truth state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "12-15; 16-67; 69-75",
+          "claim": "The spark position is a performance.now-driven ellipse; full mode listens for pointer tracking on the spark, simplified mode uses a proxy, accepted gestures trigger the 300 ms interruption reveal, and preview/readiness gates the gesture controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+          "lines": "1-2",
+          "claim": "The UI visibly renders the overload orbit and spark, hides the direct spark hit target in simplified mode, and renders the stationary proxy control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-61; 64-114",
+          "claim": "The grader requires duration, sample count, continuity, and for full mode path alignment with the moving spark; simplified mode returns before geometric tracking, while gesture order and selected interaction surface remain graded."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "21-75; 90-105",
+          "claim": "The visible full-mode solution hovers and repeatedly moves along the predicted spark ellipse during the hold, whereas the simplified solution holds the stationary proxy for the fixed duration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+          "lines": "20-25",
+          "claim": "The task verifier loads the exported result and delegates authoritative outcome checking to verify_reload_interruption."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The verifier delegates the exported result to the reload_interruption grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 322,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a three-direction gesture sequence at 560 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, simplified mode uses four visible direction buttons for the three-gesture replay; the expected sequence is random per seed and the interruption occurs after gesture 2.",
+        "At the interruption, simplified mode provides a stationary HOLD STABILIZER proxy button. Holding it for at least 900 ms with at least 8 samples clears the overload; the moving spark is pointer-inert in this mode, and the grader does not check the recorded proxy point against the spark."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all three generated directions and waits 560 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because model.ready is false."
+        },
+        {
+          "period": "interruption reveal",
+          "behavior": "After the accepted gesture at step 2, showInterruption is scheduled 300 ms later, then the machine is obscured and the overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after the overlay appears, the valid control is the proxy hold."
+        },
+        {
+          "period": "active overload",
+          "behavior": "The visible spark moves on its ellipse via requestAnimationFrame while the overlay is active; the proxy hold also samples every 90 ms, using the fixed point [0,0].",
+          "outcome_affecting_control_available": "Yes. The stationary proxy remains available for the fixed hold duration, and the spark's motion does not change its effectiveness."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "A valid proxy hold removes the overlay synchronously; the next direction button becomes available. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next direction button is available after the interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "simplified_gesture_replay",
+          "scope": "All correct simplified direction-button clicks at every sequence position across seeds and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "simplified_proxy_hold",
+          "scope": "All simplified overload proxy holds at the configured interruption step across seeds and attempts.",
+          "witness_for_real_time": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q can always select the stationary HOLD STABILIZER proxy after the known interruption point in the action history. The randomized spark phase and rate do not alter that action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window g exists, but it does not need the window: it selects and holds the stationary proxy for the fixed 900 ms duration. This does not rescue clause i or establish real time."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The autonomous spark motion is visually present but does not affect the simplified proxy. beginHold records a fixed proxy point, and the grader returns success from its tracking validation before checking geometry for simplified mode. Waiting during the hold therefore does not reduce the proxy action's value; the fixed-duration hold is supplied by the agent's own action clock."
+      },
+      "common_visible_process": "No common process satisfies all clauses. The moving spark is the only relevant autonomous task motion, but simplified mode disables its hit target and grades the stationary proxy independently; the visible motion is therefore unrelated to the outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "For every generated profile, after the gesture preparation and proxy appearance, the agent can press and hold the stationary proxy for the configured fixed hold duration, make no further outcome-affecting action, and let the page's 90 ms sampler supply the required samples. The simplified grader does not require those points to follow the moving spark."
+        ,"seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "10-30; 129-132",
+          "claim": "Difficulty 1 sets the three-gesture, one-interruption profile and the 800 ms/6-frame observation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "7-15; 69-75",
+          "claim": "Interaction mode selects simplified controls, the proxy hold samples a fixed point, the spark is still animated, and the gesture preview/readiness and interruption sequencing are explicit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+          "lines": "1-2",
+          "claim": "Simplified mode hides the moving spark's pointer target and renders the stationary overload proxy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-47; 64-114",
+          "claim": "The grader checks duration, sample density, and interaction surface, but returns from geometric spark validation immediately for simplified mode; sequence and interruption order remain checked."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "21-43; 90-105",
+          "claim": "The simplified solver clicks the direction proxies and holds the stationary stabilizer for hold_ms plus a fixed margin, with no pointer tracking."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+          "lines": "75-129",
+          "claim": "The generator varies the spark phase and rate and publishes the control condition, but those values do not affect the simplified proxy's accepted outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The authoritative verifier delegates to this mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 323,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a four-direction gesture sequence at 500 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, full mode uses a native mouse drag on the reload lever. A drag of at least 38 px is reduced to up, right, down, or left by its dominant axis; the expected four-direction sequence is random per seed and has no adjacent duplicate directions.",
+        "After the gesture at interruption step 2, full mode exposes a visible spark moving on a generated ellipse. The agent must pointer-down on the spark, keep the pointer on its moving path, hold for at least 1000 ms, provide at least 9 samples with no gap over 200 ms, and release; generated spark rates are 0.0033-0.004 radians/ms, center jitter is 20 by 14 px, radii are 108-136 by 60-85 px, and tracking tolerance is 48 px."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all four generated directions and waits 500 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because attemptGesture returns while model.ready is false."
+        },
+        {
+          "period": "interruption reveal",
+          "behavior": "After the accepted gesture at step 2, showInterruption is scheduled 300 ms later, then the machine is obscured and the overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after the overlay appears, the valid outcome-affecting control is the full moving-spark hold."
+        },
+        {
+          "period": "active overload",
+          "behavior": "While the overlay is active, requestAnimationFrame repeatedly recomputes the spark position from performance.now on the ellipse. Full-mode pointer samples are recorded during the hold, and the grader checks the recorded path against the same moving-spark equation.",
+          "outcome_affecting_control_available": "Yes. The moving-spark pointer hold remains available, but a pointer action that is not updated as the spark moves loses alignment."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "A valid hold removes the overlay synchronously; the next gesture becomes available. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next lever gesture is available after the interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "full_gesture_replay",
+          "scope": "All correct full-mode lever drags at every sequence position across seeds and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "full_overload_tracking_hold",
+          "scope": "All full-mode overload holds at the configured interruption step across seeds and attempts.",
+          "witness_for_real_time": true
+        }
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q can choose the full-surface pointer-down and tracking path across all seeds: the generator varies overload phase and rate, while I_t contains the gesture index but not the visible spark phase or velocity. A fixed cursor path therefore misses some generated spark trajectories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured bounded window is 800 ms with 6 chronological frames. Those frames visibly show the spark on its ellipse and supply phase and motion information from which g can extrapolate the spark position at delivery, then track it during the hold."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For an early active hold, success remains possible after a 400 ms no-action delay, but the same pointer location or precomputed tracking path is displaced by the autonomous spark motion; at a suitable visible phase, a shorter tau below 400 ms moves it beyond the 48 px tolerance. The strict loss is caused by the moving task state and the grader validates every full-mode sample against that path, not by a deadline alone."
+      },
+      "common_visible_process": "The common witness is the full-mode overload spark: requestAnimationFrame moves it continuously on the visible ellipse, six frames over the 800 ms window expose its recent trajectory, and the full-mode hold must keep the pointer on that moving target. I use D=full_overload_tracking_hold, Delta=400 ms, and w=800 ms; q lacks phase/rate, g can extrapolate from the frames, and waiting makes the same pointer action stale while the hold remains salvageable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful full-mode overload requires continued pointer movement: beginFullHold records only pointerdown, pointermove, and pointerup samples, while the grader requires at least 9 continuous samples and checks each sample against the moving spark. After starting the hold, no-action pre-run execution cannot supply those samples or track the spark. The mathematical Yes is therefore not overridden.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "32-52; 129-132",
+          "claim": "Difficulty 2 sets sequence_length=4, interruption_steps=[2], preview_step_ms=500, overload rate 0.0033-0.004, hold_ms=1000, tolerance=48, min_samples=9, and max_gap_ms=200; the observation window is 800 ms with 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+          "lines": "75-129",
+          "claim": "The generated sequence has no adjacent duplicate directions, and each overload receives randomized phase and rate values that are copied into public and truth state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "12-15; 16-67; 69-75",
+          "claim": "The spark moves with performance.now, full mode tracks it through pointer samples, accepted gestures trigger the 300 ms interruption reveal, and preview/readiness gates replay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-61; 64-114",
+          "claim": "Full-mode grading requires continuous samples and validates every sample against the moving spark, while also enforcing the expected sequence and interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "45-75; 90-105",
+          "claim": "The visible full-mode solver follows the moving spark throughout the hold and then resumes the gesture replay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The task verifier delegates the exported result to the reload_interruption grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 324,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a four-direction gesture sequence at 500 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, simplified mode uses four visible direction buttons for the four-gesture replay; the expected sequence is random per seed and the interruption occurs after gesture 2.",
+        "At the interruption, simplified mode provides a stationary HOLD STABILIZER proxy button. Holding it for at least 1000 ms with at least 9 samples clears the overload; the moving spark is pointer-inert in this mode, and the grader does not check the recorded proxy point against the spark."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all four generated directions and waits 500 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because model.ready is false."
+        },
+        {
+          "period": "interruption reveal",
+          "behavior": "After the accepted gesture at step 2, showInterruption is scheduled 300 ms later, then the machine is obscured and the overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after the overlay appears, the valid control is the proxy hold."
+        },
+        {
+          "period": "active overload",
+          "behavior": "The visible spark moves on its ellipse via requestAnimationFrame while the overlay is active; the proxy hold also samples every 90 ms, using the fixed point [0,0].",
+          "outcome_affecting_control_available": "Yes. The stationary proxy remains available for the fixed hold duration, and the spark's motion does not change its effectiveness."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "A valid proxy hold removes the overlay synchronously; the next direction button becomes available. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next direction button is available after the interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "simplified_gesture_replay",
+          "scope": "All correct simplified direction-button clicks at every sequence position across seeds and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "simplified_proxy_hold",
+          "scope": "All simplified overload proxy holds at the configured interruption step across seeds and attempts.",
+          "witness_for_real_time": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q can always select the stationary HOLD STABILIZER proxy after the known interruption point in the action history. The randomized spark phase and rate do not alter that action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window g exists, but it does not need the window: it selects and holds the stationary proxy for the fixed 1000 ms duration. This does not rescue clause i or establish real time."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The autonomous spark motion is visually present but does not affect the simplified proxy. beginHold records a fixed proxy point, and the grader returns before geometric tracking for simplified mode. Waiting during the hold therefore does not reduce the proxy action's value; the fixed-duration hold is supplied by the agent's own action clock."
+      },
+      "common_visible_process": "No common process satisfies all clauses. The moving spark is the only relevant autonomous task motion, but simplified mode disables its hit target and grades the stationary proxy independently; the visible motion is therefore unrelated to the outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "For every generated profile, after the gesture preparation and proxy appearance, the agent can press and hold the stationary proxy for the configured fixed hold duration, make no further outcome-affecting action, and let the page's 90 ms sampler supply the required samples. The simplified grader does not require those points to follow the moving spark.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "32-52; 129-132",
+          "claim": "Difficulty 2 sets the four-gesture, one-interruption profile and the 800 ms/6-frame observation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "7-15; 69-75",
+          "claim": "Simplified interaction selects the proxy hold while the spark continues to animate, and the preview/readiness and interruption sequencing are explicit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+          "lines": "1-2",
+          "claim": "Simplified mode hides the moving spark's pointer target and renders the stationary overload proxy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-47; 64-114",
+          "claim": "Simplified grading omits spark geometry while enforcing hold duration, sample count, sequence, interruption order, and interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "34-43; 90-105",
+          "claim": "The simplified solver holds the stationary stabilizer for the configured fixed duration and resumes the button sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The authoritative verifier delegates to this mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 325,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a five-direction gesture sequence at 460 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, full mode uses a native mouse drag on the reload lever. A drag of at least 38 px is reduced to up, right, down, or left by its dominant axis; the expected five-direction sequence is random per seed and has no adjacent duplicate directions.",
+        "After the gestures at interruption steps 2 and 4, full mode exposes a visible spark moving on a generated ellipse. Each hold requires at least 1080 ms, at least 10 samples with no gap over 190 ms, and continuous pointer tracking; generated spark rates are 0.004-0.0051 radians/ms, center jitter is 22 by 16 px, radii are 106-137 by 59-86 px, and tracking tolerance is 45 px."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all five generated directions and waits 460 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because attemptGesture returns while model.ready is false."
+        },
+        {
+          "period": "each interruption reveal",
+          "behavior": "After the accepted gesture at step 2 or 4, showInterruption is scheduled 300 ms later, then the machine is obscured and that overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after each overlay appears, the valid outcome-affecting control is the full moving-spark hold."
+        },
+        {
+          "period": "each active overload",
+          "behavior": "While either overlay is active, requestAnimationFrame repeatedly recomputes the spark position from performance.now on its ellipse. Full-mode pointer samples are recorded during the hold, and the grader checks the recorded path against the same moving-spark equation.",
+          "outcome_affecting_control_available": "Yes. Each moving-spark pointer hold remains available, but a pointer action that is not updated as the spark moves loses alignment."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "Each valid hold removes its overlay synchronously and exposes the next gesture. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next lever gesture is available after each interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "full_gesture_replay",
+          "scope": "All correct full-mode lever drags at every sequence position across seeds, both interruption rounds, and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "full_overload_tracking_hold",
+          "scope": "All full-mode overload holds at interruption steps 2 and 4 across seeds and attempts.",
+          "witness_for_real_time": true
+        }
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q can choose the full-surface pointer-down and tracking path across all seeds: the generator varies overload phase and rate, while I_t contains the gesture and interruption index but not the visible spark phase or velocity. A fixed cursor path therefore misses some generated spark trajectories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured bounded window is 800 ms with 6 chronological frames. Those frames visibly show the spark on its ellipse and supply phase and motion information from which g can extrapolate the spark position at delivery, then track it during the hold."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For an early active hold at either interruption, success remains possible after a 400 ms no-action delay, but the same pointer location or precomputed tracking path is displaced by the autonomous spark motion; at a suitable visible phase, a shorter tau below 400 ms moves it beyond the 45 px tolerance. The strict loss is caused by the moving task state and the grader validates every full-mode sample against that path, not by a deadline alone."
+      },
+      "common_visible_process": "The common witness is the full-mode overload spark at either interruption: requestAnimationFrame moves it continuously on the visible ellipse, six frames over the 800 ms window expose its recent trajectory, and the full-mode hold must keep the pointer on that moving target. I use D=full_overload_tracking_hold, Delta=400 ms, and w=800 ms; q lacks phase/rate, g can extrapolate from the frames, and waiting makes the same pointer action stale while the hold remains salvageable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful full-mode overload requires continued pointer movement: beginFullHold records only pointerdown, pointermove, and pointerup samples, while the grader requires at least 10 continuous samples and checks each sample against the moving spark. After starting either hold, no-action pre-run execution cannot supply those samples or track the spark. The mathematical Yes is therefore not overridden.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "54-74; 129-132",
+          "claim": "Difficulty 3 sets sequence_length=5, interruption_steps=[2,4], preview_step_ms=460, overload rate 0.004-0.0051, hold_ms=1080, tolerance=45, min_samples=10, and max_gap_ms=190; the observation window is 800 ms with 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+          "lines": "75-129",
+          "claim": "The generator creates both interruption occurrences with randomized phase and rate values and preserves the control condition in public and truth state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "12-15; 16-67; 69-75",
+          "claim": "The spark is performance.now-driven, full mode requires pointer tracking, each configured interruption is shown after the accepted step, and replay is gated by the preview."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-61; 64-114",
+          "claim": "Full-mode grading enforces the continuous moving-spark path for every interruption and checks sequence/interruption order."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "45-75; 90-105",
+          "claim": "The visible full-mode solver repeatedly moves along each moving spark for the required hold before resuming."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The task verifier delegates the exported result to the reload_interruption grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 326,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a five-direction gesture sequence at 460 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, simplified mode uses four visible direction buttons for the five-gesture replay; the expected sequence is random per seed and interruptions occur after gestures 2 and 4.",
+        "At each interruption, simplified mode provides a stationary HOLD STABILIZER proxy button. Holding it for at least 1080 ms with at least 10 samples clears the overload; the moving spark is pointer-inert in this mode, and the grader does not check the recorded proxy point against the spark."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all five generated directions and waits 460 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because model.ready is false."
+        },
+        {
+          "period": "each interruption reveal",
+          "behavior": "After the accepted gesture at step 2 or 4, showInterruption is scheduled 300 ms later, then the machine is obscured and that overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after each overlay appears, the valid control is the proxy hold."
+        },
+        {
+          "period": "each active overload",
+          "behavior": "The visible spark moves on its ellipse via requestAnimationFrame while either overlay is active; each proxy hold also samples every 90 ms, using the fixed point [0,0].",
+          "outcome_affecting_control_available": "Yes. The stationary proxy remains available for the fixed hold duration, and the spark's motion does not change its effectiveness."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "Each valid proxy hold removes its overlay synchronously; the next direction button becomes available. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next direction button is available after each interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "simplified_gesture_replay",
+          "scope": "All correct simplified direction-button clicks at every sequence position across seeds, both interruption rounds, and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "simplified_proxy_hold",
+          "scope": "All simplified overload proxy holds at interruption steps 2 and 4 across seeds and attempts.",
+          "witness_for_real_time": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q can always select the stationary HOLD STABILIZER proxy after either known interruption point in the action history. The randomized spark phase and rate do not alter that action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window g exists, but it does not need the window: it selects and holds the stationary proxy for the fixed 1080 ms duration. This does not rescue clause i or establish real time."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The autonomous spark motion is visually present but does not affect either simplified proxy. beginHold records fixed proxy points, and the grader returns before geometric tracking for simplified mode. Waiting during either hold therefore does not reduce the proxy action's value; the fixed-duration hold is supplied by the agent's own action clock."
+      },
+      "common_visible_process": "No common process satisfies all clauses. The moving spark is the only relevant autonomous task motion, but simplified mode disables its hit target and grades the stationary proxy independently; the visible motion is therefore unrelated to the outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "For every generated profile, after each gesture preparation and proxy appearance, the agent can press and hold the stationary proxy for the configured fixed hold duration, make no further outcome-affecting action, and let the page's 90 ms sampler supply the required samples. The simplified grader does not require those points to follow the moving spark.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "54-74; 129-132",
+          "claim": "Difficulty 3 sets the five-gesture, two-interruption profile and the 800 ms/6-frame observation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "7-15; 69-75",
+          "claim": "Simplified interaction selects the proxy hold while the spark continues to animate, with explicit preview/readiness and two interruption states."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+          "lines": "1-2",
+          "claim": "Simplified mode hides the moving spark's pointer target and renders the stationary overload proxy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-47; 64-114",
+          "claim": "Simplified grading omits spark geometry while enforcing hold duration, sample count, sequence, interruption order, and interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "34-43; 90-105",
+          "claim": "The simplified solver holds each stationary stabilizer for the configured fixed duration and resumes the button sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The authoritative verifier delegates to this mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 327,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a seven-direction gesture sequence at 420 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, full mode uses a native mouse drag on the reload lever. A drag of at least 38 px is reduced to up, right, down, or left by its dominant axis; the expected seven-direction sequence is random per seed and has no adjacent duplicate directions.",
+        "After the gestures at interruption steps 2 and 5, full mode exposes a visible spark moving on a generated ellipse. Each hold requires at least 1150 ms, at least 10 samples with no gap over 180 ms, and continuous pointer tracking; generated spark rates are 0.0048-0.0062 radians/ms, center jitter is 24 by 18 px, radii are 105-138 by 58-86 px, and tracking tolerance is 42 px."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all seven generated directions and waits 420 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because attemptGesture returns while model.ready is false."
+        },
+        {
+          "period": "each interruption reveal",
+          "behavior": "After the accepted gesture at step 2 or 5, showInterruption is scheduled 300 ms later, then the machine is obscured and that overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after each overlay appears, the valid outcome-affecting control is the full moving-spark hold."
+        },
+        {
+          "period": "each active overload",
+          "behavior": "While either overlay is active, requestAnimationFrame repeatedly recomputes the spark position from performance.now on its ellipse. Full-mode pointer samples are recorded during the hold, and the grader checks the recorded path against the same moving-spark equation.",
+          "outcome_affecting_control_available": "Yes. Each moving-spark pointer hold remains available, but a pointer action that is not updated as the spark moves loses alignment."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "Each valid hold removes its overlay synchronously and exposes the next gesture. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next lever gesture is available after each interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "full_gesture_replay",
+          "scope": "All correct full-mode lever drags at every sequence position across seeds, both interruption rounds, and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "full_overload_tracking_hold",
+          "scope": "All full-mode overload holds at interruption steps 2 and 5 across seeds and attempts.",
+          "witness_for_real_time": true
+        }
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q can choose the full-surface pointer-down and tracking path across all seeds: the generator varies overload phase and rate, while I_t contains the gesture and interruption index but not the visible spark phase or velocity. A fixed cursor path therefore misses some generated spark trajectories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured bounded window is 800 ms with 6 chronological frames. Those frames visibly show the spark on its ellipse and supply phase and motion information from which g can extrapolate the spark position at delivery, then track it during the hold."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For an early active hold at either interruption, success remains possible after a 400 ms no-action delay, but the same pointer location or precomputed tracking path is displaced by the autonomous spark motion; at a suitable visible phase, a shorter tau below 400 ms moves it beyond the 42 px tolerance. The strict loss is caused by the moving task state and the grader validates every full-mode sample against that path, not by a deadline alone."
+      },
+      "common_visible_process": "The common witness is the full-mode overload spark at either interruption: requestAnimationFrame moves it continuously on the visible ellipse, six frames over the 800 ms window expose its recent trajectory, and the full-mode hold must keep the pointer on that moving target. I use D=full_overload_tracking_hold, Delta=400 ms, and w=800 ms; q lacks phase/rate, g can extrapolate from the frames, and waiting makes the same pointer action stale while the hold remains salvageable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful full-mode overload requires continued pointer movement: beginFullHold records only pointerdown, pointermove, and pointerup samples, while the grader requires at least 10 continuous samples and checks each sample against the moving spark. After starting either hold, no-action pre-run execution cannot supply those samples or track the spark. The mathematical Yes is therefore not overridden.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "76-96; 129-132",
+          "claim": "Difficulty 4 sets sequence_length=7, interruption_steps=[2,5], preview_step_ms=420, overload rate 0.0048-0.0062, hold_ms=1150, tolerance=42, min_samples=10, and max_gap_ms=180; the observation window is 800 ms with 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+          "lines": "75-129",
+          "claim": "The generator creates both interruption occurrences with randomized phase and rate values and preserves the control condition in public and truth state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "12-15; 16-67; 69-75",
+          "claim": "The spark is performance.now-driven, full mode requires pointer tracking, each configured interruption is shown after the accepted step, and replay is gated by the preview."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-61; 64-114",
+          "claim": "Full-mode grading enforces the continuous moving-spark path for every interruption and checks sequence/interruption order."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "45-75; 90-105",
+          "claim": "The visible full-mode solver repeatedly moves along each moving spark for the required hold before resuming."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The task verifier delegates the exported result to the reload_interruption grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 328,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a seven-direction gesture sequence at 420 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, simplified mode uses four visible direction buttons for the seven-gesture replay; the expected sequence is random per seed and interruptions occur after gestures 2 and 5.",
+        "At each interruption, simplified mode provides a stationary HOLD STABILIZER proxy button. Holding it for at least 1150 ms with at least 10 samples clears the overload; the moving spark is pointer-inert in this mode, and the grader does not check the recorded proxy point against the spark."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all seven generated directions and waits 420 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because model.ready is false."
+        },
+        {
+          "period": "each interruption reveal",
+          "behavior": "After the accepted gesture at step 2 or 5, showInterruption is scheduled 300 ms later, then the machine is obscured and that overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after each overlay appears, the valid control is the proxy hold."
+        },
+        {
+          "period": "each active overload",
+          "behavior": "The visible spark moves on its ellipse via requestAnimationFrame while either overlay is active; each proxy hold also samples every 90 ms, using the fixed point [0,0].",
+          "outcome_affecting_control_available": "Yes. The stationary proxy remains available for the fixed hold duration, and the spark's motion does not change its effectiveness."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "Each valid proxy hold removes its overlay synchronously; the next direction button becomes available. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next direction button is available after each interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "simplified_gesture_replay",
+          "scope": "All correct simplified direction-button clicks at every sequence position across seeds, both interruption rounds, and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "simplified_proxy_hold",
+          "scope": "All simplified overload proxy holds at interruption steps 2 and 5 across seeds and attempts.",
+          "witness_for_real_time": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q can always select the stationary HOLD STABILIZER proxy after either known interruption point in the action history. The randomized spark phase and rate do not alter that action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window g exists, but it does not need the window: it selects and holds the stationary proxy for the fixed 1150 ms duration. This does not rescue clause i or establish real time."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The autonomous spark motion is visually present but does not affect either simplified proxy. beginHold records fixed proxy points, and the grader returns before geometric tracking for simplified mode. Waiting during either hold therefore does not reduce the proxy action's value; the fixed-duration hold is supplied by the agent's own action clock."
+      },
+      "common_visible_process": "No common process satisfies all clauses. The moving spark is the only relevant autonomous task motion, but simplified mode disables its hit target and grades the stationary proxy independently; the visible motion is therefore unrelated to the outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "For every generated profile, after each gesture preparation and proxy appearance, the agent can press and hold the stationary proxy for the configured fixed hold duration, make no further outcome-affecting action, and let the page's 90 ms sampler supply the required samples. The simplified grader does not require those points to follow the moving spark.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "76-96; 129-132",
+          "claim": "Difficulty 4 sets the seven-gesture, two-interruption profile and the 800 ms/6-frame observation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "7-15; 69-75",
+          "claim": "Simplified interaction selects the proxy hold while the spark continues to animate, with explicit preview/readiness and two interruption states."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+          "lines": "1-2",
+          "claim": "Simplified mode hides the moving spark's pointer target and renders the stationary overload proxy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-47; 64-114",
+          "claim": "Simplified grading omits spark geometry while enforcing hold duration, sample count, sequence, interruption order, and interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "34-43; 90-105",
+          "claim": "The simplified solver holds each stationary stabilizer for the configured fixed duration and resumes the button sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The authoritative verifier delegates to this mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 329,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a nine-direction gesture sequence at 380 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, full mode uses a native mouse drag on the reload lever. A drag of at least 38 px is reduced to up, right, down, or left by its dominant axis; the expected nine-direction sequence is random per seed and has no adjacent duplicate directions.",
+        "After the gestures at interruption steps 2, 5, and 7, full mode exposes a visible spark moving on a generated ellipse. Each hold requires at least 1250 ms, at least 12 samples with no gap over 260 ms, and continuous pointer tracking; generated spark rates are 0.0056-0.007 radians/ms, center jitter is 28 by 20 px, radii are 102-141 by 56-88 px, and tracking tolerance is 38 px."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all nine generated directions and waits 380 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because attemptGesture returns while model.ready is false."
+        },
+        {
+          "period": "each interruption reveal",
+          "behavior": "After the accepted gesture at step 2, 5, or 7, showInterruption is scheduled 300 ms later, then the machine is obscured and that overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after each overlay appears, the valid outcome-affecting control is the full moving-spark hold."
+        },
+        {
+          "period": "each active overload",
+          "behavior": "While any overlay is active, requestAnimationFrame repeatedly recomputes the spark position from performance.now on its ellipse. Full-mode pointer samples are recorded during the hold, and the grader checks the recorded path against the same moving-spark equation.",
+          "outcome_affecting_control_available": "Yes. Each moving-spark pointer hold remains available, but a pointer action that is not updated as the spark moves loses alignment."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "Each valid hold removes its overlay synchronously and exposes the next gesture. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next lever gesture is available after each interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "full_gesture_replay",
+          "scope": "All correct full-mode lever drags at every sequence position across seeds, all three interruption rounds, and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "full_overload_tracking_hold",
+          "scope": "All full-mode overload holds at interruption steps 2, 5, and 7 across seeds and attempts.",
+          "witness_for_real_time": true
+        }
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q can choose the full-surface pointer-down and tracking path across all seeds: the generator varies overload phase and rate, while I_t contains the gesture and interruption index but not the visible spark phase or velocity. A fixed cursor path therefore misses some generated spark trajectories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured bounded window is 800 ms with 6 chronological frames. Those frames visibly show the spark on its ellipse and supply phase and motion information from which g can extrapolate the spark position at delivery, then track it during the hold."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For an early active hold at any interruption, success remains possible after a 400 ms no-action delay, but the same pointer location or precomputed tracking path is displaced by the autonomous spark motion; at a suitable visible phase, a shorter tau below 400 ms moves it beyond the 38 px tolerance. The strict loss is caused by the moving task state and the grader validates every full-mode sample against that path, not by a deadline alone."
+      },
+      "common_visible_process": "The common witness is the full-mode overload spark at any interruption: requestAnimationFrame moves it continuously on the visible ellipse, six frames over the 800 ms window expose its recent trajectory, and the full-mode hold must keep the pointer on that moving target. I use D=full_overload_tracking_hold, Delta=400 ms, and w=800 ms; q lacks phase/rate, g can extrapolate from the frames, and waiting makes the same pointer action stale while the hold remains salvageable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful full-mode overload requires continued pointer movement: beginFullHold records only pointerdown, pointermove, and pointerup samples, while the grader requires at least 12 continuous samples and checks each sample against the moving spark. After starting any hold, no-action pre-run execution cannot supply those samples or track the spark. The mathematical Yes is therefore not overridden.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "98-118; 129-132",
+          "claim": "Difficulty 5 sets sequence_length=9, interruption_steps=[2,5,7], preview_step_ms=380, overload rate 0.0056-0.007, hold_ms=1250, tolerance=38, min_samples=12, and max_gap_ms=260; the observation window is 800 ms with 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+          "lines": "75-129",
+          "claim": "The generator creates three interruption occurrences with randomized phase and rate values and preserves the control condition in public and truth state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "12-15; 16-67; 69-75",
+          "claim": "The spark is performance.now-driven, full mode requires pointer tracking, each configured interruption is shown after the accepted step, and replay is gated by the preview."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-61; 64-114",
+          "claim": "Full-mode grading enforces the continuous moving-spark path for every interruption and checks sequence/interruption order."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "45-75; 90-105",
+          "claim": "The visible full-mode solver repeatedly moves along each moving spark for the required hold before resuming."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The task verifier delegates the exported result to the reload_interruption grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 330,
+      "public_environment_name": "Reload Interruption",
+      "environment_id": "reload_interruption_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A one-time preview runs after a 700 ms start delay and replays a nine-direction gesture sequence at 380 ms per preview step; the gesture controls are unavailable while model.ready is false.",
+        "After the preview, simplified mode uses four visible direction buttons for the nine-gesture replay; the expected sequence is random per seed and interruptions occur after gestures 2, 5, and 7.",
+        "At each interruption, simplified mode provides a stationary HOLD STABILIZER proxy button. Holding it for at least 1250 ms with at least 12 samples clears the overload; the moving spark is pointer-inert in this mode, and the grader does not check the recorded proxy point against the spark."
+      ],
+      "autonomous_processes": [
+        {
+          "period": "initial preview",
+          "behavior": "After a 700 ms delay, the browser moves the lever through all nine generated directions and waits 380 ms between moves; the preview is followed by a ready state.",
+          "outcome_affecting_control_available": "No valid gesture control is available during the preview because model.ready is false."
+        },
+        {
+          "period": "each interruption reveal",
+          "behavior": "After the accepted gesture at step 2, 5, or 7, showInterruption is scheduled 300 ms later, then the machine is obscured and that overload overlay is inserted.",
+          "outcome_affecting_control_available": "The handler can technically receive a premature gesture during the 300 ms transition, but the grader rejects that event ordering; after each overlay appears, the valid control is the proxy hold."
+        },
+        {
+          "period": "each active overload",
+          "behavior": "The visible spark moves on its ellipse via requestAnimationFrame while any overlay is active; each proxy hold also samples every 90 ms, using the fixed point [0,0].",
+          "outcome_affecting_control_available": "Yes. The stationary proxy remains available for the fixed hold duration, and the spark's motion does not change its effectiveness."
+        },
+        {
+          "period": "after clearing and final submission",
+          "behavior": "Each valid proxy hold removes its overlay synchronously; the next direction button becomes available. The final accepted gesture schedules submission after 450 ms.",
+          "outcome_affecting_control_available": "The next direction button is available after each interruption; the final submission timer is administrative."
+        },
+        {
+          "period": "ambient presentation",
+          "behavior": "The footer wave, ready-state bolt animation, lever transition, and other CSS presentation continue without changing the challenge state.",
+          "outcome_affecting_control_available": "They do not create an additional outcome-affecting control opportunity."
+        }
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "simplified_gesture_replay",
+          "scope": "All correct simplified direction-button clicks at every sequence position across seeds, all three interruption rounds, and attempts.",
+          "witness_for_real_time": false
+        },
+        {
+          "name": "simplified_proxy_hold",
+          "scope": "All simplified overload proxy holds at interruption steps 2, 5, and 7 across seeds and attempts.",
+          "witness_for_real_time": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q can always select the stationary HOLD STABILIZER proxy after any known interruption point in the action history. The randomized spark phase and rate do not alter that action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window g exists, but it does not need the window: it selects and holds the stationary proxy for the fixed 1250 ms duration. This does not rescue clause i or establish real time."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The autonomous spark motion is visually present but does not affect any simplified proxy. beginHold records fixed proxy points, and the grader returns before geometric tracking for simplified mode. Waiting during any hold therefore does not reduce the proxy action's value; the fixed-duration hold is supplied by the agent's own action clock."
+      },
+      "common_visible_process": "No common process satisfies all clauses. The moving spark is the only relevant autonomous task motion, but simplified mode disables its hit target and grades the stationary proxy independently; the visible motion is therefore unrelated to the outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "For every generated profile, after each gesture preparation and proxy appearance, the agent can press and hold the stationary proxy for the configured fixed hold duration, make no further outcome-affecting action, and let the page's 90 ms sampler supply the required samples. The simplified grader does not require those points to follow the moving spark.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+        "weird_captcha_gym/environments/reload_interruption_env/env.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/task.json",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/reload_interruption_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/reload_interruption_env/tasks/reload_interruption_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reload_interruption_env/controls.json",
+          "lines": "98-118; 129-132",
+          "claim": "Difficulty 5 sets the nine-gesture, three-interruption profile and the 800 ms/6-frame observation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.js",
+          "lines": "7-15; 69-75",
+          "claim": "Simplified interaction selects the proxy hold while the spark continues to animate, with explicit preview/readiness and three interruption states."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reload_interruption.css",
+          "lines": "1-2",
+          "claim": "Simplified mode hides the moving spark's pointer target and renders the stationary overload proxy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reload_interruption.py",
+          "lines": "18-47; 64-114",
+          "claim": "Simplified grading omits spark geometry while enforcing hold duration, sample count, sequence, interruption order, and interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reload_interruption.py",
+          "lines": "34-43; 90-105",
+          "claim": "The simplified solver holds each stationary stabilizer for the configured fixed duration and resumes the button sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30; 290-291",
+          "claim": "The authoritative verifier delegates to this mechanic grader."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

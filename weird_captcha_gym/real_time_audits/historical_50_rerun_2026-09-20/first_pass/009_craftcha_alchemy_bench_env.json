@@ -1,0 +1,720 @@
+{
+  "case_index": 9,
+  "environment_id": "craftcha_alchemy_bench_env",
+  "public_environment_name": "CRAFTCHA: Alchemy Bench",
+  "configuration_reports": [
+    {
+      "case_index": 81,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full input uses physical mouse dragging from a four-slot inventory material to a selected process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 1 generates branch lengths [1,1,1], two selected process machines, four inventory slots, three process transforms plus final assembly, initial recipe exposure of 9000-9800 ms, replay exposure of 6000-6400 ms, memory charge 3, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 9000-9800 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 6000-6400 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Full physical_drag transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "10-27", "claim": "Difficulty 1 profile: [1,1,1] branches, two process stations, four-slot inventory, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Full is physical drag, simplified is click-to-place, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and creates a random station sequence."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "282-305", "claim": "Generated recipe and replay windows, memory settings, inventory, and active stations are placed in public and hidden state."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190", "claim": "Recipe and replay shutters use timers, seal the recipe, and gate replay until the recipe is sealed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "222-294", "claim": "Full mode accepts a physical drag only after the recipe is sealed and records its trajectory."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405", "claim": "A cycle sets busy, emits fixed four-phase readouts, commits output after 410 ms, and then clears busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "470-520", "claim": "The UI disables cycle, replay, reset, and certification controls while the recipe is open or the bench is busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,362-505,535-545", "claim": "The grader enforces shutter timing, mode-specific transfer transcripts, fixed-duration cycles, and final lineage outcome; it does not grade a continuously expiring opportunity."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier loads the exported UI result and delegates the outcome to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver waits for sealing, optionally replays, then performs repeated transfers and cycle clicks before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 82,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified input selects an inventory material with a click and then clicks a process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 1 generates branch lengths [1,1,1], two selected process machines, four inventory slots, three process transforms plus final assembly, initial recipe exposure of 9000-9800 ms, replay exposure of 6000-6400 ms, memory charge 3, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 9000-9800 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 6000-6400 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Simplified click_to_place_proxy transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "10-27", "claim": "Difficulty 1 profile: [1,1,1] branches, two process stations, four-slot inventory, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Simplified is click-to-place, full is physical drag, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,296-341", "claim": "Shutter timers gate the task, and simplified mode performs click-to-place transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,414-505,535-545", "claim": "The grader enforces shutter timing, simplified transfer coordinates, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses click-to-place in simplified mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 83,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full input uses physical mouse dragging from a four-slot inventory material to a selected process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 2 generates branch patterns [1,1,2] or [1,2,2], two selected process machines, four inventory slots, four or five process transforms plus final assembly, initial recipe exposure of 7800-8850 ms, replay exposure of 5000-5700 ms, memory charge 3, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 7800-8850 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 5000-5700 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Full physical_drag transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "29-46", "claim": "Difficulty 2 profile: [1,1,2] or [1,2,2] branches, two process stations, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Full is physical drag, simplified is click-to-place, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,222-294", "claim": "Shutter timers gate the task, and full mode performs physical transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,362-505,535-545", "claim": "The grader enforces shutter timing, physical drag trajectories, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses physical drag in full mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 84,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified input selects an inventory material with a click and then clicks a process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 2 generates branch patterns [1,1,2] or [1,2,2], two selected process machines, four inventory slots, four or five process transforms plus final assembly, initial recipe exposure of 7800-8850 ms, replay exposure of 5000-5700 ms, memory charge 3, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 7800-8850 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 5000-5700 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Simplified click_to_place_proxy transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "29-46", "claim": "Difficulty 2 profile: [1,1,2] or [1,2,2] branches, two process stations, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Simplified is click-to-place, full is physical drag, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,296-341", "claim": "Shutter timers gate the task, and simplified mode performs click-to-place transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,414-505,535-545", "claim": "The grader enforces shutter timing, simplified transfer coordinates, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses click-to-place in simplified mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 85,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full input uses physical mouse dragging from a four-slot inventory material to a selected process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 3 generates branch patterns [2,2,1] or [2,2,2], three selected process machines, four inventory slots, five or six process transforms plus final assembly, initial recipe exposure of 6800-7700 ms, replay exposure of 4200-4800 ms, memory charge 3, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 6800-7700 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 4200-4800 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Full physical_drag transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "48-65", "claim": "Difficulty 3 profile: [2,2,1] or [2,2,2] branches, three process stations, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Full is physical drag, simplified is click-to-place, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,222-294", "claim": "Shutter timers gate the task, and full mode performs physical transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,362-505,535-545", "claim": "The grader enforces shutter timing, physical drag trajectories, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses physical drag in full mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 86,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified input selects an inventory material with a click and then clicks a process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 3 generates branch patterns [2,2,1] or [2,2,2], three selected process machines, four inventory slots, five or six process transforms plus final assembly, initial recipe exposure of 6800-7700 ms, replay exposure of 4200-4800 ms, memory charge 3, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 6800-7700 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 4200-4800 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Simplified click_to_place_proxy transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "48-65", "claim": "Difficulty 3 profile: [2,2,1] or [2,2,2] branches, three process stations, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Simplified is click-to-place, full is physical drag, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,296-341", "claim": "Shutter timers gate the task, and simplified mode performs click-to-place transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,414-505,535-545", "claim": "The grader enforces shutter timing, simplified transfer coordinates, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses click-to-place in simplified mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 87,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full input uses physical mouse dragging from a four-slot inventory material to a selected process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 4 generates branch patterns [2,2,1], [2,2,2], [3,2,2], or [3,3,2], three selected process machines, four inventory slots, six to nine total transforms including final assembly, initial recipe exposure of 5500-6700 ms, replay exposure of 3500-4400 ms, memory charge 3, replay cost 2, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 5500-6700 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 3500-4400 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Full physical_drag transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "67-84", "claim": "Difficulty 4 profile: four possible branch patterns, three process stations, four-slot rack, six-to-nine transforms, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Full is physical drag, simplified is click-to-place, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,222-294", "claim": "Shutter timers gate the task, and full mode performs physical transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,362-505,535-545", "claim": "The grader enforces shutter timing, physical drag trajectories, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses physical drag in full mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 88,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified input selects an inventory material with a click and then clicks a process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 4 generates branch patterns [2,2,1], [2,2,2], [3,2,2], or [3,3,2], three selected process machines, four inventory slots, six to nine total transforms including final assembly, initial recipe exposure of 5500-6700 ms, replay exposure of 3500-4400 ms, memory charge 3, replay cost 2, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 5500-6700 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 3500-4400 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Simplified click_to_place_proxy transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "67-84", "claim": "Difficulty 4 profile: four possible branch patterns, three process stations, four-slot rack, six-to-nine transforms, and fixed recipe/replay timing and memory parameters."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Simplified is click-to-place, full is physical drag, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,296-341", "claim": "Shutter timers gate the task, and simplified mode performs click-to-place transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,414-505,535-545", "claim": "The grader enforces shutter timing, simplified transfer coordinates, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses click-to-place in simplified mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 89,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full input uses physical mouse dragging from a four-slot inventory material to a selected process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 5 generates branch patterns [3,3,3], [3,3,4], or [4,3,3], all four process machines, four inventory slots, ten or eleven total transforms including final assembly, initial recipe exposure of 3600-4500 ms, replay exposure of 2400-2900 ms, memory charge 1, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 3600-4500 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 2400-2900 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Full physical_drag transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "86-103", "claim": "Difficulty 5 profile: [3,3,3], [3,3,4], or [4,3,3] branches, four process stations, ten-to-eleven transforms, short fixed recipe/replay timing, and one memory charge costing one replay."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Full is physical drag, simplified is click-to-place, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,222-294", "claim": "Shutter timers gate the task, and full mode performs physical transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,362-505,535-545", "claim": "The grader enforces shutter timing, physical drag trajectories, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses physical drag in full mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 90,
+      "public_environment_name": "CRAFTCHA: Alchemy Bench",
+      "environment_id": "craftcha_alchemy_bench_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified input selects an inventory material with a click and then clicks a process machine, the three-input assembler, or the delivery bay; machine CYCLE buttons, RESET BENCH, one recipe replay, and CERTIFY DEVICE remain available after the recipe seals.",
+        "Difficulty 5 generates branch patterns [3,3,3], [3,3,4], or [4,3,3], all four process machines, four inventory slots, ten or eleven total transforms including final assembly, initial recipe exposure of 3600-4500 ms, replay exposure of 2400-2900 ms, memory charge 1, replay cost 1, and one replay.",
+        "The shared task settings are a 1200 ms observation window with 8 frames per observation and 180 seconds of play time."
+      ],
+      "autonomous_processes": [
+        "The initial recipe shutter closes on a generated fixed timer in the 3600-4500 ms range; while it is open, route, cycle, reset, replay, and certification controls are gated by recipeSealed.",
+        "The optional replay shutter closes on a generated fixed timer in the 2400-2900 ms range; it restores recipe visibility and then only enables later controls when it seals.",
+        "Each accepted machine or assembly cycle shows four fixed readout pulses at 0, 95, 190, and 285 ms and commits its output at 410 ms while the bench is busy."
+      ],
+      "grouped_control_modes": [
+        "Simplified click_to_place_proxy transfers from an inventory slot to a process station, assembler, or delivery bay.",
+        "machine_cycle_button for each selected process station and for final assembly.",
+        "Replay button, reset button, and certification console."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated recipes, the required next station is not determined by the agent's prior actions or task times. Identical action histories can precede different sealed branch sequences, so an observation-free fixed route cannot choose every correct machine."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "After the shutter seals, the bounded recent window does not retain the multi-branch recipe needed for later route choices. The replay control is a separate action that reopens the recipe; it does not make the post-seal route itself recoverable from one bounded recent window."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The recipe and replay shutters close after fixed waits and closure only enables controls. A machine cycle is already committed by the prior click; its fixed 410 ms busy period blocks controls and then installs the next item. No available outcome-affecting action becomes strictly less effective because of this autonomous change."
+      },
+      "common_visible_process": "The visible shutter transition and the visible four-pulse cycle/output transition are the only autonomous task changes. Neither provides a common expiring control opportunity: shutter closure archives information and enables later actions, while cycle completion settles an action that was already taken and does not degrade a still-available action. Therefore no common D, positive Delta, and bounded window witnesses all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful instance requires repeated material transfers, a separate cycle action for each transformation and assembly, and a final delivery transfer before certification. The source has no autonomous phase that can complete the route after outcome-affecting actions stop.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/env.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/task.json",
+        "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py",
+        "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "86-103", "claim": "Difficulty 5 profile: [3,3,3], [3,3,4], or [4,3,3] branches, four process stations, ten-to-eleven transforms, short fixed recipe/replay timing, and one memory charge costing one replay."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/controls.json", "lines": "106-119", "claim": "Simplified is click-to-place, full is physical drag, and the shared observation window is 1200 ms with 8 frames and 180 seconds of play time."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/craftcha_alchemy_bench.py", "lines": "173-208,282-305", "claim": "The generator materializes the selected profile, samples branch lengths and selected machines, and generates the recipe and fixed shutter settings."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "150-190,296-341", "claim": "Shutter timers gate the task, and simplified mode performs click-to-place transfers only when the recipe is sealed and the bench is not busy."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.js", "lines": "343-405,470-520", "claim": "Cycles settle after 410 ms and busy/open states disable outcome-affecting controls."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/craftcha_alchemy_bench.css", "lines": "191-196,230-243", "claim": "The cycling gauge and recipe shutter are visibly represented, without adding a task-state process beyond the JavaScript timers."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/craftcha_alchemy_bench.py", "lines": "306-360,414-505,535-545", "claim": "The grader enforces shutter timing, simplified transfer coordinates, fixed-duration cycles, and final lineage outcome."},
+        {"path": "weird_captcha_gym/environments/craftcha_alchemy_bench_env/tasks/craftcha_alchemy_bench_seed_0001/verifier.py", "lines": "44-60", "claim": "The verifier delegates the exported UI result to the independent grader."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/craftcha_alchemy_bench.py", "lines": "57-72,101-155", "claim": "The normal solver uses click-to-place in simplified mode, then repeats transfer and cycle actions before delivery and certification."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

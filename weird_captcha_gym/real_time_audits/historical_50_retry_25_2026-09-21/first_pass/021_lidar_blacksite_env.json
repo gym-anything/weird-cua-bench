@@ -1,0 +1,1117 @@
+{
+  "case_index": 21,
+  "environment_id": "lidar_blacksite_env",
+  "public_environment_name": "LIDAR Blacksite",
+  "configuration_reports": [
+    {
+      "case_index": 201,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 1: introductory two-turn facility with no chamber crates; active scan range 11.5, 121 rays over a 68-degree half-angle, point lifetime 900 ticks (18000 ms), pickup range 1.2, and exit radius 0.78.",
+        "Active success requirements: at least 2 scans, 2 scan stations separated by 2, target scan displacement 4.5, travel 10, and 8 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Full surface: held W/S/A/D for movement and strafing; mouse drag on the viewport to turn; click the viewport to scan or, when the beacon is centered and eligible, recover it; entering the cyan gate submits automatically; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 900 ticks (18000 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every held W/S/A/D movement occurrence and every viewport-drag turning occurrence.",
+        "D_scan: every viewport click that is used as a scan pulse.",
+        "D_pickup: every viewport click that is used to recover a centered, eligible beacon.",
+        "D_extract: every physical-gate extraction occurrence; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the scene-recovery click must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The centered beacon return and viewport trajectory supply the corresponding visible signal for the scene click."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (1.2) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same scene-recovery action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "10-28",
+          "claim": "The exact difficulty-1 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned full mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the full input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The full markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 202,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 1: introductory two-turn facility with no chamber crates; active scan range 11.5, 121 rays over a 68-degree half-angle, point lifetime 900 ticks (18000 ms), pickup range 1.2, and exit radius 0.78.",
+        "Active success requirements: at least 2 scans, 2 scan stations separated by 2, target scan displacement 4.5, travel 10, and 8 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Simplified surface: pointer-held labelled buttons for forward, back, strafe-left, strafe-right, turn-left, and turn-right; FIRE LIDAR PULSE; PICK UP BEACON when eligible; VERIFY EXTRACTION at the gate; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 900 ticks (18000 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every occurrence of a held labelled movement or turning button, using the six control-button inputs.",
+        "D_scan: every FIRE LIDAR PULSE occurrence.",
+        "D_pickup: every PICK UP BEACON occurrence after beacon reveal and range/line-of-sight checking.",
+        "D_extract: every VERIFY EXTRACTION occurrence at the extraction gate; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the labelled pickup button must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The enabled/disabled pickup button supplies an additional visible range/LOS signal."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (1.2) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same pickup-button action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "10-28",
+          "claim": "The exact difficulty-1 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned simplified mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the simplified input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The simplified markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 203,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 2: short three-turn facility with one chamber crate; active scan range 10.5, 101 rays over a 62-degree half-angle, point lifetime 750 ticks (15000 ms), pickup range 1.1, and exit radius 0.7.",
+        "Active success requirements: at least 3 scans, 2 scan stations separated by 2.1, target scan displacement 5, travel 14, and 10 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Full surface: held W/S/A/D for movement and strafing; mouse drag on the viewport to turn; click the viewport to scan or, when the beacon is centered and eligible, recover it; entering the cyan gate submits automatically; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 750 ticks (15000 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every held W/S/A/D movement occurrence and every viewport-drag turning occurrence.",
+        "D_scan: every viewport click that is used as a scan pulse.",
+        "D_pickup: every viewport click that is used to recover a centered, eligible beacon.",
+        "D_extract: every physical-gate extraction occurrence; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the scene-recovery click must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The centered beacon return and viewport trajectory supply the corresponding visible signal for the scene click."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (1.1) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same scene-recovery action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "30-48",
+          "claim": "The exact difficulty-2 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned full mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the full input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The full markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 204,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 2: short three-turn facility with one chamber crate; active scan range 10.5, 101 rays over a 62-degree half-angle, point lifetime 750 ticks (15000 ms), pickup range 1.1, and exit radius 0.7.",
+        "Active success requirements: at least 3 scans, 2 scan stations separated by 2.1, target scan displacement 5, travel 14, and 10 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Simplified surface: pointer-held labelled buttons for forward, back, strafe-left, strafe-right, turn-left, and turn-right; FIRE LIDAR PULSE; PICK UP BEACON when eligible; VERIFY EXTRACTION at the gate; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 750 ticks (15000 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every occurrence of a held labelled movement or turning button, using the six control-button inputs.",
+        "D_scan: every FIRE LIDAR PULSE occurrence.",
+        "D_pickup: every PICK UP BEACON occurrence after beacon reveal and range/line-of-sight checking.",
+        "D_extract: every VERIFY EXTRACTION occurrence at the extraction gate; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the labelled pickup button must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The enabled/disabled pickup button supplies an additional visible range/LOS signal."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (1.1) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same pickup-button action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "30-48",
+          "claim": "The exact difficulty-2 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned simplified mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the simplified input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The simplified markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 205,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 3: intermediate four-turn facility with one chamber crate; active scan range 9.5, 85 rays over a 57-degree half-angle, point lifetime 620 ticks (12400 ms), pickup range 1, and exit radius 0.63.",
+        "Active success requirements: at least 3 scans, 3 scan stations separated by 2.2, target scan displacement 5.5, travel 18, and 12 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Full surface: held W/S/A/D for movement and strafing; mouse drag on the viewport to turn; click the viewport to scan or, when the beacon is centered and eligible, recover it; entering the cyan gate submits automatically; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 620 ticks (12400 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every held W/S/A/D movement occurrence and every viewport-drag turning occurrence.",
+        "D_scan: every viewport click that is used as a scan pulse.",
+        "D_pickup: every viewport click that is used to recover a centered, eligible beacon.",
+        "D_extract: every physical-gate extraction occurrence; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the scene-recovery click must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The centered beacon return and viewport trajectory supply the corresponding visible signal for the scene click."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (1) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same scene-recovery action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "50-68",
+          "claim": "The exact difficulty-3 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned full mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the full input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The full markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 206,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 3: intermediate four-turn facility with one chamber crate; active scan range 9.5, 85 rays over a 57-degree half-angle, point lifetime 620 ticks (12400 ms), pickup range 1, and exit radius 0.63.",
+        "Active success requirements: at least 3 scans, 3 scan stations separated by 2.2, target scan displacement 5.5, travel 18, and 12 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Simplified surface: pointer-held labelled buttons for forward, back, strafe-left, strafe-right, turn-left, and turn-right; FIRE LIDAR PULSE; PICK UP BEACON when eligible; VERIFY EXTRACTION at the gate; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 620 ticks (12400 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every occurrence of a held labelled movement or turning button, using the six control-button inputs.",
+        "D_scan: every FIRE LIDAR PULSE occurrence.",
+        "D_pickup: every PICK UP BEACON occurrence after beacon reveal and range/line-of-sight checking.",
+        "D_extract: every VERIFY EXTRACTION occurrence at the extraction gate; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the labelled pickup button must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The enabled/disabled pickup button supplies an additional visible range/LOS signal."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (1) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same pickup-button action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "50-68",
+          "claim": "The exact difficulty-3 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned simplified mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the simplified input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The simplified markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 207,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 4: current five- or six-turn facility with two chamber crates; active scan range 8.5, 73 rays over a 52-degree half-angle, point lifetime 500 ticks (10000 ms), pickup range 0.92, and exit radius 0.56.",
+        "Active success requirements: at least 4 scans, 3 scan stations separated by 2.2, target scan displacement 5, travel 12, and 14 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Full surface: held W/S/A/D for movement and strafing; mouse drag on the viewport to turn; click the viewport to scan or, when the beacon is centered and eligible, recover it; entering the cyan gate submits automatically; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 500 ticks (10000 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every held W/S/A/D movement occurrence and every viewport-drag turning occurrence.",
+        "D_scan: every viewport click that is used as a scan pulse.",
+        "D_pickup: every viewport click that is used to recover a centered, eligible beacon.",
+        "D_extract: every physical-gate extraction occurrence; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the scene-recovery click must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The centered beacon return and viewport trajectory supply the corresponding visible signal for the scene click."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (0.92) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same scene-recovery action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "70-88",
+          "claim": "The exact difficulty-4 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned full mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the full input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The full markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 208,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 4: current five- or six-turn facility with two chamber crates; active scan range 8.5, 73 rays over a 52-degree half-angle, point lifetime 500 ticks (10000 ms), pickup range 0.92, and exit radius 0.56.",
+        "Active success requirements: at least 4 scans, 3 scan stations separated by 2.2, target scan displacement 5, travel 12, and 14 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Simplified surface: pointer-held labelled buttons for forward, back, strafe-left, strafe-right, turn-left, and turn-right; FIRE LIDAR PULSE; PICK UP BEACON when eligible; VERIFY EXTRACTION at the gate; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 500 ticks (10000 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every occurrence of a held labelled movement or turning button, using the six control-button inputs.",
+        "D_scan: every FIRE LIDAR PULSE occurrence.",
+        "D_pickup: every PICK UP BEACON occurrence after beacon reveal and range/line-of-sight checking.",
+        "D_extract: every VERIFY EXTRACTION occurrence at the extraction gate; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the labelled pickup button must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The enabled/disabled pickup button supplies an additional visible range/LOS signal."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (0.92) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same pickup-button action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "70-88",
+          "claim": "The exact difficulty-4 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned simplified mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the simplified input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The simplified markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 209,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 5: branched facility with three dead-end branches and four chamber crates; active scan range 6.8, 49 rays over a 42-degree half-angle, point lifetime 320 ticks (6400 ms), pickup range 0.74, and exit radius 0.44.",
+        "Active success requirements: at least 5 scans, 4 scan stations separated by 2, target scan displacement 7, travel 24, and 16 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Full surface: held W/S/A/D for movement and strafing; mouse drag on the viewport to turn; click the viewport to scan or, when the beacon is centered and eligible, recover it; entering the cyan gate submits automatically; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 320 ticks (6400 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every held W/S/A/D movement occurrence and every viewport-drag turning occurrence.",
+        "D_scan: every viewport click that is used as a scan pulse.",
+        "D_pickup: every viewport click that is used to recover a centered, eligible beacon.",
+        "D_extract: every physical-gate extraction occurrence; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the scene-recovery click must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The centered beacon return and viewport trajectory supply the corresponding visible signal for the scene click."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (0.74) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same scene-recovery action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "90-108",
+          "claim": "The exact difficulty-5 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned full mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the full input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The full markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 210,
+      "public_environment_name": "LIDAR Blacksite",
+      "environment_id": "lidar_blacksite_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 5: branched facility with three dead-end branches and four chamber crates; active scan range 6.8, 49 rays over a 42-degree half-angle, point lifetime 320 ticks (6400 ms), pickup range 0.74, and exit radius 0.44.",
+        "Active success requirements: at least 5 scans, 4 scan stations separated by 2, target scan displacement 7, travel 24, and 16 key transitions; the shared movement tick is 20 ms at speed 1.55 with 100 degrees/second turning and a 7-tick scan cooldown.",
+        "Simplified surface: pointer-held labelled buttons for forward, back, strafe-left, strafe-right, turn-left, and turn-right; FIRE LIDAR PULSE; PICK UP BEACON when eligible; VERIFY EXTRACTION at the gate; and ABORT / NEW FACILITY."
+      ],
+      "autonomous_processes": [
+        "Every 20 ms, the browser interval advances stepPlayer. Any movement or turning input that remains held changes the player's position or heading without another agent event; swept collision, travel distance, collision count, and tick advance with that physics step.",
+        "Every 20 ms, point ages and scan-burst ages advance. Scan-burst rays are removed after 8 ticks (160 ms), and visible world-anchored LIDAR points are removed after 320 ticks (6400 ms); their drawn opacity also decays continuously.",
+        "After a scan, the scanner is unavailable for the fixed 7-tick (140 ms) cooldown and then becomes available again. This is fixed enablement, not a loss of an action opportunity.",
+        "The walls, chamber occluders, beacon, and extraction gate do not move. Once a scan sees the beacon, targetSeen remains true; pickup and extraction checks continue to use the fixed geometry, range, and line-of-sight rules."
+      ],
+      "grouped_control_modes": [
+        "D_move_turn: every occurrence of a held labelled movement or turning button, using the six control-button inputs.",
+        "D_scan: every FIRE LIDAR PULSE occurrence.",
+        "D_pickup: every PICK UP BEACON occurrence after beacon reveal and range/line-of-sight checking.",
+        "D_extract: every VERIFY EXTRACTION occurrence at the extraction gate; D_abandon is a terminal failure control and is not a success witness."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_pickup, an observation-free q(I_t) cannot choose the delayed recovery action versus releasing/turning the held movement across route layouts, mirrors, occluder placements, and approach speeds. The same prior action/timing transcript can reach different visible beacon distances or angles; the labelled pickup button must therefore be selected from the current task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_pickup, g(I_t, W_t^w) can use the configured 500 ms, 5-frame window, the visible return field and relative beacon motion, and the held-input history to predict whether the player will still have a valid pickup at delivery. The enabled/disabled pickup button supplies an additional visible range/LOS signal."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a history just inside the beacon pickup range (0.74) with a movement input held away from the beacon. Use Delta=500 ms and tau=250 ms: at speed 1.55, the player can move about 0.39 m before tau, leaving the valid range or line of sight while success remains recoverable by releasing, reversing, and reapproaching. The same pickup-button action has lower Q after that visible player-position change, rather than merely after a deadline or later completion."
+      },
+      "common_visible_process": "Held-input player motion in the fixed facility while approaching the beacon is the common visible process. The five chronological frames over 500 ms show the relative beacon/player motion; if the player is moving away, a pickup action that is valid at t can be out of range or line of sight at t+Delta. LIDAR point fading is a separate display process and is not being used to manufacture the witness.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a single autonomous outcome phase that completes the task without later outcome-affecting events. A successful transcript must still interleave movement transitions, scans from multiple positions, beacon pickup, and extraction; final certification is administrative, but those gameplay events are not.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+        "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "90-108",
+          "claim": "The exact difficulty-5 profile sets the active layout, occluder count, sensing parameters, point lifetime, pickup/exit ranges, and success requirements reported for this configuration."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lidar_blacksite_env/controls.json",
+          "lines": "111-124",
+          "claim": "Both interaction modes are implemented and the assigned simplified mode uses the shared 500 ms observation window, five frames, and 90-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "266-348",
+          "claim": "Generation selects the controlled layout and parameters, creates fixed walls/occluders/beacon/exit geometry, and sets a 20 ms movement tick, movement speed, scan cooldown, and point lifetime."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lidar_blacksite.py",
+          "lines": "375-426",
+          "claim": "The public rules require movement, repeated scans from separated positions, beacon reveal/pickup, and physical extraction; returns fade but geometry does not move, and the browser receives geometry rather than a hidden route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "19-27",
+          "claim": "The 20 ms player step advances held-input movement, ages/removes bursts and points, while pickup requires targetSeen, fixed range, and line of sight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "37-56",
+          "claim": "The browser maps the simplified input surface to movement, scan, pickup, and submit events; a pickup is a discrete action and targetSeen persists after a beacon hit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.js",
+          "lines": "62-79",
+          "claim": "The simplified markup and listeners expose the mode-specific controls, and the shared interval runs stepPlayer every configured 20 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lidar_blacksite.css",
+          "lines": "165-176",
+          "claim": "The visible canvas is the viewport interaction surface; full mode exposes its drag state and cursor while the underlying task remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lidar_blacksite.py",
+          "lines": "328-423",
+          "claim": "The verifier enforces mode-specific event sources, replays movement/scans/pickup against fixed geometry, and bases pass on replayed counts, carrying, extraction, and tick requirements rather than point-cloud age."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lidar_blacksite.py",
+          "lines": "266-324",
+          "claim": "The normal solve interleaves movement, scans, beacon pickup, and extraction through visible UI controls; it is implementation evidence for the interactive path, not private policy information."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

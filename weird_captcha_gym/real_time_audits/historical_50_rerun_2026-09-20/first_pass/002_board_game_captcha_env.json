@@ -1,0 +1,1147 @@
+{
+  "case_index": 2,
+  "environment_id": "board_game_captcha_env",
+  "public_environment_name": "Gyroscopic Tilt Board",
+  "configuration_reports": [
+    {
+      "case_index": 11,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 1 ordered lamp, 0 walls, 1 well, a final cup, the ball, and live lamp/well/contact counters.",
+        "Full steering uses the visible #tilt-pad: pointerdown/pointermove set a normalized continuous two-dimensional tilt vector and pointerup levels it.",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 70 ms. It applies the current tilt with acceleration 140, multiplies velocity by friction 0.94, caps speed at 130, and advances the 15-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 7 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 0 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_full: every analog_drag steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal analog correction can be a reflected steering or braking vector. No q(I_t) can choose that action for every success-still-possible history in C_500(D_full)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_full, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the continuous analog correction that is optimal for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the analog steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A braking/steering vector that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-1 physics contract: after a nonzero analog_drag tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 3 analog_drag tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected full input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "6",
+          "claim": "This exact level has 1 ordered lamp, 0 walls, 1 well, 70 ms ticks, acceleration 140, friction 0.94, speed cap 130, lamp radius 34, goal radius 36, and minimum 3 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Full mode is implemented as continuous analog knob dragging. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 12,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 1 ordered lamp, 0 walls, 1 well, a final cup, the ball, and live lamp/well/contact counters.",
+        "Simplified steering uses visible NW/N/NE/W/LEVEL/E/SW/S/SE buttons: the eight compass vectors persist until another choice, and LEVEL sets the player's tilt to [0,0].",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 70 ms. It applies the current tilt with acceleration 140, multiplies velocity by friction 0.94, caps speed at 130, and advances the 15-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 7 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 0 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_simplified: every compass_button steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal compass choice can be a reflected E/W, diagonal, or LEVEL correction. No q(I_t) can choose that action for every success-still-possible history in C_500(D_simplified)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_simplified, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the appropriate visible compass vector or LEVEL for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the compass steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A compass braking/steering choice that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-1 physics contract: after a nonzero compass_button tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 3 compass_button tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected simplified input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "6",
+          "claim": "This exact level has 1 ordered lamp, 0 walls, 1 well, 70 ms ticks, acceleration 140, friction 0.94, speed cap 130, lamp radius 34, goal radius 36, and minimum 3 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Simplified mode is implemented as persistent compass buttons including LEVEL. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 13,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 2 ordered lamps, 1 wall, 1 well, a final cup, the ball, and live lamp/well/contact counters.",
+        "Full steering uses the visible #tilt-pad: pointerdown/pointermove set a normalized continuous two-dimensional tilt vector and pointerup levels it.",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 60 ms. It applies the current tilt with acceleration 160, multiplies velocity by friction 0.95, caps speed at 145, and advances the 14-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 8 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 1 wall and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_full: every analog_drag steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal analog correction can be a reflected steering or braking vector. No q(I_t) can choose that action for every success-still-possible history in C_500(D_full)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_full, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the continuous analog correction that is optimal for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the analog steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A braking/steering vector that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-2 physics contract: after a nonzero analog_drag tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 5 analog_drag tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected full input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "7",
+          "claim": "This exact level has 2 ordered lamps, 1 wall, 1 well, 60 ms ticks, acceleration 160, friction 0.95, speed cap 145, lamp radius 30, goal radius 34, and minimum 5 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Full mode is implemented as continuous analog knob dragging. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 14,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 2 ordered lamps, 1 wall, 1 well, a final cup, the ball, and live lamp/well/contact counters.",
+        "Simplified steering uses visible NW/N/NE/W/LEVEL/E/SW/S/SE buttons: the eight compass vectors persist until another choice, and LEVEL sets the player's tilt to [0,0].",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 60 ms. It applies the current tilt with acceleration 160, multiplies velocity by friction 0.95, caps speed at 145, and advances the 14-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 8 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 1 wall and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_simplified: every compass_button steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal compass choice can be a reflected E/W, diagonal, or LEVEL correction. No q(I_t) can choose that action for every success-still-possible history in C_500(D_simplified)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_simplified, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the appropriate visible compass vector or LEVEL for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the compass steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A compass braking/steering choice that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-2 physics contract: after a nonzero compass_button tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 5 compass_button tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected simplified input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "7",
+          "claim": "This exact level has 2 ordered lamps, 1 wall, 1 well, 60 ms ticks, acceleration 160, friction 0.95, speed cap 145, lamp radius 30, goal radius 34, and minimum 5 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Simplified mode is implemented as persistent compass buttons including LEVEL. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 15,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 3 ordered lamps, 3 walls, 3 wells, a final cup, the ball, and live lamp/well/contact counters.",
+        "Full steering uses the visible #tilt-pad: pointerdown/pointermove set a normalized continuous two-dimensional tilt vector and pointerup levels it.",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 50 ms. It applies the current tilt with acceleration 190, multiplies velocity by friction 0.958, caps speed at 178, and advances the 13-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 10 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 3 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_full: every analog_drag steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal analog correction can be a reflected steering or braking vector. No q(I_t) can choose that action for every success-still-possible history in C_500(D_full)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_full, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the continuous analog correction that is optimal for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the analog steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A braking/steering vector that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-3 physics contract: after a nonzero analog_drag tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 8 analog_drag tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected full input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "8",
+          "claim": "This exact level has 3 ordered lamps, 3 walls, 3 wells, 50 ms ticks, acceleration 190, friction 0.958, speed cap 178, lamp radius 24, goal radius 28, and minimum 8 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Full mode is implemented as continuous analog knob dragging. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 16,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 3 ordered lamps, 3 walls, 3 wells, a final cup, the ball, and live lamp/well/contact counters.",
+        "Simplified steering uses visible NW/N/NE/W/LEVEL/E/SW/S/SE buttons: the eight compass vectors persist until another choice, and LEVEL sets the player's tilt to [0,0].",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 50 ms. It applies the current tilt with acceleration 190, multiplies velocity by friction 0.958, caps speed at 178, and advances the 13-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 10 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 3 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_simplified: every compass_button steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal compass choice can be a reflected E/W, diagonal, or LEVEL correction. No q(I_t) can choose that action for every success-still-possible history in C_500(D_simplified)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_simplified, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the appropriate visible compass vector or LEVEL for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the compass steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A compass braking/steering choice that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-3 physics contract: after a nonzero compass_button tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 8 compass_button tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected simplified input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "8",
+          "claim": "This exact level has 3 ordered lamps, 3 walls, 3 wells, 50 ms ticks, acceleration 190, friction 0.958, speed cap 178, lamp radius 24, goal radius 28, and minimum 8 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Simplified mode is implemented as persistent compass buttons including LEVEL. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 17,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 4 ordered lamps, 4 walls, 4 wells, a final cup, the ball, and live lamp/well/contact counters.",
+        "Full steering uses the visible #tilt-pad: pointerdown/pointermove set a normalized continuous two-dimensional tilt vector and pointerup levels it.",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 42 ms. It applies the current tilt with acceleration 210, multiplies velocity by friction 0.965, caps speed at 190, and advances the 12-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 12 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 4 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_full: every analog_drag steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal analog correction can be a reflected steering or braking vector. No q(I_t) can choose that action for every success-still-possible history in C_500(D_full)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_full, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the continuous analog correction that is optimal for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the analog steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A braking/steering vector that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-4 physics contract: after a nonzero analog_drag tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 12 analog_drag tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected full input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "9",
+          "claim": "This exact level has 4 ordered lamps, 4 walls, 4 wells, 42 ms ticks, acceleration 210, friction 0.965, speed cap 190, lamp radius 20, goal radius 24, and minimum 12 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Full mode is implemented as continuous analog knob dragging. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 18,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 4 ordered lamps, 4 walls, 4 wells, a final cup, the ball, and live lamp/well/contact counters.",
+        "Simplified steering uses visible NW/N/NE/W/LEVEL/E/SW/S/SE buttons: the eight compass vectors persist until another choice, and LEVEL sets the player's tilt to [0,0].",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 42 ms. It applies the current tilt with acceleration 210, multiplies velocity by friction 0.965, caps speed at 190, and advances the 12-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 12 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 4 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_simplified: every compass_button steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal compass choice can be a reflected E/W, diagonal, or LEVEL correction. No q(I_t) can choose that action for every success-still-possible history in C_500(D_simplified)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_simplified, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the appropriate visible compass vector or LEVEL for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the compass steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A compass braking/steering choice that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-4 physics contract: after a nonzero compass_button tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 12 compass_button tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected simplified input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "9",
+          "claim": "This exact level has 4 ordered lamps, 4 walls, 4 wells, 42 ms ticks, acceleration 210, friction 0.965, speed cap 190, lamp radius 20, goal radius 24, and minimum 12 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Simplified mode is implemented as persistent compass buttons including LEVEL. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 19,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 5 ordered lamps, 5 walls, 5 wells, a final cup, the ball, and live lamp/well/contact counters.",
+        "Full steering uses the visible #tilt-pad: pointerdown/pointermove set a normalized continuous two-dimensional tilt vector and pointerup levels it.",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 35 ms. It applies the current tilt with acceleration 235, multiplies velocity by friction 0.97, caps speed at 215, and advances the 11-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 14 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 5 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_full: every analog_drag steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal analog correction can be a reflected steering or braking vector. No q(I_t) can choose that action for every success-still-possible history in C_500(D_full)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_full, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the continuous analog correction that is optimal for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the analog steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A braking/steering vector that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-5 physics contract: after a nonzero analog_drag tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 16 analog_drag tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected full input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "10",
+          "claim": "This exact level has 5 ordered lamps, 5 walls, 5 wells, 35 ms ticks, acceleration 235, friction 0.97, speed cap 215, lamp radius 17, goal radius 20, and minimum 16 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Full mode is implemented as continuous analog knob dragging. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 20,
+      "public_environment_name": "Gyroscopic Tilt Board",
+      "environment_id": "board_game_captcha_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible canvas shows 5 ordered lamps, 5 walls, 5 wells, a final cup, the ball, and live lamp/well/contact counters.",
+        "Simplified steering uses visible NW/N/NE/W/LEVEL/E/SW/S/SE buttons: the eight compass vectors persist until another choice, and LEVEL sets the player's tilt to [0,0].",
+        "LEVEL + RESET BOARD resets position, velocity, ordered-lamp progress, and tilt; CERTIFY THE RUN is the administrative seal."
+      ],
+      "autonomous_processes": [
+        "While the run is live, physicsTick executes every 35 ms. It applies the current tilt with acceleration 235, multiplies velocity by friction 0.97, caps speed at 215, and advances the 11-radius ball.",
+        "The ball retains velocity between input events; the 500 ms observation window spans about 14 physics ticks, so the chronological frames expose its changing position and direction.",
+        "The configured 5 walls and stage rims bounce the ball; contact with a well returns it to the start and resets ordered-lamp progress, while reaching the next lamp and then the cup changes the outcome.",
+        "At initial rest with zero tilt there is no autonomous displacement, but once steering creates velocity the same state evolution continues without a new action."
+      ],
+      "grouped_control_modes": [
+        "D_simplified: every compass_button steering occurrence across all generated seeds, rounds, and attempts for this interaction surface.",
+        "D_reset: every manual_reset occurrence; seal is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified, the same I_t and task time can occur on mirrored seeds or after different physical states. The generator mirrors the start, goal, lamps, walls, and wells, while I_t contains no current canvas position or velocity, so the delayed-optimal compass choice can be a reflected E/W, diagonal, or LEVEL correction. No q(I_t) can choose that action for every success-still-possible history in C_500(D_simplified)."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "For D_simplified, g can use the five chronological frames in W_t^500: consecutive ball positions reveal current motion, and the visible board and lamp state identify the next corridor or target. It can select the appropriate visible compass vector or LEVEL for delivery at t+500."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a moving, pre-collision H_t in the compass steering mode, with success still possible after 500 ms. For 0<tau<500 and no new input, interval ticks carry velocity forward and move the ball toward a lamp, rim, wall, or well. A compass braking/steering choice that is useful at H_t is delivered later at a different position and velocity and can overshoot, miss the target, or enter the well, while recovery remains possible from the chosen H_t^tau. This is a strict loss in Q or in Q(action)-Q(no-op) caused by physical state evolution, not by the deadline."
+      },
+      "common_visible_process": "The common visible process is inertial ball motion under the level-5 physics contract: after a nonzero compass_button tilt, the ball's position and velocity change autonomously on interval ticks and are redrawn on the canvas; recent frames show that motion, while collisions, well resets, ordered-lamp progress, and cup locking visibly change the task state. The supplied profile has no external tilt or hole-gravity process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Source-structural: there is no separate autonomous outcome phase. render starts the physics interval immediately, physics consumes only the current tilt, and a passing replay requires at least 16 compass_button tilt changes. Because those outcome-affecting changes are the only way to steer this profile and the selected simplified input is unavailable after preparation under the pre-run rule, no generated instance admits the required pre-run form.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "10",
+          "claim": "This exact level has 5 ordered lamps, 5 walls, 5 wells, 35 ms ticks, acceleration 235, friction 0.97, speed cap 215, lamp radius 17, goal radius 20, and minimum 16 control changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "lines": "12-16",
+          "claim": "Simplified mode is implemented as persistent compass buttons including LEVEL. The configured observation window is 500 ms with five frames and 120 seconds of play time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "29-61",
+          "claim": "The generator reads the supplied difficulty parameters and only adds external_tilt or hole_gravity when those optional parameters are explicitly present; the supplied profiles do not include either."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "lines": "63-124",
+          "claim": "Each seed visibly determines the mirrored board geometry and the active physics/requirements contract, including the level-specific tick and minimum-control values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "35-48",
+          "claim": "The autonomous interval tick integrates current tilt, friction, velocity cap, position, rim/wall collisions, well reset, ordered lamps, and cup completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "lines": "65-79",
+          "claim": "The visible handlers use analog_drag or compass_button to change tilt, the reset is a separate recovery action, and render starts the physics interval immediately."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "lines": "155-241",
+          "claim": "The replay grader binds the accepted input source to the selected interaction mode, replays every tick from the reported prior state, and requires the configured minimum ticks, control changes, ordered lamps, cup, and seal."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-30,241-260",
+          "claim": "The task verifier routes the deterministic gyroscopic generator to the shared board replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py",
+          "lines": "58-107",
+          "claim": "The private solver repeatedly reads position and velocity and changes the selected input about every 95 ms; this is implementation evidence of closed-loop steering, not information available to the policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339,548-579",
+          "claim": "The shared clock advances the mechanic's interval timers during a live/run window and does not drain them while paused."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

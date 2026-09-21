@@ -1,0 +1,1218 @@
+{
+  "case_index": 36,
+  "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+  "environment_id": "rorschach_fixed_rubric_env",
+  "configuration_reports": [
+    {
+      "case_index": 351,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 2 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the enabled direct physical surface for each of the 1 generated required tool(s): FOLD is a left-to-right fold-axis sweep of at least 105 stage units, PRESSURE is a pointer hold of at least 360 ms, and COOL is one cooling-pulse click. Non-required or already observed tools are disabled.",
+        "Each accepted physical test starts one specimen-bound response cycle with 5 visible ticks at 135 ms per tick; only one cycle is active at a time.",
+        "After all 2 specimen/tool responses are archived, drag the verification stamp from its dock onto the target specimen, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted direct physical gesture/click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 5 pre-generated snapshots at 135 ms intervals (675 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 2 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "A full PRESSURE hold is a fixed 360 ms minimum-duration gesture when that tool is required; the state change is tied to the agent's held input and its own duration, not an autonomous target process."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 2 cards.",
+        "Direct FOLD sweep, when FOLD is generated as required, with the 105-unit threshold.",
+        "Direct PRESSURE hold/release, when PRESSURE is generated as required, with the 360 ms threshold.",
+        "Direct COOL cooling-pulse click, when COOL is generated as required.",
+        "Direct verification-stamp drag from the dock to a specimen.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final direct stamp drag to a specimen, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a direct drag to the card whose visible archived response labels satisfy the rubric: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 675 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 2 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 360 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 2 separate specimen/tool probes, each with all 5 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "9-20",
+          "claim": "The exact level profile is 2 specimens, 1 required tool(s), 5 ticks at 135 ms, a 105-unit fold threshold, and a 360 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected full interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 2 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The full surface is explicit: direct fold, pressure, cooling, and stamp-drag handlers are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 2 specimen/tool pairs, every 5-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 352,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 2 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the labelled APPLY TEST proxy for each of the 1 generated required tool(s); the proxy starts the same specimen-bound response cycle as the direct surface.",
+        "Each accepted proxy test produces 5 visible ticks at 135 ms per tick, and the labelled proxy is unavailable while that response is active.",
+        "After all 2 responses are archived, select the target card and click the selected-card verification-stamp proxy, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted labelled proxy click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 5 pre-generated snapshots at 135 ms intervals (675 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 2 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "In simplified mode, the proxy buttons have no independent autonomous evolution beyond the same fixed response cycles."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 2 cards, including the final target selection.",
+        "Labelled APPLY TEST proxy click for each generated required tool.",
+        "Selected-card verification-stamp proxy click after every required pair is observed.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final target-card selection before the selected-card stamp proxy, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a target-card selection followed by the selected-card stamp proxy: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 675 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 2 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 360 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 2 separate specimen/tool probes, each with all 5 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "9-20",
+          "claim": "The exact level profile is 2 specimens, 1 required tool(s), 5 ticks at 135 ms, a 105-unit fold threshold, and a 360 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected simplified interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 2 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The simplified surface is explicit: labelled test proxies and a selected-card stamp proxy are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 2 specimen/tool pairs, every 5-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 353,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 3 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the enabled direct physical surface for each of the 1 generated required tool(s): FOLD is a left-to-right fold-axis sweep of at least 130 stage units, PRESSURE is a pointer hold of at least 420 ms, and COOL is one cooling-pulse click. Non-required or already observed tools are disabled.",
+        "Each accepted physical test starts one specimen-bound response cycle with 5 visible ticks at 125 ms per tick; only one cycle is active at a time.",
+        "After all 3 specimen/tool responses are archived, drag the verification stamp from its dock onto the target specimen, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted direct physical gesture/click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 5 pre-generated snapshots at 125 ms intervals (625 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 3 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "A full PRESSURE hold is a fixed 420 ms minimum-duration gesture when that tool is required; the state change is tied to the agent's held input and its own duration, not an autonomous target process."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 3 cards.",
+        "Direct FOLD sweep, when FOLD is generated as required, with the 130-unit threshold.",
+        "Direct PRESSURE hold/release, when PRESSURE is generated as required, with the 420 ms threshold.",
+        "Direct COOL cooling-pulse click, when COOL is generated as required.",
+        "Direct verification-stamp drag from the dock to a specimen.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final direct stamp drag to a specimen, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a direct drag to the card whose visible archived response labels satisfy the rubric: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 625 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 3 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 420 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 3 separate specimen/tool probes, each with all 5 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "23-34",
+          "claim": "The exact level profile is 3 specimens, 1 required tool(s), 5 ticks at 125 ms, a 130-unit fold threshold, and a 420 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected full interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 3 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The full surface is explicit: direct fold, pressure, cooling, and stamp-drag handlers are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 3 specimen/tool pairs, every 5-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 354,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 3 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the labelled APPLY TEST proxy for each of the 1 generated required tool(s); the proxy starts the same specimen-bound response cycle as the direct surface.",
+        "Each accepted proxy test produces 5 visible ticks at 125 ms per tick, and the labelled proxy is unavailable while that response is active.",
+        "After all 3 responses are archived, select the target card and click the selected-card verification-stamp proxy, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted labelled proxy click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 5 pre-generated snapshots at 125 ms intervals (625 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 3 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "In simplified mode, the proxy buttons have no independent autonomous evolution beyond the same fixed response cycles."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 3 cards, including the final target selection.",
+        "Labelled APPLY TEST proxy click for each generated required tool.",
+        "Selected-card verification-stamp proxy click after every required pair is observed.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final target-card selection before the selected-card stamp proxy, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a target-card selection followed by the selected-card stamp proxy: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 625 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 3 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 420 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 3 separate specimen/tool probes, each with all 5 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "23-34",
+          "claim": "The exact level profile is 3 specimens, 1 required tool(s), 5 ticks at 125 ms, a 130-unit fold threshold, and a 420 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected simplified interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 3 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The simplified surface is explicit: labelled test proxies and a selected-card stamp proxy are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 3 specimen/tool pairs, every 5-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 355,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 4 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the enabled direct physical surface for each of the 2 generated required tool(s): FOLD is a left-to-right fold-axis sweep of at least 160 stage units, PRESSURE is a pointer hold of at least 500 ms, and COOL is one cooling-pulse click. Non-required or already observed tools are disabled.",
+        "Each accepted physical test starts one specimen-bound response cycle with 6 visible ticks at 115 ms per tick; only one cycle is active at a time.",
+        "After all 8 specimen/tool responses are archived, drag the verification stamp from its dock onto the target specimen, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted direct physical gesture/click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 6 pre-generated snapshots at 115 ms intervals (690 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 8 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "A full PRESSURE hold is a fixed 500 ms minimum-duration gesture when that tool is required; the state change is tied to the agent's held input and its own duration, not an autonomous target process."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 4 cards.",
+        "Direct FOLD sweep, when FOLD is generated as required, with the 160-unit threshold.",
+        "Direct PRESSURE hold/release, when PRESSURE is generated as required, with the 500 ms threshold.",
+        "Direct COOL cooling-pulse click, when COOL is generated as required.",
+        "Direct verification-stamp drag from the dock to a specimen.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final direct stamp drag to a specimen, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a direct drag to the card whose visible archived response labels satisfy the rubric: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 690 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 8 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 500 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 8 separate specimen/tool probes, each with all 6 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "37-47",
+          "claim": "The exact level profile is 4 specimens, 2 required tool(s), 6 ticks at 115 ms, a 160-unit fold threshold, and a 500 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected full interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 8 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The full surface is explicit: direct fold, pressure, cooling, and stamp-drag handlers are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 8 specimen/tool pairs, every 6-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 356,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 4 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the labelled APPLY TEST proxy for each of the 2 generated required tool(s); the proxy starts the same specimen-bound response cycle as the direct surface.",
+        "Each accepted proxy test produces 6 visible ticks at 115 ms per tick, and the labelled proxy is unavailable while that response is active.",
+        "After all 8 responses are archived, select the target card and click the selected-card verification-stamp proxy, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted labelled proxy click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 6 pre-generated snapshots at 115 ms intervals (690 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 8 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "In simplified mode, the proxy buttons have no independent autonomous evolution beyond the same fixed response cycles."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 4 cards, including the final target selection.",
+        "Labelled APPLY TEST proxy click for each generated required tool.",
+        "Selected-card verification-stamp proxy click after every required pair is observed.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final target-card selection before the selected-card stamp proxy, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a target-card selection followed by the selected-card stamp proxy: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 690 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 8 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 500 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 8 separate specimen/tool probes, each with all 6 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "37-47",
+          "claim": "The exact level profile is 4 specimens, 2 required tool(s), 6 ticks at 115 ms, a 160-unit fold threshold, and a 500 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected simplified interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 8 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The simplified surface is explicit: labelled test proxies and a selected-card stamp proxy are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 8 specimen/tool pairs, every 6-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 357,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 5 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the enabled direct physical surface for each of the 2 generated required tool(s): FOLD is a left-to-right fold-axis sweep of at least 190 stage units, PRESSURE is a pointer hold of at least 620 ms, and COOL is one cooling-pulse click. Non-required or already observed tools are disabled.",
+        "Each accepted physical test starts one specimen-bound response cycle with 7 visible ticks at 105 ms per tick; only one cycle is active at a time.",
+        "After all 10 specimen/tool responses are archived, drag the verification stamp from its dock onto the target specimen, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted direct physical gesture/click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 7 pre-generated snapshots at 105 ms intervals (735 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 10 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "A full PRESSURE hold is a fixed 620 ms minimum-duration gesture when that tool is required; the state change is tied to the agent's held input and its own duration, not an autonomous target process."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 5 cards.",
+        "Direct FOLD sweep, when FOLD is generated as required, with the 190-unit threshold.",
+        "Direct PRESSURE hold/release, when PRESSURE is generated as required, with the 620 ms threshold.",
+        "Direct COOL cooling-pulse click, when COOL is generated as required.",
+        "Direct verification-stamp drag from the dock to a specimen.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final direct stamp drag to a specimen, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a direct drag to the card whose visible archived response labels satisfy the rubric: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 735 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 10 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 620 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 10 separate specimen/tool probes, each with all 7 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "50-60",
+          "claim": "The exact level profile is 5 specimens, 2 required tool(s), 7 ticks at 105 ms, a 190-unit fold threshold, and a 620 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected full interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "95-184, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 10 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The full surface is explicit: direct fold, pressure, cooling, and stamp-drag handlers are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 10 specimen/tool pairs, every 7-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 358,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 5 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the labelled APPLY TEST proxy for each of the 2 generated required tool(s); the proxy starts the same specimen-bound response cycle as the direct surface.",
+        "Each accepted proxy test produces 7 visible ticks at 105 ms per tick, and the labelled proxy is unavailable while that response is active.",
+        "After all 10 responses are archived, select the target card and click the selected-card verification-stamp proxy, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted labelled proxy click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 7 pre-generated snapshots at 105 ms intervals (735 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 10 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "In simplified mode, the proxy buttons have no independent autonomous evolution beyond the same fixed response cycles."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 5 cards, including the final target selection.",
+        "Labelled APPLY TEST proxy click for each generated required tool.",
+        "Selected-card verification-stamp proxy click after every required pair is observed.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final target-card selection before the selected-card stamp proxy, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a target-card selection followed by the selected-card stamp proxy: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 735 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 10 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 620 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 10 separate specimen/tool probes, each with all 7 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "50-60",
+          "claim": "The exact level profile is 5 specimens, 2 required tool(s), 7 ticks at 105 ms, a 190-unit fold threshold, and a 620 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected simplified interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "95-184, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 10 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The simplified surface is explicit: labelled test proxies and a selected-card stamp proxy are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 10 specimen/tool pairs, every 7-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 359,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 5 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the enabled direct physical surface for each of the 3 generated required tool(s): FOLD is a left-to-right fold-axis sweep of at least 230 stage units, PRESSURE is a pointer hold of at least 850 ms, and COOL is one cooling-pulse click. Non-required or already observed tools are disabled.",
+        "Each accepted physical test starts one specimen-bound response cycle with 9 visible ticks at 90 ms per tick; only one cycle is active at a time.",
+        "After all 15 specimen/tool responses are archived, drag the verification stamp from its dock onto the target specimen, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted direct physical gesture/click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 9 pre-generated snapshots at 90 ms intervals (810 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 15 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "A full PRESSURE hold is a fixed 850 ms minimum-duration gesture when that tool is required; the state change is tied to the agent's held input and its own duration, not an autonomous target process."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 5 cards.",
+        "Direct FOLD sweep, when FOLD is generated as required, with the 230-unit threshold.",
+        "Direct PRESSURE hold/release, when PRESSURE is generated as required, with the 850 ms threshold.",
+        "Direct COOL cooling-pulse click, when COOL is generated as required.",
+        "Direct verification-stamp drag from the dock to a specimen.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final direct stamp drag to a specimen, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a direct drag to the card whose visible archived response labels satisfy the rubric: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 810 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 15 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 850 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 15 separate specimen/tool probes, each with all 9 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "63-73",
+          "claim": "The exact level profile is 5 specimens, 3 required tool(s), 9 ticks at 90 ms, a 230-unit fold threshold, and a 850 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected full interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 15 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The full surface is explicit: direct fold, pressure, cooling, and stamp-drag handlers are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 15 specimen/tool pairs, every 9-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 360,
+      "public_environment_name": "Rorschach / Subjective Prompt With A Fixed Rubric",
+      "environment_id": "rorschach_fixed_rubric_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 5 specimen cards by clicking; the initial blot appearance is non-diagnostic.",
+        "Use the labelled APPLY TEST proxy for each of the 3 generated required tool(s); the proxy starts the same specimen-bound response cycle as the direct surface.",
+        "Each accepted proxy test produces 9 visible ticks at 90 ms per tick, and the labelled proxy is unavailable while that response is active.",
+        "After all 15 responses are archived, select the target card and click the selected-card verification-stamp proxy, then certify the run."
+      ],
+      "autonomous_processes": [
+        "After each accepted labelled proxy click, startProbe marks the task active and runs a fixed response cycle for the selected specimen/tool pair.",
+        "The cycle autonomously applies 9 pre-generated snapshots at 90 ms intervals (810 ms from first scheduled tick to the final tick): blot left/right scale, fold, hue, flow, response meter, and transient readout change visibly.",
+        "finishCycle then labels and permanently archives that pair's response, adds it to the observation set, marks the task inactive, re-enables the next controls, and settles the finite action.",
+        "After all 15 pairs, the stamp becomes ready. The ready stamp has only a repeating CSS pulse; it does not alter the target or verifier outcome.",
+        "In simplified mode, the proxy buttons have no independent autonomous evolution beyond the same fixed response cycles."
+      ],
+      "grouped_control_modes": [
+        "Specimen-card selection/load click across all 5 cards, including the final target selection.",
+        "Labelled APPLY TEST proxy click for each generated required tool.",
+        "Selected-card verification-stamp proxy click after every required pair is observed.",
+        "RESET MATERIAL RUN click, which clears the accumulated response transcript."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static final-decision candidate D=the final target-card selection before the selected-card stamp proxy, an observation-free q using only I_t cannot choose the correct specimen across generated histories because the culprit and response matrix vary by seed; a visible policy can use the archived response labels. This satisfies only the information-dependence part of the diagnostic, not real-time by itself."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded final screenshot is sufficient for g to choose a target-card selection followed by the selected-card stamp proxy: the response badges and rubric remain visible after archival. No long-term memory or unobservable generator state is needed for this static choice. This candidate has no changing opportunity to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D has the required strict loss. During each 810 ms response cycle, model.active disables the outcome-affecting tools; waiting cannot make an available tool worse, and completion archives the response and enables controls. After all 15 cycles, the correct stamp/target remains available indefinitely apart from the excluded deadline; the CSS pulse is unrelated. The fixed 850 ms hold in full mode is an agent-duration threshold, and the simplified proxy has the same fixed-cycle behavior. Thus no non-clock task-state evolution makes Q(H_t^tau,a) or its advantage strictly smaller while success remains possible."
+      },
+      "common_visible_process": "None. The fixed probe response cycle is visibly evidenced, but it only archives the response and then enables the next control; it never makes an available outcome-affecting action strictly less effective. The ready-stamp pulse is unrelated idle animation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful instance requires 15 separate specimen/tool probes, each with all 9 response ticks, followed by the correct stamp. The grader and normal workflow require a new outcome-affecting probe or target-selection/stamp action after the preceding response cycle; one autonomous response phase covers only one pair. Therefore no generated instance admits a successful one-phase pre-run with no further outcome-affecting actions after it starts; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/env.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/task.json",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rorschach_fixed_rubric_env/tasks/rorschach_fixed_rubric_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+        "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The frozen diagnostic requires one common grouped mode, delay, and bounded window; clause (iii) needs a non-clock task-state loss, and explicitly excludes a fixed animation that later enables controls or permanently archives its result."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "63-73",
+          "claim": "The exact level profile is 5 specimens, 3 required tool(s), 9 ticks at 90 ms, a 230-unit fold threshold, and a 850 ms pressure threshold."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rorschach_fixed_rubric_env/controls.json",
+          "lines": "76-89",
+          "claim": "The selected simplified interaction mapping, 150-second play allowance, 500 ms observation window, and five captured frames are fixed in the control profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rorschach_fixed_rubric.py",
+          "lines": "204-246, 249-297, 302-311",
+          "claim": "Generation chooses the required tools and culprit, creates one finite frame sequence for each of the 15 specimen/tool pairs, and preserves the selected condition; the L4 baseline uses the preserved legacy branch with the condition attached."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "77-81, 85-130, 133-160",
+          "claim": "The UI disables controls while a response is active; each probe starts a fixed interval cycle, applies visible snapshots, and then archives the terminal label, marks the cycle inactive, re-enables controls, and settles the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.js",
+          "lines": "370-405",
+          "claim": "The simplified surface is explicit: labelled test proxies and a selected-card stamp proxy are bound to the page, while the same response matrix and required-pair count are rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rorschach_fixed_rubric.py",
+          "lines": "97-112, 241-273, 274-337",
+          "claim": "The grader requires every one of the 15 specimen/tool pairs, every 9-tick response sample, and the correct final stamp; it does not score any unfinished autonomous motion as an expiring opportunity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rorschach_fixed_rubric.css",
+          "lines": "69-73",
+          "claim": "The ready stamp's only idle visual motion is a repeating CSS box-shadow pulse, with no task-state or grading effect."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rorschach_fixed_rubric.py",
+          "lines": "70-125",
+          "claim": "The normal workflow selects every card, performs each required test, waits for the pair to be observed, and only then stamps the culprit; the private truth read by this solver is implementation evidence, not policy information."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-317",
+          "claim": "The shared clock advances queued intervals only while running and leaves them queued while paused, so live-versus-paused changes when the fixed cycle progresses but does not introduce an expiring task action."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

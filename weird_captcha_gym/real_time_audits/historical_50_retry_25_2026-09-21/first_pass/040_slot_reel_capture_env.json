@@ -1,0 +1,1159 @@
+{
+  "case_index": 40,
+  "environment_id": "slot_reel_capture_env",
+  "public_environment_name": "Slot-Reel Character Capture",
+  "configuration_reports": [
+    {
+      "case_index": 391,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; key-repeat events are ignored.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 900, 960, 1020, 1080 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Full physical-keyboard capture: all ASCII alphanumeric keydown occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 600,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=600 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required key can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 4-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2700 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=600 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Full mode additionally needs the unseen target character to select the key. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+      "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The target keydown has positive value at H_t, but within tau<Delta=600 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2700 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "9-20",
+          "claim": "Difficulty 1 activates 4 reels, 4 symbols per cycle, interval choices 900, 960, 1020, 1080 ms, 5 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The full interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Full mode exposes a trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; repeated keydown events are ignored. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and no character field; the keyboard handler is the action surface."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the target physical keydown therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the target key; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 392,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Trusted CAPTURE SYMBOL button click for the current active reel; no character is supplied.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 900, 960, 1020, 1080 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Simplified capture-button capture: all CAPTURE SYMBOL click occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 600,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=600 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required click-versus-no-op timing can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 4-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2700 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=600 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Simplified mode does not need the character, but it still needs to know whether the generic click will land during the unseen target slot. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the CAPTURE SYMBOL click has positive value at H_t, but within tau<Delta=600 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2700 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "9-20",
+          "claim": "Difficulty 1 activates 4 reels, 4 symbols per cycle, interval choices 900, 960, 1020, 1080 ms, 5 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The simplified interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Simplified mode exposes a trusted CAPTURE SYMBOL button for the current active reel and sends no character. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and a CAPTURE SYMBOL button."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the CAPTURE SYMBOL click therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the capture button; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 393,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; key-repeat events are ignored.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 720, 780, 840, 900 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Full physical-keyboard capture: all ASCII alphanumeric keydown occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 500,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=500 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required key can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 5-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2880 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=500 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Full mode additionally needs the unseen target character to select the key. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the target keydown has positive value at H_t, but within tau<Delta=500 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2880 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "22-32",
+          "claim": "Difficulty 2 activates 5 reels, 5 symbols per cycle, interval choices 720, 780, 840, 900 ms, 4 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The full interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Full mode exposes a trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; repeated keydown events are ignored. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and no character field; the keyboard handler is the action surface."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the target physical keydown therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the target key; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 394,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Trusted CAPTURE SYMBOL button click for the current active reel; no character is supplied.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 720, 780, 840, 900 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Simplified capture-button capture: all CAPTURE SYMBOL click occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 500,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=500 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required click-versus-no-op timing can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 5-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2880 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=500 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Simplified mode does not need the character, but it still needs to know whether the generic click will land during the unseen target slot. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the CAPTURE SYMBOL click has positive value at H_t, but within tau<Delta=500 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2880 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "22-32",
+          "claim": "Difficulty 2 activates 5 reels, 5 symbols per cycle, interval choices 720, 780, 840, 900 ms, 4 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The simplified interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Simplified mode exposes a trusted CAPTURE SYMBOL button for the current active reel and sends no character. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and a CAPTURE SYMBOL button."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the CAPTURE SYMBOL click therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the capture button; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 395,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; key-repeat events are ignored.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 540, 600, 660, 720 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Full physical-keyboard capture: all ASCII alphanumeric keydown occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=400 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required key can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 6-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2700 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=400 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Full mode additionally needs the unseen target character to select the key. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the target keydown has positive value at H_t, but within tau<Delta=400 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2700 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "34-44",
+          "claim": "Difficulty 3 activates 6 reels, 6 symbols per cycle, interval choices 540, 600, 660, 720 ms, 4 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The full interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Full mode exposes a trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; repeated keydown events are ignored. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and no character field; the keyboard handler is the action surface."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the target physical keydown therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the target key; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 396,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Trusted CAPTURE SYMBOL button click for the current active reel; no character is supplied.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 540, 600, 660, 720 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Simplified capture-button capture: all CAPTURE SYMBOL click occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=400 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required click-versus-no-op timing can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 6-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2700 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=400 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Simplified mode does not need the character, but it still needs to know whether the generic click will land during the unseen target slot. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the CAPTURE SYMBOL click has positive value at H_t, but within tau<Delta=400 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2700 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "34-44",
+          "claim": "Difficulty 3 activates 6 reels, 6 symbols per cycle, interval choices 540, 600, 660, 720 ms, 4 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The simplified interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Simplified mode exposes a trusted CAPTURE SYMBOL button for the current active reel and sends no character. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and a CAPTURE SYMBOL button."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the CAPTURE SYMBOL click therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the capture button; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 397,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; key-repeat events are ignored.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 360, 390, 420, 450, 480, 510, 540 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Full physical-keyboard capture: all ASCII alphanumeric keydown occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 300,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=300 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required key can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 7-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2160 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=300 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Full mode additionally needs the unseen target character to select the key. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the target keydown has positive value at H_t, but within tau<Delta=300 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2160 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "46-56",
+          "claim": "Difficulty 4 activates 7 reels, 7 symbols per cycle, interval choices 360, 390, 420, 450, 480, 510, 540 ms, 3 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The full interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Full mode exposes a trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; repeated keydown events are ignored. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and no character field; the keyboard handler is the action surface."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the target physical keydown therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the target key; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 398,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Trusted CAPTURE SYMBOL button click for the current active reel; no character is supplied.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 360, 390, 420, 450, 480, 510, 540 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Simplified capture-button capture: all CAPTURE SYMBOL click occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 300,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=300 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required click-versus-no-op timing can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 7-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2160 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=300 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Simplified mode does not need the character, but it still needs to know whether the generic click will land during the unseen target slot. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the CAPTURE SYMBOL click has positive value at H_t, but within tau<Delta=300 ms the token boundary is crossed, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2160 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "46-56",
+          "claim": "Difficulty 4 activates 7 reels, 7 symbols per cycle, interval choices 360, 390, 420, 450, 480, 510, 540 ms, 3 visible strikes, and capture_window_ratio 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The simplified interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Simplified mode exposes a trusted CAPTURE SYMBOL button for the current active reel and sends no character. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and a CAPTURE SYMBOL button."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the CAPTURE SYMBOL click therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the capture button; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 399,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; key-repeat events are ignored.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 270, 300, 330, 360 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "At difficulty 5 the symbol also moves through the visible center band as cyclePosition changes, and captureReady is true only within the configured 0.68 band.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Full physical-keyboard capture: all ASCII alphanumeric keydown occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 240,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=240 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required key can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 9-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2160 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=240 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Full mode additionally needs the unseen target character to select the key. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the target keydown has positive value at H_t, but within tau<Delta=240 ms the token boundary is crossed or the target leaves the 0.68 center band, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2160 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "58-68",
+          "claim": "Difficulty 5 activates 9 reels, 9 symbols per cycle, interval choices 270, 300, 330, 360 ms, 2 visible strikes, and capture_window_ratio 0.68."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The full interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Full mode exposes a trusted physical keyboard keydown for one ASCII alphanumeric key on the current active reel; repeated keydown events are ignored. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and no character field; the keyboard handler is the action surface."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the target physical keydown therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the target key; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 400,
+      "public_environment_name": "Slot-Reel Character Capture",
+      "environment_id": "slot_reel_capture_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Trusted CAPTURE SYMBOL button click for the current active reel; no character is supplied.",
+        "VERIFY button for final submission after all reels are captured (administrative, not outcome-affecting during capture)."
+      ],
+      "autonomous_processes": [
+        "Each reel's visible token advances without a new agent action at a seed-selected interval from 270, 300, 330, 360 ms, with a seed-selected phase; the active reel remains outcome-relevant until accepted.",
+        "At difficulty 5 the symbol also moves through the visible center band as cyclePosition changes, and captureReady is true only within the configured 0.68 band.",
+        "After an accepted action the current reel is frozen and the next reel becomes active; the final VERIFY request only certifies the accumulated result."
+      ],
+      "grouped_control_modes": [
+        "Simplified capture-button capture: all CAPTURE SYMBOL click occurrences for the current active reel across seeds, rounds, and attempts."
+      ],
+      "delta_ms": 240,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For Delta=240 ms, no policy q(I_t) can be optimal across C_Delta: the generator randomizes target character, target position in the token cycle, interval, and phase while identical prior action histories can occur. The required click-versus-no-op timing can differ. An action-clock-only schedule therefore fails clause (i)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The largest allowed recent window is 800 ms, but one target appears once per 9-token cycle. Even at the shortest interval, the gap after one target leaves until the next target begins is 2160 ms. There are C_Delta histories whose last 800 ms shows only decoys while the next target/capture opportunity arrives within Delta=240 ms; full visible history can retain the earlier target/order/phase, but g(I_t,W_t^w) cannot. Simplified mode does not need the character, but it still needs to know whether the generic click will land during the unseen target slot. Making Delta smaller does not repair this because the next target can be arbitrarily close to delivery, and w cannot exceed 800 ms. Clause (ii) fails for every legitimate D covering all occurrences."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For the same active-reel process and D, choose H_t with the target visible and capture-ready near the end of its token opportunity. The the CAPTURE SYMBOL click has positive value at H_t, but within tau<Delta=240 ms the token boundary is crossed or the target leaves the 0.68 center band, so the same action becomes ineffective; success remains possible on a later target cycle. The strict loss is caused by visible symbol/position evolution, not by a deadline or later administrative submission."
+      },
+      "common_visible_process": "The common task-state process is the active reel's visible token stream: the renderer shows tokens[floor(elapsed_ms/interval_ms)+phase], with exactly one transient alphanumeric target per cycle; accepted reels freeze and the active reel continues. At difficulty 5 the symbol visibly traverses a bounded 0.68 center band. This process visibly expires a capture action, but the target leaves no persistent trace and recurs only after at least 2160 ms, so the configured 800 ms window cannot predict every delayed-optimal action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance admits a successful no-action outcome phase: the replay requires one accepted witness action for every reel and advances active_index only on accepted actions. VERIFY is administrative, but it cannot replace those per-reel captures. Thus fewer than half of instances can be solved after starting the autonomous phase without outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/env.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/task.json",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/tasks/slot_reel_capture_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/slot_reel_capture_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "58-68",
+          "claim": "Difficulty 5 activates 9 reels, 9 symbols per cycle, interval choices 270, 300, 330, 360 ms, 2 visible strikes, and capture_window_ratio 0.68."
+        },
+        {
+          "path": "weird_captcha_gym/environments/slot_reel_capture_env/controls.json",
+          "lines": "71-84",
+          "claim": "The simplified interaction is implemented; the shared configuration captures a chronological 800 ms window in 6 frames and allows 90 seconds of task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "149-152;1515-1555",
+          "claim": "The generator chooses the alphanumeric sequence, shuffles the control symbols, inserts exactly one target per reel, and independently randomizes each reel's interval and phase from the active difficulty profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3047-3080;3115-3122",
+          "claim": "The browser renders the token at floor(elapsed/interval)+phase, continuously repaints every reel, and exposes captureReady plus the visible symbol; accepted reels are the only ones made visually frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "3151-3217;3242-3278",
+          "claim": "Simplified mode exposes a trusted CAPTURE SYMBOL button for the current active reel and sends no character. VERIFY submits the captured transcript and is administrative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "411-430",
+          "claim": "The visible UI has a changing slot symbol, capture lines, active-reel marker, frozen-reel styling, and a CAPTURE SYMBOL button."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/slot_reel_witness.py",
+          "lines": "218-233;267-351",
+          "claim": "The task clock recomputes the current token and capture-ready state at action time, accepts only the active target with the correct input surface, and records every accepted or rejected action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+          "lines": "333-358;407-417",
+          "claim": "Replay requires the expected target token and capture-ready state for each action, advances to the next active reel only on acceptance, and requires every reel in order; the CAPTURE SYMBOL click therefore affects the outcome while VERIFY is only final certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/slot_reel_capture.py",
+          "lines": "37-69;133-153",
+          "claim": "The normal visible-control solver waits for the active target and then uses the capture button; it cannot complete a run without those per-reel capture actions."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "36-68;72-88",
+          "claim": "The frozen definition requires D to cover all occurrences, a bounded recent window to determine the delayed-optimal action, and a same-process action opportunity that strictly degrades before the witness horizon; the pre-run rule excludes configurations with at least half no-action solutions."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

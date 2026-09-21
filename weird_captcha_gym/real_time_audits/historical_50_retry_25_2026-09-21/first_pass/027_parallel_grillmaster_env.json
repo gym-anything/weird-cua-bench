@@ -1,0 +1,1217 @@
+{
+  "case_index": 27,
+  "environment_id": "parallel_grillmaster_env",
+  "public_environment_name": "Parallel Grillmaster",
+  "configuration_reports": [
+    {
+      "case_index": 261,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window.",
+        "Full interaction uses pointer drag-and-drop from RAW ORDER to LIVE FIRE to start a food and from LIVE FIRE to SERVING TRAY to serve it; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = food_drag/full_drop: witnessed full pointer drag transitions from prep to grill and from grill to tray."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": false,
+        "reason": "No. An observation-free policy q can use I_t to serve each food exactly 6000 ms after its own start. Every possible difficulty-1 target/tolerance interval contains 6000 ms: 4200+1800 = 6000 and 7800-1800 = 6000, with the 6000 ms target covering that point as well. The shuffled assignment and tolerance choice therefore do not prevent this fixed schedule."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes in the limited information sense: a g is available because the fixed 6000 ms schedule already works, and the visible 800 ms/up-to-6-frame window is not needed for that schedule."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. There is no batch-start spread requirement at this level. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "9-20; 71-84",
+          "claim": "Difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window. The interaction section binds full to the drag surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In full mode it binds the corresponding pointer drag/drop events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 262,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window.",
+        "Simplified interaction uses a food selection followed by the visible START COOKING or MOVE TO TRAY proxy button; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = grill_proxy_controls/selection_plus_proxy_button: witnessed food selection followed by the matching START COOKING or MOVE TO TRAY control."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": false,
+        "reason": "No. An observation-free policy q can use I_t to serve each food exactly 6000 ms after its own start. Every possible difficulty-1 target/tolerance interval contains 6000 ms: 4200+1800 = 6000 and 7800-1800 = 6000, with the 6000 ms target covering that point as well. The shuffled assignment and tolerance choice therefore do not prevent this fixed schedule."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes in the limited information sense: a g is available because the fixed 6000 ms schedule already works, and the visible 800 ms/up-to-6-frame window is not needed for that schedule."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. There is no batch-start spread requirement at this level. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "9-20; 71-84",
+          "claim": "Difficulty 1 has 3 foods, target times 4200/6000/7800 ms, per-food tolerance chosen from 1800/2000 ms, one-at-a-time starts, and no parallel-start window. The interaction section binds simplified to the selection and proxy-button surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In simplified mode it binds the corresponding food selection plus START COOKING or MOVE TO TRAY events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 263,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window.",
+        "Full interaction uses pointer drag-and-drop from RAW ORDER to LIVE FIRE to start a food and from LIVE FIRE to SERVING TRAY to serve it; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = food_drag/full_drop: witnessed full pointer drag transitions from prep to grill and from grill to tray."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. There is no batch-start spread requirement at this level. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "22-32; 71-84",
+          "claim": "Difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window. The interaction section binds full to the drag surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In full mode it binds the corresponding pointer drag/drop events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 264,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window.",
+        "Simplified interaction uses a food selection followed by the visible START COOKING or MOVE TO TRAY proxy button; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = grill_proxy_controls/selection_plus_proxy_button: witnessed food selection followed by the matching START COOKING or MOVE TO TRAY control."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. There is no batch-start spread requirement at this level. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window. There is no batch-start spread requirement at this level. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "22-32; 71-84",
+          "claim": "Difficulty 2 has 6 foods, target times 3600/4400/5200/6100/7100/8200 ms, per-food tolerance chosen from 1150/1250/1350 ms, one-at-a-time starts, and no parallel-start window. The interaction section binds simplified to the selection and proxy-button surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In simplified mode it binds the corresponding food selection plus START COOKING or MOVE TO TRAY events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 265,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first.",
+        "Full interaction uses pointer drag-and-drop from RAW ORDER to LIVE FIRE to start a food and from LIVE FIRE to SERVING TRAY to serve it; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first. The first three start timestamps also have to fit the configured 2600 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = food_drag/full_drop: witnessed full pointer drag transitions from prep to grill and from grill to tray."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. The first three start timestamps also have to fit the configured 2600 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first. The first three start timestamps also have to fit the configured 2600 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "34-44; 71-84",
+          "claim": "Difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first. The interaction section binds full to the drag surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In full mode it binds the corresponding pointer drag/drop events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 266,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first.",
+        "Simplified interaction uses a food selection followed by the visible START COOKING or MOVE TO TRAY proxy button; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first. The first three start timestamps also have to fit the configured 2600 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = grill_proxy_controls/selection_plus_proxy_button: witnessed food selection followed by the matching START COOKING or MOVE TO TRAY control."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. The first three start timestamps also have to fit the configured 2600 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first. The first three start timestamps also have to fit the configured 2600 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "34-44; 71-84",
+          "claim": "Difficulty 3 has 6 foods, the difficulty-2 target times, tolerance chosen from 950/1050 ms, and requires any 3 starts within 2600 ms of the first. The interaction section binds simplified to the selection and proxy-button surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In simplified mode it binds the corresponding food selection plus START COOKING or MOVE TO TRAY events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 267,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first.",
+        "Full interaction uses pointer drag-and-drop from RAW ORDER to LIVE FIRE to start a food and from LIVE FIRE to SERVING TRAY to serve it; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first. The first six start timestamps also have to fit the configured 3000 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = food_drag/full_drop: witnessed full pointer drag transitions from prep to grill and from grill to tray."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. The first six start timestamps also have to fit the configured 3000 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first. The first six start timestamps also have to fit the configured 3000 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "46-56; 71-84",
+          "claim": "Difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first. The interaction section binds full to the drag surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In full mode it binds the corresponding pointer drag/drop events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 268,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first.",
+        "Simplified interaction uses a food selection followed by the visible START COOKING or MOVE TO TRAY proxy button; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first. The first six start timestamps also have to fit the configured 3000 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = grill_proxy_controls/selection_plus_proxy_button: witnessed food selection followed by the matching START COOKING or MOVE TO TRAY control."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. The first six start timestamps also have to fit the configured 3000 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first. The first six start timestamps also have to fit the configured 3000 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "46-56; 71-84",
+          "claim": "Difficulty 4 has 6 foods, target times 3600/4200/4800/5400/6000/6600 ms, tolerance chosen from 750/850 ms, and requires all 6 starts within 3000 ms of the first. The interaction section binds simplified to the selection and proxy-button surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In simplified mode it binds the corresponding food selection plus START COOKING or MOVE TO TRAY events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 269,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first.",
+        "Full interaction uses pointer drag-and-drop from RAW ORDER to LIVE FIRE to start a food and from LIVE FIRE to SERVING TRAY to serve it; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first. The first eight start timestamps also have to fit the configured 3200 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = food_drag/full_drop: witnessed full pointer drag transitions from prep to grill and from grill to tray."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. The first eight start timestamps also have to fit the configured 3200 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a full drag start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first. The first eight start timestamps also have to fit the configured 3200 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "58-68; 71-84",
+          "claim": "Difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first. The interaction section binds full to the drag surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In full mode it binds the corresponding pointer drag/drop events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 270,
+      "public_environment_name": "Parallel Grillmaster",
+      "environment_id": "parallel_grillmaster_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first.",
+        "Simplified interaction uses a food selection followed by the visible START COOKING or MOVE TO TRAY proxy button; the visible SERVE button is administrative submission.",
+        "During live cooking, start/serve controls remain outcome-affecting; the final SERVE control only submits the witnessed transcript."
+      ],
+      "autonomous_processes": [
+        "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first. The first eight start timestamps also have to fit the configured 3200 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective.",
+        "While an item remains on LIVE FIRE, requestAnimationFrame continuously updates its visible cook-state without a new agent action. Moving it to the tray ends the interval and freezes served or spoiled status.",
+        "The looping CSS heat-wave animation also runs while idle, but it does not change task state, controls, or grading and is not the audited process."
+      ],
+      "grouped_control_modes": [
+        "D = grill_proxy_controls/selection_plus_proxy_button: witnessed food selection followed by the matching START COOKING or MOVE TO TRAY control."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "Yes for the observation-free-policy test. The generator shuffles target times across food kinds/IDs and independently chooses tolerances, while the visible card does not reveal those values. The target intervals do not share a common duration at this level (for example, the earliest-target upper bound is below the latest-target lower bound), so a q based only on I_t cannot choose a serve action that is optimal across all generated assignments."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Yes for the candidate service decision. The renderer exposes each cooking item's raw, warming, ready, burning, or burnt state in the visible page, and the ready state is the action-relevant interval. A recent window bounded by 800 ms and 6 frames can identify a visibly ready item for the serve control. This visual sufficiency does not repair the failed clause (iii)."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No. Cooking does change autonomously and visibly, and serve remains an outcome-affecting control during cooking. However, if a food is served after its ready upper bound, the grader records that food outside target_ms plus or minus tolerance_ms and requires every food to be correct, so waiting through the strict-loss transition makes success impossible; that history is not in C_Delta. If the wait stays inside the ready interval, Q for serve is unchanged because the terminal outcome is binary and later completion is only a tie-break. If the action is taken before the ready interval, waiting makes it more effective, which the definition expressly excludes. The first eight start timestamps also have to fit the configured 3200 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. No choice of D, Delta, or w supplies the required clause-(iii) witness."
+      },
+      "common_visible_process": "After a simplified proxy start, the live task clock advances without a new action. The item changes visibly from raw/warming to ready and then burning/burnt according to its hidden target_ms plus or minus its hidden tolerance_ms; difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first. The first eight start timestamps also have to fit the configured 3200 ms spread, but this adds an action deadline rather than a recoverable degrading action. If waiting past that deadline makes the required batch impossible, the resulting history is outside C_Delta; if the batch remains possible, starting the remaining prep food is not less effective. This is the same cook-state process used for the candidate q/g decisions and for the clause-(iii) check; the decorative heat-wave loop is not substituted for it.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause (iii) has no valid C_Delta witness; the prompt says the pre-run threshold cannot change that result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/env.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/task.json",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/tasks/parallel_grillmaster_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/parallel_grillmaster_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/parallel_grillmaster_env/controls.json",
+          "lines": "58-68; 71-84",
+          "claim": "Difficulty 5 has 8 foods, target times 3200/3650/4100/4550/5000/5450/5900/6350 ms, tolerance chosen from 550/650 ms, and requires all 8 starts within 3200 ms of the first. The interaction section binds simplified to the selection and proxy-button surface, and configures a 120000 ms play time, 800 ms observation window, and 6 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1377-1446",
+          "claim": "The generator validates the per-level parameters, shuffles target_times, assigns target_ms and a random tolerance_ms to foods, then shuffles the food presentation order; it exports foods and the control condition to public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2682-2698; 2784-2806",
+          "claim": "The visible state is computed from live elapsed time: prep is raw, tray is served or spoiled by duration, and grill state progresses through raw/warming/ready/burning/burnt. A grill start stores startedAt and a serve stores duration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2835-2973",
+          "claim": "The visible implementation creates RAW ORDER, LIVE FIRE, and SERVING TRAY. In simplified mode it binds the corresponding food selection plus START COOKING or MOVE TO TRAY events, while final SERVE submits the result."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "322-327",
+          "claim": "The state transitions are visible: warming, glowing/pulsing ready, burning, burnt/spoiled, and served have distinct styles; the separate heat-wave animation is decorative."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-58; 155-177; 548-580",
+          "claim": "The live task clock advances with elapsed time, pause freezes task time and animations, and run_for resumes the clock for a bounded observation window before pausing it."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/grillmaster_witness.py",
+          "lines": "19-22; 142-149; 316-459",
+          "claim": "Full and simplified modes use distinct witnessed sources/routes, action timestamps come from the server active task clock, and only prep-to-grill start and grill-to-tray serve transitions are recorded."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/parallel_grillmaster.py",
+          "lines": "145-216; 304-346",
+          "claim": "The grader requires one start and one serve for every food, computes each duration from the witnessed timestamps, accepts only abs(duration-target_ms) <= tolerance_ms, and enforces the level's parallel-start spread."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "458-482",
+          "claim": "The verifier routes controlled tasks to the external parallel-grillmaster grader, whose pass condition requires every target duration to be correct."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/parallel_grillmaster.py",
+          "lines": "32-54; 92-152",
+          "claim": "The implementation solver uses the two mode-specific visible actions, waits for target timing, serves every food, and checks the trusted witness; it is implementation evidence rather than policy-visible state."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

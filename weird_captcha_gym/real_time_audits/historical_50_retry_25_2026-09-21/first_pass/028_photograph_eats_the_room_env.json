@@ -1,0 +1,1067 @@
+{
+  "case_index": 28,
+  "environment_id": "photograph_eats_the_room_env",
+  "public_environment_name": "Photograph Eats the Room",
+  "configuration_reports": [
+    {
+      "case_index": 271,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 1 profile: stage_count=1; one beam-to-bridge rewrite; source_offset=1.5; pit_width=2.25 or 2.5; terminal_x=14.75; capture_range=5.6; frustum_margin=0.01; socket_tolerance=0.84; angle_tolerance=30 degrees; bridge_half_width=0.7; plane rotation step=30 degrees; plane scale step=0.2.",
+        "Full surface: hold WASD to navigate and use ArrowLeft/ArrowRight to turn; press C to capture.",
+        "Full surface: drag the photograph on the perspective canvas, Shift-drag to rotate it, and use the mouse wheel to scale it.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a full-mode WASD keydown, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until keyup; each tick changes the visible perspective and map without another agent event.",
+        "The beam, pit, socket, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup.",
+        "Camera turning: ArrowLeft and ArrowRight.",
+        "Frustum capture: C.",
+        "Photograph placement: direct canvas drag.",
+        "Photograph rotation: Shift-drag on the canvas.",
+        "Photograph scaling: mouse wheel.",
+        "Develop into room.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y and source_side, plus different pit choices. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the beam's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the full-mode key remains down while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the bridge is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "9-29,116-129",
+          "claim": "Difficulty 1 has one stage and the listed broad capture/placement margins; full interaction uses direct drag, Shift-drag, and wheel controls, with a 500 ms observation window and four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117",
+          "claim": "Generation samples lane_y, source_side, pit location/width, and wall location, then creates static sources, sockets, room geometry, movement controls, and qualification thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, while full mode uses canvas gestures and simplified mode uses the alternate controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays held movement and frustum capture, requires the ordered bridge operation and terminal contact, and requires at least 30 movement samples and 12 units of travel."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal scripted solve uses visible-control-equivalent movement holds, capture, placement, development, and a final terminal walk; it does not rely on a moving target."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 272,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 1 profile: stage_count=1; one beam-to-bridge rewrite; source_offset=1.5; pit_width=2.25 or 2.5; terminal_x=14.75; capture_range=5.6; frustum_margin=0.01; socket_tolerance=0.84; angle_tolerance=30 degrees; bridge_half_width=0.7; plane rotation step=30 degrees; plane scale step=0.2.",
+        "Simplified surface: hold WASD or the side-panel W/A/S/D controls to navigate, and use ArrowLeft/ArrowRight or the turn buttons to turn.",
+        "Simplified surface: press C or CAPTURE FRUSTUM, drag the photograph pad, and use the rotation and scale buttons.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a simplified-mode movement keydown or side-panel pointer-down, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until release; each tick changes the visible perspective and map without another agent event.",
+        "The beam, pit, socket, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup or side-panel movement pointer-down/pointer-up.",
+        "Camera turning: ArrowLeft/ArrowRight or side-panel turn buttons.",
+        "Frustum capture: C or CAPTURE FRUSTUM.",
+        "Photograph placement: simplified photo-pad drag.",
+        "Photograph rotation: rotation buttons.",
+        "Photograph scaling: scale buttons.",
+        "Develop into room.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y and source_side, plus different pit choices. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the beam's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the simplified keyboard key or side-panel button remains held while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the bridge is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "9-29,116-129",
+          "claim": "Difficulty 1 has one stage and the listed broad capture/placement margins; simplified interaction retains held navigation, buttons, the photo pad, and a 500 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117",
+          "claim": "Generation samples lane_y, source_side, pit location/width, and wall location, then creates static sources, sockets, room geometry, movement controls, and qualification thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, and simplified mode binds the held side controls and discrete transform controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays held movement and frustum capture, requires the ordered bridge operation and terminal contact, and requires at least 30 movement samples and 12 units of travel."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal scripted solve uses visible-control-equivalent movement holds, capture, placement, development, and a final terminal walk; it does not rely on a moving target."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 273,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 2 profile: stage_count=2; beam bridge followed by opening doorway; source_offset=1.8; pit_width=2.5 or 2.75; terminal_x=21.1; capture_range=5.2; frustum_margin=0.02; socket_tolerance=0.7; angle_tolerance=20 degrees; bridge_half_width=0.62; door_half_width=0.62; rotation step=30 degrees; scale step=0.2.",
+        "Full surface: hold WASD to navigate and use ArrowLeft/ArrowRight to turn; press C to capture.",
+        "Full surface: drag the photograph on the perspective canvas, Shift-drag to rotate it, and use the mouse wheel to scale it.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a full-mode WASD keydown, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until keyup; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup.",
+        "Camera turning: ArrowLeft and ArrowRight.",
+        "Frustum capture: C.",
+        "Photograph placement: direct canvas drag.",
+        "Photograph rotation: Shift-drag on the canvas.",
+        "Photograph scaling: mouse wheel.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the full-mode key remains down while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "31-49,116-129",
+          "claim": "Difficulty 2 has two dependent stages with the listed broad tolerances; full interaction uses direct drag, Shift-drag, and wheel controls, with a 500 ms observation window and four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates a bridge and doorway source/socket pair for stage_count=2 and samples the static route geometry and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, while full mode uses canvas gestures and synchronous development."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 274,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 2 profile: stage_count=2; beam bridge followed by opening doorway; source_offset=1.8; pit_width=2.5 or 2.75; terminal_x=21.1; capture_range=5.2; frustum_margin=0.02; socket_tolerance=0.7; angle_tolerance=20 degrees; bridge_half_width=0.62; door_half_width=0.62; rotation step=30 degrees; scale step=0.2.",
+        "Simplified surface: hold WASD or the side-panel W/A/S/D controls to navigate, and use ArrowLeft/ArrowRight or the turn buttons to turn.",
+        "Simplified surface: press C or CAPTURE FRUSTUM, drag the photograph pad, and use the rotation and scale buttons.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a simplified-mode movement keydown or side-panel pointer-down, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until release; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup or side-panel movement pointer-down/pointer-up.",
+        "Camera turning: ArrowLeft/ArrowRight or side-panel turn buttons.",
+        "Frustum capture: C or CAPTURE FRUSTUM.",
+        "Photograph placement: simplified photo-pad drag.",
+        "Photograph rotation: rotation buttons.",
+        "Photograph scaling: scale buttons.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the simplified keyboard key or side-panel button remains held while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "31-49,116-129",
+          "claim": "Difficulty 2 has two dependent stages with the listed broad tolerances; simplified interaction retains held navigation, buttons, the photo pad, and a 500 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates a bridge and doorway source/socket pair for stage_count=2 and samples the static route geometry and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, and simplified mode binds the held side controls and discrete transform controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 275,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 3 profile: stage_count=2; two dependent rewrites; source_offset=2.0; pit_width=2.75 or 3.0; terminal_x=21.1; capture_range=4.9; frustum_margin=0.03; socket_tolerance=0.62; angle_tolerance=15 degrees; bridge_half_width=0.55; door_half_width=0.54; rotation step=15 degrees; scale step=0.1.",
+        "Full surface: hold WASD to navigate and use ArrowLeft/ArrowRight to turn; press C to capture.",
+        "Full surface: drag the photograph on the perspective canvas, Shift-drag to rotate it, and use the mouse wheel to scale it.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a full-mode WASD keydown, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until keyup; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup.",
+        "Camera turning: ArrowLeft and ArrowRight.",
+        "Frustum capture: C.",
+        "Photograph placement: direct canvas drag.",
+        "Photograph rotation: Shift-drag on the canvas.",
+        "Photograph scaling: mouse wheel.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the full-mode key remains down while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "52-70,116-129",
+          "claim": "Difficulty 3 has two dependent stages with narrower capture, placement, bridge, and doorway margins; full interaction uses direct drag, Shift-drag, and wheel controls, with a 500 ms observation window and four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates a bridge and doorway source/socket pair for stage_count=2 and samples the static route geometry and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, while full mode uses canvas gestures and synchronous development."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 276,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 3 profile: stage_count=2; two dependent rewrites; source_offset=2.0; pit_width=2.75 or 3.0; terminal_x=21.1; capture_range=4.9; frustum_margin=0.03; socket_tolerance=0.62; angle_tolerance=15 degrees; bridge_half_width=0.55; door_half_width=0.54; rotation step=15 degrees; scale step=0.1.",
+        "Simplified surface: hold WASD or the side-panel W/A/S/D controls to navigate, and use ArrowLeft/ArrowRight or the turn buttons to turn.",
+        "Simplified surface: press C or CAPTURE FRUSTUM, drag the photograph pad, and use the rotation and scale buttons.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a simplified-mode movement keydown or side-panel pointer-down, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until release; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup or side-panel movement pointer-down/pointer-up.",
+        "Camera turning: ArrowLeft/ArrowRight or side-panel turn buttons.",
+        "Frustum capture: C or CAPTURE FRUSTUM.",
+        "Photograph placement: simplified photo-pad drag.",
+        "Photograph rotation: rotation buttons.",
+        "Photograph scaling: scale buttons.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the simplified keyboard key or side-panel button remains held while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "52-70,116-129",
+          "claim": "Difficulty 3 has two dependent stages with narrower capture, placement, bridge, and doorway margins; simplified interaction retains held navigation, buttons, the photo pad, and a 500 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates a bridge and doorway source/socket pair for stage_count=2 and samples the static route geometry and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, and simplified mode binds the held side controls and discrete transform controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 277,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 4 profile: stage_count=2; original two-source room; source_offset=2.25; pit_width=3.0 or 3.25; terminal_x=21.1; capture_range=4.6; frustum_margin=0.04; socket_tolerance=0.52; angle_tolerance=10 degrees; bridge_half_width=0.48; door_half_width=0.45; rotation step=15 degrees; scale step=0.1.",
+        "Full surface: hold WASD to navigate and use ArrowLeft/ArrowRight to turn; press C to capture.",
+        "Full surface: drag the photograph on the perspective canvas, Shift-drag to rotate it, and use the mouse wheel to scale it.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a full-mode WASD keydown, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until keyup; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup.",
+        "Camera turning: ArrowLeft and ArrowRight.",
+        "Frustum capture: C.",
+        "Photograph placement: direct canvas drag.",
+        "Photograph rotation: Shift-drag on the canvas.",
+        "Photograph scaling: mouse wheel.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the full-mode key remains down while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "73-91,116-129",
+          "claim": "Difficulty 4 uses the original two-source room with the listed tight margins; full interaction uses direct drag, Shift-drag, and wheel controls, with a 500 ms observation window and four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates the two static source/socket rewrites and samples the room route and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, while full mode uses canvas gestures and synchronous development."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 278,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 4 profile: stage_count=2; original two-source room; source_offset=2.25; pit_width=3.0 or 3.25; terminal_x=21.1; capture_range=4.6; frustum_margin=0.04; socket_tolerance=0.52; angle_tolerance=10 degrees; bridge_half_width=0.48; door_half_width=0.45; rotation step=15 degrees; scale step=0.1.",
+        "Simplified surface: hold WASD or the side-panel W/A/S/D controls to navigate, and use ArrowLeft/ArrowRight or the turn buttons to turn.",
+        "Simplified surface: press C or CAPTURE FRUSTUM, drag the photograph pad, and use the rotation and scale buttons.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a simplified-mode movement keydown or side-panel pointer-down, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until release; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup or side-panel movement pointer-down/pointer-up.",
+        "Camera turning: ArrowLeft/ArrowRight or side-panel turn buttons.",
+        "Frustum capture: C or CAPTURE FRUSTUM.",
+        "Photograph placement: simplified photo-pad drag.",
+        "Photograph rotation: rotation buttons.",
+        "Photograph scaling: scale buttons.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the simplified keyboard key or side-panel button remains held while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "73-91,116-129",
+          "claim": "Difficulty 4 uses the original two-source room with the listed tight margins; simplified interaction retains held navigation, buttons, the photo pad, and a 500 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates the two static source/socket rewrites and samples the room route and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, and simplified mode binds the held side controls and discrete transform controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 279,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 5 profile: stage_count=2; two dependent rewrites; source_offset=2.7; pit_width=3.35 or 3.5; terminal_x=21.1; capture_range=4.2; frustum_margin=0.08; socket_tolerance=0.42; angle_tolerance=7 degrees; bridge_half_width=0.4; door_half_width=0.36; rotation step=10 degrees; scale step=0.05.",
+        "Full surface: hold WASD to navigate and use ArrowLeft/ArrowRight to turn; press C to capture.",
+        "Full surface: drag the photograph on the perspective canvas, Shift-drag to rotate it, and use the mouse wheel to scale it.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a full-mode WASD keydown, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until keyup; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup.",
+        "Camera turning: ArrowLeft and ArrowRight.",
+        "Frustum capture: C.",
+        "Photograph placement: direct canvas drag.",
+        "Photograph rotation: Shift-drag on the canvas.",
+        "Photograph scaling: mouse wheel.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the full-mode key remains down while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "94-112,116-129",
+          "claim": "Difficulty 5 has the narrowest capture, transform, bridge, doorway, and corridor margins; full interaction uses direct drag, Shift-drag, and wheel controls, with a 500 ms observation window and four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates the two static source/socket rewrites and samples the static room route and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, while full mode uses canvas gestures and synchronous development."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 280,
+      "public_environment_name": "Photograph Eats the Room",
+      "environment_id": "photograph_eats_the_room_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Difficulty 5 profile: stage_count=2; two dependent rewrites; source_offset=2.7; pit_width=3.35 or 3.5; terminal_x=21.1; capture_range=4.2; frustum_margin=0.08; socket_tolerance=0.42; angle_tolerance=7 degrees; bridge_half_width=0.4; door_half_width=0.36; rotation step=10 degrees; scale step=0.05.",
+        "Simplified surface: hold WASD or the side-panel W/A/S/D controls to navigate, and use ArrowLeft/ArrowRight or the turn buttons to turn.",
+        "Simplified surface: press C or CAPTURE FRUSTUM, drag the photograph pad, and use the rotation and scale buttons.",
+        "DEVELOP INTO ROOM, RESET PRINT, REWIND ROOM, and VERIFY ROOM remain available."
+      ],
+      "autonomous_processes": [
+        "After a simplified-mode movement keydown or side-panel pointer-down, held navigation remains active and a 70 ms interval advances the camera at 2.35 units per second until release; each tick changes the visible perspective and map without another agent event.",
+        "The beam, aperture, pit, sockets, terminal, and collision geometry are static. Capture, photograph transforms, development, rewinding, and verification are synchronous input handlers; there is no independent moving target or expiry timer.",
+        "After a failed verification, only a failure-overlay/fresh-challenge timeout runs; that state is already outside success-preserving histories and is not an outcome process for this audit."
+      ],
+      "grouped_control_modes": [
+        "Held camera navigation and release: WASD keydown/keyup or side-panel movement pointer-down/pointer-up.",
+        "Camera turning: ArrowLeft/ArrowRight or side-panel turn buttons.",
+        "Frustum capture: C or CAPTURE FRUSTUM.",
+        "Photograph placement: simplified photo-pad drag.",
+        "Photograph rotation: rotation buttons.",
+        "Photograph scaling: scale buttons.",
+        "Develop into room, first for the bridge and then for the doorway.",
+        "Reset print.",
+        "Rewind room.",
+        "Verify room (administrative terminal certification)."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=held navigation and Delta=500 ms, histories with the same action history can have different lane_y, source_side, pit choices, and wall location. An observation-free q(I_t) cannot choose the timely navigation release and capture continuation for every success-preserving history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured four chronological frames cover 500 ms and show the camera coordinate/map and the source's changing projection in the canvas. Combined with the held direction in I_t, a bounded-window policy can release before the visible source leaves the usable frustum and then capture it."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose H_t during a held forward segment while the beam is visibly in the capture frustum. Releasing the hold immediately preserves that capture opportunity; with no new action for 500 ms, tickMove advances the camera about 1.175 m and can carry the beam out of the frustum, so the same release has lower value and requires recovery. Success remains possible, and the loss is geometric state evolution rather than a deadline."
+      },
+      "common_visible_process": "Held navigation is the common process: the simplified keyboard key or side-panel button remains held while 70 ms move ticks advance the camera, visibly changing the source-to-frustum relationship. A 500 ms live delay can therefore move a visible beam out of its useful capture opportunity while recovery remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has a qualifying autonomous outcome phase with no further outcome-affecting actions. After the doorway is developed, the camera still must travel to the terminal; success requires held movement and then move_end, while submission is disabled during movement and the verifier rejects verification during movement. The required move_end is an outcome-affecting action, so the pre-run threshold is not met.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/env.json",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+        "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/controls.json",
+          "lines": "94-112,116-129",
+          "claim": "Difficulty 5 has the narrowest capture, transform, bridge, doorway, and corridor margins; simplified interaction retains held navigation, buttons, the photo pad, and a 500 ms observation window with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/photograph_eats_the_room.py",
+          "lines": "46-117,140-148",
+          "claim": "Generation creates the two static source/socket rewrites and samples the static room route and control thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/photograph_eats_the_room.js",
+          "lines": "186-208,218-227",
+          "claim": "Held navigation runs tickMove on a 70 ms interval; capture is blocked during movement, and simplified mode binds the held side controls and discrete transform controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62,250-317",
+          "claim": "Task time drives virtual performance time and scheduled intervals; timers do not advance while paused."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/photograph_eats_the_room.py",
+          "lines": "227-287,346-405",
+          "claim": "The grader replays movement and frustum capture, requires the ordered bridge/door operations and terminal contact, and requires the timed movement qualification."
+        },
+        {
+          "path": "weird_captcha_gym/environments/photograph_eats_the_room_env/tasks/photograph_eats_the_room_seed_0001/verifier.py",
+          "lines": "29-40",
+          "claim": "Verification delegates the exported event transcript and final state to the independent perspective/collision grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/photograph_eats_the_room.py",
+          "lines": "189-238",
+          "claim": "The normal solve separately captures, places, develops both source geometries, and then walks to the terminal through visible controls."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

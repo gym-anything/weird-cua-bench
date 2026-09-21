@@ -1,0 +1,1467 @@
+{
+  "case_index": 13,
+  "environment_id": "dead_mans_switch_env",
+  "public_environment_name": "Dead Man's Switch",
+  "configuration_reports": [
+    {
+      "case_index": 121,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Primary-pointer hold: press the visible moving pressure pad and keep the held pointer on the pad, using pointer_tracking moves; pointerup, pointercancel, lost capture, blur, or leaving the pad long enough ends and resets the hold.",
+        "Keyboard route: WASD or arrow keydown actions emit N/E/S/W moves while the pressure hold is active.",
+        "Static course: 9 columns x 7 rows with 1 alternating relay/checkpoint; the generated route is constrained to 7-12 accepted moves.",
+        "Moving-pressure contract: period 4800 ms; x amplitude 155-175 milli-units; y amplitude 95-115 milli-units; hit ellipse radii 270 x 310 milli-units; sample interval 140 ms; maximum gap 520 ms; outside grace 460 ms; minimum continuous hold 3000 ms.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame updates the pressure pad continuously according to its elapsed-time sinusoid; no agent action is needed for the plate to move.",
+        "During a full hold, each frame tests the held pointer against the moving hit ellipse, records in-pad samples every 140 ms, and starts the outside-grace reset process when the pointer is out of the pad.",
+        "The route vehicle, accepted position, and checkpoint index change only after keyboard actions; there is no autonomous course motion.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset may play a short CSS rewind animation; that animation is visual feedback rather than an independent outcome mechanism."
+      ],
+      "grouped_control_modes": [
+        "D_full_pointer_tracking (common witness): pointer_tracking hold-start and pointer-move actions across all full-mode holds, rounds, and attempts.",
+        "D_full_keyboard_route: keyboard WASD/arrow actions that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": 1000,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_pointer_tracking, an observation-free q cannot choose the pointer-down/tracking coordinate for every history with the same I_t: the generator randomizes phase and also varies period and amplitudes, while I_t contains no current plate position."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured W_t^500 contains five chronological frames across 500 ms. The visible pad position and its recent direction/trajectory support a bounded-window policy g that predicts the plate center at t+1000 ms and places the pointer there; no private phase or page state is required."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_full_pointer_tracking before hold start at a visible plate center and a phase where the plate moves far enough during Delta=1000 ms: the same stale pointer-down coordinate is outside the hit ellipse at delivery, while success remains possible by starting the hold later. The selected horizons are within the active pressure opportunity and the strict loss is caused by the plate's visible non-clock motion, not by a deadline."
+      },
+      "common_visible_process": "The common process is the visibly moving pressure plate: its sinusoidal motion is evidenced by the five-frame window, determines the delayed pointer target, and makes the stale full-mode pointer-down/tracking action strictly less effective after 1000 ms.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated full instance has a nonzero required route (the generated route is constrained to 7-12 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "10-35",
+          "claim": "Difficulty 1 activates 9 columns x 7 rows with 1 alternating relay/checkpoint; the generated route is constrained to 7-12 accepted moves. Pressure parameters are period 4800 ms; x amplitude 155-175 milli-units; y amplitude 95-115 milli-units; hit ellipse radii 270 x 310 milli-units; sample interval 140 ms; maximum gap 520 ms; outside grace 460 ms; minimum continuous hold 3000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish full mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds full input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 122,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "ENGAGE TRACKER starts the visible tracker_proxy hold once; the browser then follows the moving pressure center internally.",
+        "Visible N/W/S/E direction buttons emit direction_buttons route moves while the tracker hold is active; manual pointer tracking and keyboard route input are not the simplified controls.",
+        "Static course: 9 columns x 7 rows with 1 alternating relay/checkpoint; the generated route is constrained to 7-12 accepted moves.",
+        "Moving-pressure contract: period 4800 ms; x amplitude 155-175 milli-units; y amplitude 95-115 milli-units; hit ellipse radii 270 x 310 milli-units; sample interval 140 ms; maximum gap 520 ms; outside grace 460 ms; minimum continuous hold 3000 ms; the pressure pad itself is display-only in simplified mode.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame moves the visible pressure pad continuously according to its elapsed-time sinusoid.",
+        "During a simplified hold, each animation frame sets lastPointer to the current pressure center and records samples, so the tracker proxy follows the plate without an agent pointer action and does not incur pointerleave reset.",
+        "The route vehicle and checkpoint index change only after visible N/W/S/E direction-button actions; the board itself is static between those actions.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset/reissue interaction can show a short CSS rewind animation, but it does not create a moving route target."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tracker_proxy: ENGAGE TRACKER starts the hold and the browser internally recomputes the current pressure center.",
+        "D_simplified_direction_buttons: N/W/S/E buttons that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_direction_buttons, q cannot select the next route direction across randomized static boards using only I_t; the current board and next checkpoint are visible but excluded from I_t. This observation dependence is static route information, not the moving-pressure phenomenon."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, and therefore the 500 ms bounded window, contains the static course and ordered checkpoint geometry, so g can choose a direction-button action. It does not need the window's temporal change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate simplified action loses value from the plate's autonomous motion: the proxy handler samples pressureCenter at delivery, and every active simplified frame overwrites lastPointer with the current pressure center. Direction buttons remain enabled and the board does not change autonomously. Waiting can only consume deadline/hold duration, which the definition excludes."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure plate moves, but simplified mode's tracker follows it automatically; the only agent-dependent route changes are button actions on a static board.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated simplified instance has a nonzero required route (the generated route is constrained to 7-12 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "10-35",
+          "claim": "Difficulty 1 activates 9 columns x 7 rows with 1 alternating relay/checkpoint; the generated route is constrained to 7-12 accepted moves. Pressure parameters are period 4800 ms; x amplitude 155-175 milli-units; y amplitude 95-115 milli-units; hit ellipse radii 270 x 310 milli-units; sample interval 140 ms; maximum gap 520 ms; outside grace 460 ms; minimum continuous hold 3000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish simplified mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds simplified input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 123,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Primary-pointer hold: press the visible moving pressure pad and keep the held pointer on the pad, using pointer_tracking moves; pointerup, pointercancel, lost capture, blur, or leaving the pad long enough ends and resets the hold.",
+        "Keyboard route: WASD or arrow keydown actions emit N/E/S/W moves while the pressure hold is active.",
+        "Static course: 12 columns x 8 rows with 2 alternating relays/checkpoints; the generated route is constrained to 15-20 accepted moves.",
+        "Moving-pressure contract: period 4400 or 4600 ms; x amplitude 195-215 milli-units; y amplitude 120-140 milli-units; hit ellipse radii 240 x 280 milli-units; sample interval 125 ms; maximum gap 460 ms; outside grace 390 ms; minimum continuous hold 3800 ms.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame updates the pressure pad continuously according to its elapsed-time sinusoid; no agent action is needed for the plate to move.",
+        "During a full hold, each frame tests the held pointer against the moving hit ellipse, records in-pad samples every 125 ms, and starts the outside-grace reset process when the pointer is out of the pad.",
+        "The route vehicle, accepted position, and checkpoint index change only after keyboard actions; there is no autonomous course motion.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset may play a short CSS rewind animation; that animation is visual feedback rather than an independent outcome mechanism."
+      ],
+      "grouped_control_modes": [
+        "D_full_pointer_tracking (common witness): pointer_tracking hold-start and pointer-move actions across all full-mode holds, rounds, and attempts.",
+        "D_full_keyboard_route: keyboard WASD/arrow actions that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": 700,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_pointer_tracking, an observation-free q cannot choose the pointer-down/tracking coordinate for every history with the same I_t: the generator randomizes phase and also varies period and amplitudes, while I_t contains no current plate position."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured W_t^500 contains five chronological frames across 500 ms. The visible pad position and its recent direction/trajectory support a bounded-window policy g that predicts the plate center at t+700 ms and places the pointer there; no private phase or page state is required."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_full_pointer_tracking before hold start at a visible plate center and a phase where the plate moves far enough during Delta=700 ms: the same stale pointer-down coordinate is outside the hit ellipse at delivery, while success remains possible by starting the hold later. The selected horizons are within the active pressure opportunity and the strict loss is caused by the plate's visible non-clock motion, not by a deadline."
+      },
+      "common_visible_process": "The common process is the visibly moving pressure plate: its sinusoidal motion is evidenced by the five-frame window, determines the delayed pointer target, and makes the stale full-mode pointer-down/tracking action strictly less effective after 700 ms.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated full instance has a nonzero required route (the generated route is constrained to 15-20 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "37-61",
+          "claim": "Difficulty 2 activates 12 columns x 8 rows with 2 alternating relays/checkpoints; the generated route is constrained to 15-20 accepted moves. Pressure parameters are period 4400 or 4600 ms; x amplitude 195-215 milli-units; y amplitude 120-140 milli-units; hit ellipse radii 240 x 280 milli-units; sample interval 125 ms; maximum gap 460 ms; outside grace 390 ms; minimum continuous hold 3800 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish full mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds full input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 124,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "ENGAGE TRACKER starts the visible tracker_proxy hold once; the browser then follows the moving pressure center internally.",
+        "Visible N/W/S/E direction buttons emit direction_buttons route moves while the tracker hold is active; manual pointer tracking and keyboard route input are not the simplified controls.",
+        "Static course: 12 columns x 8 rows with 2 alternating relays/checkpoints; the generated route is constrained to 15-20 accepted moves.",
+        "Moving-pressure contract: period 4400 or 4600 ms; x amplitude 195-215 milli-units; y amplitude 120-140 milli-units; hit ellipse radii 240 x 280 milli-units; sample interval 125 ms; maximum gap 460 ms; outside grace 390 ms; minimum continuous hold 3800 ms; the pressure pad itself is display-only in simplified mode.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame moves the visible pressure pad continuously according to its elapsed-time sinusoid.",
+        "During a simplified hold, each animation frame sets lastPointer to the current pressure center and records samples, so the tracker proxy follows the plate without an agent pointer action and does not incur pointerleave reset.",
+        "The route vehicle and checkpoint index change only after visible N/W/S/E direction-button actions; the board itself is static between those actions.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset/reissue interaction can show a short CSS rewind animation, but it does not create a moving route target."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tracker_proxy: ENGAGE TRACKER starts the hold and the browser internally recomputes the current pressure center.",
+        "D_simplified_direction_buttons: N/W/S/E buttons that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_direction_buttons, q cannot select the next route direction across randomized static boards using only I_t; the current board and next checkpoint are visible but excluded from I_t. This observation dependence is static route information, not the moving-pressure phenomenon."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, and therefore the 500 ms bounded window, contains the static course and ordered checkpoint geometry, so g can choose a direction-button action. It does not need the window's temporal change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate simplified action loses value from the plate's autonomous motion: the proxy handler samples pressureCenter at delivery, and every active simplified frame overwrites lastPointer with the current pressure center. Direction buttons remain enabled and the board does not change autonomously. Waiting can only consume deadline/hold duration, which the definition excludes."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure plate moves, but simplified mode's tracker follows it automatically; the only agent-dependent route changes are button actions on a static board.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated simplified instance has a nonzero required route (the generated route is constrained to 15-20 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "37-61",
+          "claim": "Difficulty 2 activates 12 columns x 8 rows with 2 alternating relays/checkpoints; the generated route is constrained to 15-20 accepted moves. Pressure parameters are period 4400 or 4600 ms; x amplitude 195-215 milli-units; y amplitude 120-140 milli-units; hit ellipse radii 240 x 280 milli-units; sample interval 125 ms; maximum gap 460 ms; outside grace 390 ms; minimum continuous hold 3800 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish simplified mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds simplified input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 125,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Primary-pointer hold: press the visible moving pressure pad and keep the held pointer on the pad, using pointer_tracking moves; pointerup, pointercancel, lost capture, blur, or leaving the pad long enough ends and resets the hold.",
+        "Keyboard route: WASD or arrow keydown actions emit N/E/S/W moves while the pressure hold is active.",
+        "Static course: 15 columns x 9 rows with 3 alternating relays/checkpoints; the generated route is constrained to 28-36 accepted moves.",
+        "Moving-pressure contract: period 4000 or 4200 ms; x amplitude 220-240 milli-units; y amplitude 140-160 milli-units; hit ellipse radii 210 x 255 milli-units; sample interval 110 ms; maximum gap 410 ms; outside grace 350 ms; minimum continuous hold 4500 ms.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame updates the pressure pad continuously according to its elapsed-time sinusoid; no agent action is needed for the plate to move.",
+        "During a full hold, each frame tests the held pointer against the moving hit ellipse, records in-pad samples every 110 ms, and starts the outside-grace reset process when the pointer is out of the pad.",
+        "The route vehicle, accepted position, and checkpoint index change only after keyboard actions; there is no autonomous course motion.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset may play a short CSS rewind animation; that animation is visual feedback rather than an independent outcome mechanism."
+      ],
+      "grouped_control_modes": [
+        "D_full_pointer_tracking (common witness): pointer_tracking hold-start and pointer-move actions across all full-mode holds, rounds, and attempts.",
+        "D_full_keyboard_route: keyboard WASD/arrow actions that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": 600,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_pointer_tracking, an observation-free q cannot choose the pointer-down/tracking coordinate for every history with the same I_t: the generator randomizes phase and also varies period and amplitudes, while I_t contains no current plate position."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured W_t^500 contains five chronological frames across 500 ms. The visible pad position and its recent direction/trajectory support a bounded-window policy g that predicts the plate center at t+600 ms and places the pointer there; no private phase or page state is required."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_full_pointer_tracking before hold start at a visible plate center and a phase where the plate moves far enough during Delta=600 ms: the same stale pointer-down coordinate is outside the hit ellipse at delivery, while success remains possible by starting the hold later. The selected horizons are within the active pressure opportunity and the strict loss is caused by the plate's visible non-clock motion, not by a deadline."
+      },
+      "common_visible_process": "The common process is the visibly moving pressure plate: its sinusoidal motion is evidenced by the five-frame window, determines the delayed pointer target, and makes the stale full-mode pointer-down/tracking action strictly less effective after 600 ms.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated full instance has a nonzero required route (the generated route is constrained to 28-36 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "64-88",
+          "claim": "Difficulty 3 activates 15 columns x 9 rows with 3 alternating relays/checkpoints; the generated route is constrained to 28-36 accepted moves. Pressure parameters are period 4000 or 4200 ms; x amplitude 220-240 milli-units; y amplitude 140-160 milli-units; hit ellipse radii 210 x 255 milli-units; sample interval 110 ms; maximum gap 410 ms; outside grace 350 ms; minimum continuous hold 4500 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish full mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds full input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 126,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "ENGAGE TRACKER starts the visible tracker_proxy hold once; the browser then follows the moving pressure center internally.",
+        "Visible N/W/S/E direction buttons emit direction_buttons route moves while the tracker hold is active; manual pointer tracking and keyboard route input are not the simplified controls.",
+        "Static course: 15 columns x 9 rows with 3 alternating relays/checkpoints; the generated route is constrained to 28-36 accepted moves.",
+        "Moving-pressure contract: period 4000 or 4200 ms; x amplitude 220-240 milli-units; y amplitude 140-160 milli-units; hit ellipse radii 210 x 255 milli-units; sample interval 110 ms; maximum gap 410 ms; outside grace 350 ms; minimum continuous hold 4500 ms; the pressure pad itself is display-only in simplified mode.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame moves the visible pressure pad continuously according to its elapsed-time sinusoid.",
+        "During a simplified hold, each animation frame sets lastPointer to the current pressure center and records samples, so the tracker proxy follows the plate without an agent pointer action and does not incur pointerleave reset.",
+        "The route vehicle and checkpoint index change only after visible N/W/S/E direction-button actions; the board itself is static between those actions.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset/reissue interaction can show a short CSS rewind animation, but it does not create a moving route target."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tracker_proxy: ENGAGE TRACKER starts the hold and the browser internally recomputes the current pressure center.",
+        "D_simplified_direction_buttons: N/W/S/E buttons that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_direction_buttons, q cannot select the next route direction across randomized static boards using only I_t; the current board and next checkpoint are visible but excluded from I_t. This observation dependence is static route information, not the moving-pressure phenomenon."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, and therefore the 500 ms bounded window, contains the static course and ordered checkpoint geometry, so g can choose a direction-button action. It does not need the window's temporal change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate simplified action loses value from the plate's autonomous motion: the proxy handler samples pressureCenter at delivery, and every active simplified frame overwrites lastPointer with the current pressure center. Direction buttons remain enabled and the board does not change autonomously. Waiting can only consume deadline/hold duration, which the definition excludes."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure plate moves, but simplified mode's tracker follows it automatically; the only agent-dependent route changes are button actions on a static board.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated simplified instance has a nonzero required route (the generated route is constrained to 28-36 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "64-88",
+          "claim": "Difficulty 3 activates 15 columns x 9 rows with 3 alternating relays/checkpoints; the generated route is constrained to 28-36 accepted moves. Pressure parameters are period 4000 or 4200 ms; x amplitude 220-240 milli-units; y amplitude 140-160 milli-units; hit ellipse radii 210 x 255 milli-units; sample interval 110 ms; maximum gap 410 ms; outside grace 350 ms; minimum continuous hold 4500 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish simplified mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds simplified input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 127,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Primary-pointer hold: press the visible moving pressure pad and keep the held pointer on the pad, using pointer_tracking moves; pointerup, pointercancel, lost capture, blur, or leaving the pad long enough ends and resets the hold.",
+        "Keyboard route: WASD or arrow keydown actions emit N/E/S/W moves while the pressure hold is active.",
+        "Static course: 18 columns x 10 rows with 5 alternating relays/checkpoints; the generated route is constrained to 45-57 accepted moves.",
+        "Moving-pressure contract: period 3600, 3800, or 4000 ms; x amplitude 245-285 milli-units; y amplitude 155-190 milli-units; hit ellipse radii 185 x 235 milli-units; sample interval 100 ms; maximum gap 360 ms; outside grace 310 ms; minimum continuous hold 5200 ms.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame updates the pressure pad continuously according to its elapsed-time sinusoid; no agent action is needed for the plate to move.",
+        "During a full hold, each frame tests the held pointer against the moving hit ellipse, records in-pad samples every 100 ms, and starts the outside-grace reset process when the pointer is out of the pad.",
+        "The route vehicle, accepted position, and checkpoint index change only after keyboard actions; there is no autonomous course motion.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset may play a short CSS rewind animation; that animation is visual feedback rather than an independent outcome mechanism."
+      ],
+      "grouped_control_modes": [
+        "D_full_pointer_tracking (common witness): pointer_tracking hold-start and pointer-move actions across all full-mode holds, rounds, and attempts.",
+        "D_full_keyboard_route: keyboard WASD/arrow actions that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": 500,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_pointer_tracking, an observation-free q cannot choose the pointer-down/tracking coordinate for every history with the same I_t: the generator randomizes phase and also varies period and amplitudes, while I_t contains no current plate position."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured W_t^500 contains five chronological frames across 500 ms. The visible pad position and its recent direction/trajectory support a bounded-window policy g that predicts the plate center at t+500 ms and places the pointer there; no private phase or page state is required."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_full_pointer_tracking before hold start at a visible plate center and a phase where the plate moves far enough during Delta=500 ms: the same stale pointer-down coordinate is outside the hit ellipse at delivery, while success remains possible by starting the hold later. The selected horizons are within the active pressure opportunity and the strict loss is caused by the plate's visible non-clock motion, not by a deadline."
+      },
+      "common_visible_process": "The common process is the visibly moving pressure plate: its sinusoidal motion is evidenced by the five-frame window, determines the delayed pointer target, and makes the stale full-mode pointer-down/tracking action strictly less effective after 500 ms.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated full instance has a nonzero required route (the generated route is constrained to 45-57 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "91-115",
+          "claim": "Difficulty 4 activates 18 columns x 10 rows with 5 alternating relays/checkpoints; the generated route is constrained to 45-57 accepted moves. Pressure parameters are period 3600, 3800, or 4000 ms; x amplitude 245-285 milli-units; y amplitude 155-190 milli-units; hit ellipse radii 185 x 235 milli-units; sample interval 100 ms; maximum gap 360 ms; outside grace 310 ms; minimum continuous hold 5200 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish full mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds full input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 128,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "ENGAGE TRACKER starts the visible tracker_proxy hold once; the browser then follows the moving pressure center internally.",
+        "Visible N/W/S/E direction buttons emit direction_buttons route moves while the tracker hold is active; manual pointer tracking and keyboard route input are not the simplified controls.",
+        "Static course: 18 columns x 10 rows with 5 alternating relays/checkpoints; the generated route is constrained to 45-57 accepted moves.",
+        "Moving-pressure contract: period 3600, 3800, or 4000 ms; x amplitude 245-285 milli-units; y amplitude 155-190 milli-units; hit ellipse radii 185 x 235 milli-units; sample interval 100 ms; maximum gap 360 ms; outside grace 310 ms; minimum continuous hold 5200 ms; the pressure pad itself is display-only in simplified mode.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame moves the visible pressure pad continuously according to its elapsed-time sinusoid.",
+        "During a simplified hold, each animation frame sets lastPointer to the current pressure center and records samples, so the tracker proxy follows the plate without an agent pointer action and does not incur pointerleave reset.",
+        "The route vehicle and checkpoint index change only after visible N/W/S/E direction-button actions; the board itself is static between those actions.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset/reissue interaction can show a short CSS rewind animation, but it does not create a moving route target."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tracker_proxy: ENGAGE TRACKER starts the hold and the browser internally recomputes the current pressure center.",
+        "D_simplified_direction_buttons: N/W/S/E buttons that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_direction_buttons, q cannot select the next route direction across randomized static boards using only I_t; the current board and next checkpoint are visible but excluded from I_t. This observation dependence is static route information, not the moving-pressure phenomenon."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, and therefore the 500 ms bounded window, contains the static course and ordered checkpoint geometry, so g can choose a direction-button action. It does not need the window's temporal change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate simplified action loses value from the plate's autonomous motion: the proxy handler samples pressureCenter at delivery, and every active simplified frame overwrites lastPointer with the current pressure center. Direction buttons remain enabled and the board does not change autonomously. Waiting can only consume deadline/hold duration, which the definition excludes."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure plate moves, but simplified mode's tracker follows it automatically; the only agent-dependent route changes are button actions on a static board.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated simplified instance has a nonzero required route (the generated route is constrained to 45-57 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "91-115",
+          "claim": "Difficulty 4 activates 18 columns x 10 rows with 5 alternating relays/checkpoints; the generated route is constrained to 45-57 accepted moves. Pressure parameters are period 3600, 3800, or 4000 ms; x amplitude 245-285 milli-units; y amplitude 155-190 milli-units; hit ellipse radii 185 x 235 milli-units; sample interval 100 ms; maximum gap 360 ms; outside grace 310 ms; minimum continuous hold 5200 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish simplified mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds simplified input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 129,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Primary-pointer hold: press the visible moving pressure pad and keep the held pointer on the pad, using pointer_tracking moves; pointerup, pointercancel, lost capture, blur, or leaving the pad long enough ends and resets the hold.",
+        "Keyboard route: WASD or arrow keydown actions emit N/E/S/W moves while the pressure hold is active.",
+        "Static course: 22 columns x 12 rows with 6 alternating relays/checkpoints; the generated route is constrained to 60-74 accepted moves.",
+        "Moving-pressure contract: period 3200, 3400, or 3600 ms; x amplitude 285-315 milli-units; y amplitude 185-215 milli-units; hit ellipse radii 155 x 200 milli-units; sample interval 85 ms; maximum gap 300 ms; outside grace 240 ms; minimum continuous hold 6500 ms.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame updates the pressure pad continuously according to its elapsed-time sinusoid; no agent action is needed for the plate to move.",
+        "During a full hold, each frame tests the held pointer against the moving hit ellipse, records in-pad samples every 85 ms, and starts the outside-grace reset process when the pointer is out of the pad.",
+        "The route vehicle, accepted position, and checkpoint index change only after keyboard actions; there is no autonomous course motion.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset may play a short CSS rewind animation; that animation is visual feedback rather than an independent outcome mechanism."
+      ],
+      "grouped_control_modes": [
+        "D_full_pointer_tracking (common witness): pointer_tracking hold-start and pointer-move actions across all full-mode holds, rounds, and attempts.",
+        "D_full_keyboard_route: keyboard WASD/arrow actions that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": 300,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_full_pointer_tracking, an observation-free q cannot choose the pointer-down/tracking coordinate for every history with the same I_t: the generator randomizes phase and also varies period and amplitudes, while I_t contains no current plate position."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured W_t^500 contains five chronological frames across 500 ms. The visible pad position and its recent direction/trajectory support a bounded-window policy g that predicts the plate center at t+300 ms and places the pointer there; no private phase or page state is required."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_full_pointer_tracking before hold start at a visible plate center and a phase where the plate moves far enough during Delta=300 ms: the same stale pointer-down coordinate is outside the hit ellipse at delivery, while success remains possible by starting the hold later. The selected horizons are within the active pressure opportunity and the strict loss is caused by the plate's visible non-clock motion, not by a deadline."
+      },
+      "common_visible_process": "The common process is the visibly moving pressure plate: its sinusoidal motion is evidenced by the five-frame window, determines the delayed pointer target, and makes the stale full-mode pointer-down/tracking action strictly less effective after 300 ms.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated full instance has a nonzero required route (the generated route is constrained to 60-74 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "118-142",
+          "claim": "Difficulty 5 activates 22 columns x 12 rows with 6 alternating relays/checkpoints; the generated route is constrained to 60-74 accepted moves. Pressure parameters are period 3200, 3400, or 3600 ms; x amplitude 285-315 milli-units; y amplitude 185-215 milli-units; hit ellipse radii 155 x 200 milli-units; sample interval 85 ms; maximum gap 300 ms; outside grace 240 ms; minimum continuous hold 6500 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish full mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds full input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 130,
+      "public_environment_name": "Dead Man's Switch",
+      "environment_id": "dead_mans_switch_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "ENGAGE TRACKER starts the visible tracker_proxy hold once; the browser then follows the moving pressure center internally.",
+        "Visible N/W/S/E direction buttons emit direction_buttons route moves while the tracker hold is active; manual pointer tracking and keyboard route input are not the simplified controls.",
+        "Static course: 22 columns x 12 rows with 6 alternating relays/checkpoints; the generated route is constrained to 60-74 accepted moves.",
+        "Moving-pressure contract: period 3200, 3400, or 3600 ms; x amplitude 285-315 milli-units; y amplitude 185-215 milli-units; hit ellipse radii 155 x 200 milli-units; sample interval 85 ms; maximum gap 300 ms; outside grace 240 ms; minimum continuous hold 6500 ms; the pressure pad itself is display-only in simplified mode.",
+        "REISSUE COURSE is an administrative failure/restart control."
+      ],
+      "autonomous_processes": [
+        "From render onward, requestAnimationFrame moves the visible pressure pad continuously according to its elapsed-time sinusoid.",
+        "During a simplified hold, each animation frame sets lastPointer to the current pressure center and records samples, so the tracker proxy follows the plate without an agent pointer action and does not incur pointerleave reset.",
+        "The route vehicle and checkpoint index change only after visible N/W/S/E direction-button actions; the board itself is static between those actions.",
+        "The continuity bar advances with elapsed hold time, and once the dock, route, minimum hold, and recent-sample conditions are satisfied, maybeComplete submits without another route action.",
+        "A reset/reissue interaction can show a short CSS rewind animation, but it does not create a moving route target."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_tracker_proxy: ENGAGE TRACKER starts the hold and the browser internally recomputes the current pressure center.",
+        "D_simplified_direction_buttons: N/W/S/E buttons that change the static route position and checkpoint progress.",
+        "REISSUE COURSE is administrative and is not an outcome-affecting grouped mode."
+      ],
+      "delta_ms": null,
+      "window_ms": 500,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_simplified_direction_buttons, q cannot select the next route direction across randomized static boards using only I_t; the current board and next checkpoint are visible but excluded from I_t. This observation dependence is static route information, not the moving-pressure phenomenon."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, and therefore the 500 ms bounded window, contains the static course and ordered checkpoint geometry, so g can choose a direction-button action. It does not need the window's temporal change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate simplified action loses value from the plate's autonomous motion: the proxy handler samples pressureCenter at delivery, and every active simplified frame overwrites lastPointer with the current pressure center. Direction buttons remain enabled and the board does not change autonomously. Waiting can only consume deadline/hold duration, which the definition excludes."
+      },
+      "common_visible_process": "No common visible process satisfies all three clauses. The pressure plate moves, but simplified mode's tracker follows it automatically; the only agent-dependent route changes are button actions on a static board.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated simplified instance has a nonzero required route (the generated route is constrained to 60-74 accepted moves.) and the grader requires accepted movement events inside one continuous hold. Starting the hold and then sending no outcome-affecting actions cannot reach the dock; the source therefore rules out a successful pre-run solution for at least half of instances without inventing a rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+        "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+        "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The task identifies the public game as Dead Man's Switch and describes continuous pressure tracking plus ordered relay navigation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/env.json",
+          "lines": "9-15",
+          "claim": "The environment exposes mouse and keyboard actions and configures a 500 ms, 5-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "118-142",
+          "claim": "Difficulty 5 activates 22 columns x 12 rows with 6 alternating relays/checkpoints; the generated route is constrained to 60-74 accepted moves. Pressure parameters are period 3200, 3400, or 3600 ms; x amplitude 285-315 milli-units; y amplitude 185-215 milli-units; hit ellipse radii 155 x 200 milli-units; sample interval 85 ms; maximum gap 300 ms; outside grace 240 ms; minimum continuous hold 6500 ms."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/controls.json",
+          "lines": "146-160",
+          "claim": "The exact interaction descriptions distinguish simplified mode and set play_time_seconds=120, observation_window_ms=500, and frames_per_observation=5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "67-90",
+          "claim": "The generator consumes the selected difficulty_parameters, including route, pressure-period, motion-amplitude, hit, sampling, grace, and hold-duration values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "122-175",
+          "claim": "Each instance randomizes relay gaps, start/goal, route, pressure period, phase, amplitudes, and hit/sampling parameters within the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/dead_mans_switch.py",
+          "lines": "176-200",
+          "claim": "The visible and hidden states expose the board, pressure_motion, and the selected movement/pressure control contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "36-43",
+          "claim": "The moving plate position is a sinusoidal function of elapsed event time, period, phase, and amplitudes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "65-100",
+          "claim": "requestAnimationFrame moves the visible plate continuously and, during a hold, samples the pointer or resets after an outside-grace interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "262-299",
+          "claim": "The vehicle and checkpoint state change only when an accepted direction action calls move; the course has no autonomous vehicle motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.js",
+          "lines": "397-459",
+          "claim": "The browser binds simplified input to the selected hold and movement sources, with full mode using pointer tracking plus keyboard and simplified mode using the proxy plus direction buttons."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/dead_mans_switch.css",
+          "lines": "181-224",
+          "claim": "The pressure pad is the full-mode pointer target; simplified mode disables its pointer events and exposes the proxy and direction-button controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "95-166",
+          "claim": "The independent grader enforces the selected interaction input sources and the exact difficulty geometry and pressure parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/dead_mans_switch.py",
+          "lines": "184-318",
+          "claim": "The grader replays hold, sample, release, and movement events, requiring a continuous hold, recent samples, the full route, duration, and final dock state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/dead_mans_switch_env/tasks/dead_mans_switch_seed_0001/verifier.py",
+          "lines": "44-56",
+          "claim": "The task verifier loads the exported UI result and applies the independent grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/dead_mans_switch.py",
+          "lines": "32-76",
+          "claim": "The implementation solver uses the proxy/buttons in simplified mode and continuously repositions the pointer to the moving pad while sending keyboard moves in full mode; this is implementation evidence, not private state available to a policy."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

@@ -1,0 +1,401 @@
+{
+  "case_index": 23,
+  "environment_id": "microgame_gauntlet_env",
+  "public_environment_name": "Five-System Verification Reactor",
+  "configuration_reports": [
+    {
+      "case_index": 221,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "full",
+        "difficulty_profile": {
+          "pressure_pulses": "4",
+          "chords": 1,
+          "chord_required_ticks": 2,
+          "chord_tick_ms": 170,
+          "dial_target_tolerance_degrees": 36,
+          "dial_friction": 0.88,
+          "dial_tick_ms": 115,
+          "packets": 1,
+          "packet_speed_range_per_tick": "2.4-2.8",
+          "gate_half_width": 12,
+          "intercept_tick_ms": 130,
+          "route_points": 5,
+          "checkpoint_radius": 10,
+          "corridor_radius": 15
+        },
+        "round_controls": [
+          "Pressure: hold Space, click the four pulse sockets in order, and release Space after the bank is dark.",
+          "Chord: press and release the displayed two-key chord; keep both keys held through 2 charge ticks at 170 ms per tick.",
+          "Dial: drag the flywheel rim, release to coast, and click BRAKE inside the target sector of ±36 degrees.",
+          "Intercept: click the arm control once, then click the moving packet when it is inside the visible gate; one packet uses a 130 ms tick and speed 2.4-2.8 per tick.",
+          "Route: hold-drag the capsule through 5 numbered hoops while staying inside the visible corridor."
+        ],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [
+        {
+          "process": "Chord charge",
+          "period": "While both displayed keys are held",
+          "behavior": "The browser timer adds one visible charge tick every 170 ms until 2 ticks; an early release faults the round.",
+          "outcome_affecting_control": "Key release remains a required action after the fixed minimum hold, so waiting enables rather than expires it."
+        },
+        {
+          "process": "Dial coast",
+          "period": "After flywheel release and before BRAKE",
+          "behavior": "The angle advances every 115 ms and velocity is multiplied by 0.88; the visible angle, velocity, and target sector update.",
+          "outcome_affecting_control": "BRAKE is outcome-affecting during the coast, but the moving-packet process below supplies the common witness."
+        },
+        {
+          "process": "Moving-packet intercept",
+          "period": "After the scanner is armed and until the packet is captured",
+          "behavior": "The packet position advances every 130 ms at its generated speed, reverses at the track ends, and the visible target moves across the visible gate.",
+          "outcome_affecting_control": "The full-mode packet click is effective only when the moving target is within the gate."
+        },
+        {
+          "process": "Round transition",
+          "period": "After a round is sealed or a fault is submitted",
+          "behavior": "The browser waits briefly before rendering the next or fresh round.",
+          "outcome_affecting_control": "No round-solving control is available during this fixed transition."
+        }
+      ],
+      "grouped_control_modes": [
+        {"mode": "pressure", "D": "All full-mode Space-hold and ordered pulse-click occurrences across seeds and attempts."},
+        {"mode": "chord", "D": "All full-mode displayed-key hold/release occurrences across chord fields."},
+        {"mode": "dial", "D": "All full-mode flywheel drag, release, coast, and BRAKE occurrences."},
+        {"mode": "intercept", "D": "All full-mode armed moving-packet capture occurrences across packets and seeds."},
+        {"mode": "route", "D": "All full-mode continuous capsule-drag occurrences across route points and seeds."}
+      ],
+      "delta_ms": 260,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "I use D for an armed packet capture. The generator varies packet speed and gate center across instances, and the same prior action history can therefore have different visible packet phases and different delayed-optimal capture times. A policy q using only I_t cannot distinguish those cases or choose the capture time optimally for all of them."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "I use the six chronological frames in the configured 800 ms window to read the packet's visible position and direction against the visible gate, estimate its current motion, and predict its position 260 ms later. A policy g can choose the full-mode packet click when that delayed position is inside the gate and choose no-op otherwise."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "I choose a history after at least two intercept ticks in which the packet is inside the gate and moving toward its edge. The packet click succeeds at H_t; after a tau of about one 130 ms tick, the autonomous move can put it outside the gate, so the same click has lower Q while success remains possible at a later crossing. This is task-state motion, not a deadline."
+      },
+      "common_visible_process": "I use the armed moving-packet process as the common witness: the packet visibly advances and reverses on the track while the capture gate remains visible. I set Delta to two 130 ms ticks and w to 800 ms. The recent trajectory supplies the speed and direction needed to predict delayed capture, while an action-only schedule cannot account for generated speed, gate center, and phase; the capture opportunity degrades when the packet leaves the gate but later crossings preserve recoverability.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated instance contains an intercept round. Arming starts the autonomous packet timer, and the browser requires a separate capture action for the packet; the grader also requires an intercept_click for every packet. Thus no instance can complete its autonomous intercept phase with no outcome-affecting action after arming.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json",
+        "weird_captcha_gym/environments/microgame_gauntlet_env/env.json",
+        "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json",
+        "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py",
+        "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "9-31,131-145", "claim": "Level 1 has the stated five-system parameters, both full and simplified surfaces, and an 800 ms observation window with six frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "61-121,128-205,208-243", "claim": "The generator applies the level parameters, shuffles but always emits pressure, chord, dial, intercept, and route rounds, and randomizes packet speeds and gate centers."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "17-37,427-489,615-711", "claim": "The selected input surface is recorded; arming starts the moving-packet interval, capture checks the visible gate, and both mode branches use the same packet state and completion path."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22,29-31", "claim": "The packet, gate, and level-specific proxy controls are visibly rendered; simplified mode changes the input surface rather than the moving state."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,236-306", "claim": "The independent replay advances the packet at each tick, requires at least two ticks and an in-gate click for every packet, and enforces the selected interaction surface and five-round resource replay."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-160", "claim": "The normal visible-control solver waits for the moving target to be visibly in the gate before clicking the full-mode target or simplified capture control."},
+        {"path": "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "lines": "21-34", "claim": "Task verification loads the independent mixed-reactor replay grader for the exported UI outcome."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 222,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "simplified",
+        "difficulty_profile": {
+          "pressure_pulses": "4",
+          "chords": 1,
+          "chord_required_ticks": 2,
+          "chord_tick_ms": 170,
+          "dial_target_tolerance_degrees": 36,
+          "dial_friction": 0.88,
+          "dial_tick_ms": 115,
+          "packets": 1,
+          "packet_speed_range_per_tick": "2.4-2.8",
+          "gate_half_width": 12,
+          "intercept_tick_ms": 130,
+          "route_points": 5,
+          "checkpoint_radius": 10,
+          "corridor_radius": 15
+        },
+        "round_controls": [
+          "Pressure: click ENGAGE PRESSURE, click the four pulse sockets in order, and click RELEASE BANK after the bank is dark.",
+          "Chord: click ENGAGE DISPLAYED PAIR, wait for 2 visible charge ticks at 170 ms per tick, and click RELEASE CHARGED PAIR.",
+          "Dial: click GRIP CALIBRATION, use visible TURN ±12° steps, click RELEASE / COAST, and click BRAKE inside the target sector of ±36 degrees.",
+          "Intercept: click ARM SCANNER, then click CAPTURE ALIGNED PACKET when the moving packet is inside the visible gate; one packet uses a 130 ms tick and speed 2.4-2.8 per tick.",
+          "Route: click the five visible numbered hoop buttons in order; each selection traverses the same visible corridor."
+        ],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [
+        {"process": "Chord charge", "period": "After ENGAGE DISPLAYED PAIR and before release", "behavior": "A 170 ms interval fills 2 visible charge ticks while the displayed pair is logically held.", "outcome_affecting_control": "Release is enabled after a fixed minimum duration; waiting does not make it expire."},
+        {"process": "Dial coast", "period": "After RELEASE / COAST and before BRAKE", "behavior": "The angle advances every 115 ms with friction 0.88 and the visible angle and velocity change.", "outcome_affecting_control": "BRAKE remains the outcome action during coast; the packet motion is the common witness."},
+        {"process": "Moving-packet intercept", "period": "After ARM SCANNER and until capture", "behavior": "The packet moves and reverses every 130 ms at its generated speed across the visible fixed gate.", "outcome_affecting_control": "CAPTURE ALIGNED PACKET is effective only while the moving target is inside the gate."},
+        {"process": "Round transition", "period": "After a seal or fault", "behavior": "A fixed browser transition renders the next or fresh round.", "outcome_affecting_control": "No round-solving control is available during the transition."}
+      ],
+      "grouped_control_modes": [
+        {"mode": "pressure", "D": "All simplified engage/release pressure-proxy and ordered pulse-selection occurrences."},
+        {"mode": "chord", "D": "All simplified displayed-pair engage/release occurrences across chord fields."},
+        {"mode": "dial", "D": "All simplified grip, visible turn-step, coast-release, and BRAKE occurrences."},
+        {"mode": "intercept", "D": "All simplified armed moving-packet capture-button occurrences across packets and seeds."},
+        {"mode": "route", "D": "All simplified numbered-hoop selection occurrences across route points and seeds."}
+      ],
+      "delta_ms": 260,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use D for a simplified armed packet capture. Generated speed, gate center, and packet phase differ while the same prior action history can be identical, so a policy q based only on I_t cannot select the delayed-optimal CAPTURE ALIGNED PACKET action for every history."},
+      "clause_ii": {"holds": true, "reason": "I use the 800 ms six-frame window to observe the packet's visible displacement and direction relative to the visible gate, forecast its position 260 ms later, and choose the simplified capture button or no-op accordingly."},
+      "clause_iii": {"holds": true, "reason": "I choose a post-arm history with the packet inside the gate and moving out after at least two ticks. The capture button succeeds at H_t; after roughly one 130 ms tick it can be outside, lowering the same button's value, while continued bouncing leaves a later successful crossing possible."},
+      "common_visible_process": "I use the same armed moving-packet process for all three clauses. The packet's position and direction visibly change every 130 ms, the gate remains visible, and two ticks give Delta=260 ms. Six recent frames over w=800 ms let g predict delayed alignment; q cannot see the randomized speed, gate center, or phase. Waiting can move the packet out of the gate without making the round unrecoverable.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "Every instance includes an intercept round. ARM SCANNER starts the autonomous timer, and each packet still requires its own CAPTURE ALIGNED PACKET click; the replay grader requires one intercept_click per packet. No instance has a successful zero-action outcome phase after arming.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "9-31,131-145", "claim": "The level-1 parameters, simplified surface, and 800 ms/6-frame observation settings are explicit."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "61-121,128-205,208-243", "claim": "The five round types are always generated, and packet speed and gate center are generated independently of the selected simplified surface."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "17-37,427-489,615-711", "claim": "Simplified mode uses proxy controls while sharing the intercept timer, position, in-gate test, and packet progression with full mode."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22,29-31", "claim": "The moving target and capture gate are visible, and simplified proxy buttons are the selected input surface."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,247-306", "claim": "Replay requires moving ticks, in-gate capture for every packet, and the expected simplified input surface."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-160", "claim": "The visible-control solver waits for the target's in-gate state and presses the simplified capture control."},
+        {"path": "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "lines": "21-34", "claim": "The task verifier delegates the exported outcome to the independent replay grader."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 223,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "full",
+        "difficulty_profile": {"pressure_pulses": 5, "chords": 2, "chord_required_ticks": 3, "chord_tick_ms": 160, "dial_target_tolerance_degrees": 27, "dial_friction": 0.9, "dial_tick_ms": 110, "packets": 2, "packet_speed_range_per_tick": "3.0-3.5", "gate_half_width": "9-10", "intercept_tick_ms": 120, "route_points": 6, "checkpoint_radius": 8, "corridor_radius": 12},
+        "round_controls": ["Pressure: hold Space while clicking 5 ordered pulse sockets, then release.", "Chord: press/release each of 2 displayed two-key chords after 3 ticks at 160 ms per tick.", "Dial: drag and release the flywheel, then BRAKE during the 110 ms coast ticks inside ±27 degrees.", "Intercept: arm once and click each of 2 moving packets when inside the visible gate; speeds are 3.0-3.5 per tick and gate half-width is 9-10.", "Route: hold-drag through 6 numbered hoops inside the corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [
+        {"process": "Chord charge", "period": "While both displayed keys are held", "behavior": "A 160 ms timer fills 3 visible charge ticks for each chord.", "outcome_affecting_control": "Release is required after the minimum charge and does not expire through waiting."},
+        {"process": "Dial coast", "period": "After flywheel release", "behavior": "The dial advances every 110 ms with friction 0.9 and its visible angle/velocity change.", "outcome_affecting_control": "BRAKE is active during coast; the packet process is the common witness."},
+        {"process": "Moving-packet intercept", "period": "After scanner arm and before each capture", "behavior": "Each packet advances every 120 ms, bounces at track ends, and is visibly tested against its generated gate; capture resets the next packet to the start.", "outcome_affecting_control": "The full-mode packet click is effective only during an in-gate crossing."},
+        {"process": "Round transition", "period": "After seal or fault", "behavior": "A fixed short browser transition changes the displayed round.", "outcome_affecting_control": "No round-solving input is available during it."}
+      ],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All full Space-hold/pulse-click occurrences."}, {"mode": "chord", "D": "All full displayed-key chord hold/release occurrences."}, {"mode": "dial", "D": "All full flywheel coast/BRAKE occurrences."}, {"mode": "intercept", "D": "All full armed moving-packet capture occurrences for both packets."}, {"mode": "route", "D": "All full continuous capsule-drag occurrences."}],
+      "delta_ms": 240,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the armed intercept D. Random packet speed, gate center, and current phase produce histories with identical I_t but different delayed capture times, so no action-only q is optimal across the grouped occurrences."},
+      "clause_ii": {"holds": true, "reason": "I use recent visible target movement over 800 ms to infer direction and speed and forecast the in-gate position 240 ms later. g can select the full target click or no-op from I_t and that bounded visual window."},
+      "clause_iii": {"holds": true, "reason": "At a history with an in-gate packet moving toward an edge, a capture click succeeds immediately. After about one 120 ms tick the packet can be outside, reducing that click's Q, while its ongoing bounce keeps later capture possible; Delta is two ticks and the loss is not a deadline."},
+      "common_visible_process": "I use the visible, autonomously moving packet after arm. Delta=240 ms spans two 120 ms ticks and w=800 ms contains multiple trajectory samples. That same trajectory makes delayed capture depend on observation and causes an in-gate click to degrade after the packet leaves the gate.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "The fixed five-round generator includes an intercept round in every instance. After arm, each of its 2 packets requires a separate capture event in the browser and in the replay grader, so a pre-run solution cannot send no outcome-affecting actions during that autonomous phase.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "34-55,131-145", "claim": "The level-2 profile specifies 5 pulses, 2 chords, 2 packets, 6 route points, and the 120 ms intercept tick with both interaction surfaces."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "61-121,167-205", "claim": "The level parameters are applied to all five shuffled rounds and packet speed/gate center are generated per packet."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "Arming creates the 120 ms moving-packet interval and capture advances only after a visible in-gate check in full mode."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The target, gate, and full-mode arm/capture controls are visibly rendered."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,236-306", "claim": "The grader replays movement and requires every packet capture plus the exact interaction condition."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-160", "claim": "The full-mode solver waits for visible in-gate alignment before clicking the moving target."}],
+      "uncertainties": []
+    },
+    {
+      "case_index": 224,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "simplified",
+        "difficulty_profile": {"pressure_pulses": 5, "chords": 2, "chord_required_ticks": 3, "chord_tick_ms": 160, "dial_target_tolerance_degrees": 27, "dial_friction": 0.9, "dial_tick_ms": 110, "packets": 2, "packet_speed_range_per_tick": "3.0-3.5", "gate_half_width": "9-10", "intercept_tick_ms": 120, "route_points": 6, "checkpoint_radius": 8, "corridor_radius": 12},
+        "round_controls": ["Pressure: use ENGAGE PRESSURE, click 5 ordered pulse sockets, and use RELEASE BANK.", "Chord: use ENGAGE DISPLAYED PAIR and RELEASE CHARGED PAIR for each of 2 pairs after 3 visible ticks at 160 ms per tick.", "Dial: use GRIP CALIBRATION, visible ±12° turns, RELEASE / COAST, and BRAKE inside ±27 degrees.", "Intercept: use ARM SCANNER and CAPTURE ALIGNED PACKET for each of 2 packets as it crosses the visible gate; the motion ticks every 120 ms.", "Route: select 6 numbered hoop buttons in order; the capsule follows the same visible corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [{"process": "Chord charge", "period": "After each proxy engage", "behavior": "The displayed pair remains logically held while a 160 ms interval fills 3 visible ticks.", "outcome_affecting_control": "Proxy release is enabled after a fixed minimum hold and does not become less effective by waiting."}, {"process": "Dial coast", "period": "After proxy coast release", "behavior": "The dial advances every 110 ms with friction 0.9.", "outcome_affecting_control": "BRAKE acts during coast; the intercept process supplies the common witness."}, {"process": "Moving-packet intercept", "period": "After ARM SCANNER and until each capture", "behavior": "The packet visibly advances and bounces every 120 ms across the visible gate, then the next packet starts at the track origin after capture.", "outcome_affecting_control": "The simplified capture button is effective only during an in-gate crossing."}, {"process": "Round transition", "period": "After seal or fault", "behavior": "A fixed short transition renders the next or fresh round.", "outcome_affecting_control": "No round-solving input is available during it."}],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All simplified pressure engage/release and pulse-button occurrences."}, {"mode": "chord", "D": "All simplified chord proxy engage/release occurrences."}, {"mode": "dial", "D": "All simplified dial grip, turn-step, coast-release, and BRAKE occurrences."}, {"mode": "intercept", "D": "All simplified moving-packet capture-button occurrences."}, {"mode": "route", "D": "All simplified ordered hoop-button occurrences."}],
+      "delta_ms": 240,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the simplified armed-packet D. The same I_t can precede different generated speeds, gate centers, and visible phases, so q cannot choose the delayed-optimal simplified capture-button timing without observation."},
+      "clause_ii": {"holds": true, "reason": "I use the six-frame 800 ms visible trajectory to estimate packet direction and speed and choose the simplified capture button for its position at t+240 ms, or no-op when no delayed crossing is optimal."},
+      "clause_iii": {"holds": true, "reason": "A packet can be inside the gate at H_t and leave it on the next 120 ms autonomous tick. The same capture button then has lower Q, but the continuing bounce permits a later capture, so success remains possible and the strict loss is caused by visible task motion."},
+      "common_visible_process": "I use the same moving-packet process for clauses (i)-(iii): the target's visible trajectory over w=800 ms predicts the position at Delta=240 ms, and the in-gate capture opportunity can close temporarily inside that delay without a deadline or permanent loss.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "Every level-2 instance includes the intercept round. ARM SCANNER starts autonomous motion and each of the 2 packets requires a separate simplified capture action; the grader rejects a transcript without those clicks. A zero-action outcome phase is impossible for every instance.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "34-55,131-145", "claim": "The level-2 simplified profile and observation settings are explicit."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "110-121,167-205", "claim": "The intercept round is always present and packet speed and gate center are generated per packet."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "Simplified ARM and CAPTURE controls share the timer, visible position, gate test, and packet progression."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The target and gate are visible while the simplified controls are rendered as the active proxy surface."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,247-306", "claim": "Replay enforces moving ticks, in-gate packet captures, and the simplified condition."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-152", "claim": "The visible-control solver waits for in-gate state before pressing the simplified capture button."}],
+      "uncertainties": []
+    },
+    {
+      "case_index": 225,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "full",
+        "difficulty_profile": {"pressure_pulses": 6, "chords": 3, "chord_required_ticks": 3, "chord_tick_ms": 150, "dial_target_tolerance_degrees": 19, "dial_friction": 0.92, "dial_tick_ms": 100, "packets": 3, "packet_speed_range_per_tick": "3.7-4.5", "gate_half_width": "7-8", "intercept_tick_ms": 112, "route_points": 7, "checkpoint_radius": 7, "corridor_radius": 10},
+        "round_controls": ["Pressure: hold Space, click 6 ordered pulses, and release after the bank is dark.", "Chord: press/release 3 displayed two-key chords after 3 charge ticks at 150 ms per tick.", "Dial: drag/release the flywheel and BRAKE during 100 ms inertial ticks inside ±19 degrees.", "Intercept: arm once and click each of 3 moving packets inside its visible gate; speeds are 3.7-4.5 per tick and gate half-width is 7-8.", "Route: hold-drag the capsule through 7 numbered hoops inside the visible corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [{"process": "Chord charge", "period": "While a displayed chord is held", "behavior": "A 150 ms interval fills 3 visible charge ticks for each of 3 chord fields.", "outcome_affecting_control": "Release becomes enabled after a minimum duration; waiting does not expire it."}, {"process": "Dial coast", "period": "After flywheel release", "behavior": "Angle and velocity update every 100 ms with friction 0.92.", "outcome_affecting_control": "BRAKE remains the coast control; the moving-packet process is the common witness."}, {"process": "Moving-packet intercept", "period": "After arm and before each of 3 captures", "behavior": "The target advances every 112 ms, reverses at the track endpoints, and visibly crosses a packet-specific gate.", "outcome_affecting_control": "The full target click is effective only while the target is in its gate."}, {"process": "Round transition", "period": "After a seal or fault", "behavior": "A fixed short transition changes the displayed round.", "outcome_affecting_control": "No round-solving input is available during it."}],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All full Space-hold and ordered pulse-click occurrences."}, {"mode": "chord", "D": "All full three-field key-chord hold/release occurrences."}, {"mode": "dial", "D": "All full flywheel coast and BRAKE occurrences."}, {"mode": "intercept", "D": "All full armed packet-capture occurrences across three packets."}, {"mode": "route", "D": "All full continuous route-drag occurrences."}],
+      "delta_ms": 224,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the full armed-packet D. Packet speeds and gate centers are generated per instance, so equal I_t histories can require different capture phases; q cannot be optimal across D without the visible state."},
+      "clause_ii": {"holds": true, "reason": "The visible target trajectory in the 800 ms six-frame window supplies position and direction for forecasting the target 224 ms later. g can choose the full target click or no-op from that bounded window."},
+      "clause_iii": {"holds": true, "reason": "I choose an in-gate, outward-moving packet state after the required two observation ticks. A click is successful at H_t, can be outside the 7-8 half-width gate after roughly one 112 ms tick, and has lower Q then, while later oscillation preserves a possible capture."},
+      "common_visible_process": "I use the moving packet after scanner arm as the common process. Delta=224 ms is two 112 ms ticks, and w=800 ms shows enough visible movement to predict delayed alignment. The same process makes q fail, makes g sufficient, and temporarily degrades the full-mode click without relying on a deadline.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "The generator always includes an intercept round, and each of its 3 moving packets requires a capture event after arm. Browser logic and the independent grader both require those outcome-affecting clicks, so no generated instance admits a pre-run intercept phase with no such action.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "58-79,131-145", "claim": "The level-3 profile has 3 packets, 112 ms intercept ticks, narrow 7-8 gate half-width, 7 route points, and both input surfaces."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "110-121,167-205", "claim": "The generator preserves all five rounds and randomizes packet speed and gate center for the level-3 intercept round."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "The packet interval, reversal, visible in-gate state, and full target-click capture are implemented directly."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The target motion and gate are visible in the full-mode task UI."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,236-306", "claim": "The grader checks deterministic packet ticks, in-gate captures for all packets, and the full surface."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-160", "claim": "The visible solver waits for in-gate target state before full-mode capture."}],
+      "uncertainties": []
+    },
+    {
+      "case_index": 226,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "simplified",
+        "difficulty_profile": {"pressure_pulses": 6, "chords": 3, "chord_required_ticks": 3, "chord_tick_ms": 150, "dial_target_tolerance_degrees": 19, "dial_friction": 0.92, "dial_tick_ms": 100, "packets": 3, "packet_speed_range_per_tick": "3.7-4.5", "gate_half_width": "7-8", "intercept_tick_ms": 112, "route_points": 7, "checkpoint_radius": 7, "corridor_radius": 10},
+        "round_controls": ["Pressure: use ENGAGE PRESSURE, click 6 ordered pulses, and use RELEASE BANK.", "Chord: engage/release each of 3 displayed pairs after 3 charge ticks at 150 ms per tick.", "Dial: use GRIP CALIBRATION, ±12° turn steps, RELEASE / COAST, and BRAKE inside ±19 degrees.", "Intercept: use ARM SCANNER and CAPTURE ALIGNED PACKET for each of 3 moving packets inside the visible gate; motion ticks every 112 ms.", "Route: select 7 numbered hoop buttons in order through the same visible corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [{"process": "Chord charge", "period": "After each simplified chord engage", "behavior": "A 150 ms timer fills 3 visible charge ticks while the pair is logically held.", "outcome_affecting_control": "Release is enabled after the fixed hold and does not expire."}, {"process": "Dial coast", "period": "After simplified coast release", "behavior": "The dial advances every 100 ms with friction 0.92.", "outcome_affecting_control": "BRAKE is active during coast; packet motion is the common witness."}, {"process": "Moving-packet intercept", "period": "After ARM SCANNER and before each capture", "behavior": "The packet position visibly changes every 112 ms and reverses at the endpoints while the gate remains visible.", "outcome_affecting_control": "CAPTURE ALIGNED PACKET is effective only during an in-gate crossing."}, {"process": "Round transition", "period": "After a seal or fault", "behavior": "A fixed short browser transition changes the round.", "outcome_affecting_control": "No round-solving input is available during it."}],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All simplified pressure proxy and ordered pulse-button occurrences."}, {"mode": "chord", "D": "All simplified chord proxy engage/release occurrences."}, {"mode": "dial", "D": "All simplified dial grip, turn-step, coast-release, and BRAKE occurrences."}, {"mode": "intercept", "D": "All simplified armed packet capture-button occurrences across three packets."}, {"mode": "route", "D": "All simplified ordered hoop-button occurrences."}],
+      "delta_ms": 224,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the simplified armed-packet D. The generated speed, gate center, and phase are not encoded in I_t, so an observation-free q cannot select the delayed-optimal simplified capture timing across all histories."},
+      "clause_ii": {"holds": true, "reason": "I use six recent visible frames over 800 ms to estimate the packet trajectory and choose the simplified capture button for the position at t+224 ms, or no-op when appropriate."},
+      "clause_iii": {"holds": true, "reason": "When a packet is in the gate and moving outward, the simplified capture succeeds at H_t. One autonomous 112 ms tick can move it outside the gate and lower the same button's Q, while continued bouncing keeps later success possible."},
+      "common_visible_process": "I use one common process: the armed packet visibly advances and reverses, with three level-3 packets and packet-specific gates. Two ticks give Delta=224 ms; the 800 ms window supplies trajectory evidence, and leaving the gate temporarily reduces capture value without a clock deadline.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "All instances contain the intercept round, and each of its 3 packets must be captured with a separate simplified control action after ARM SCANNER. The browser and replay grader provide no automatic completion path, so fewer than half—and structurally none—can be pre-run solved.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "58-79,131-145", "claim": "The level-3 simplified profile and 800 ms/6-frame settings are explicit."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "110-121,167-205", "claim": "The intercept round and per-packet speed/gate state are generated independently of input surface."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "Simplified capture uses the same moving target, gate test, timer, and packet reset as full mode."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The target and gate remain visible while simplified capture controls are displayed."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,247-306", "claim": "The grader requires all moving packet captures and the simplified surface."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-152", "claim": "The visible solver waits for the target to be in the gate before simplified capture."}],
+      "uncertainties": []
+    },
+    {
+      "case_index": 227,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "full",
+        "difficulty_profile": {"pressure_pulses": "7-8", "chords": 3, "chord_required_ticks": 4, "chord_tick_ms": 145, "dial_target_tolerance_degrees": 13, "dial_friction": 0.945, "dial_tick_ms": 95, "packets": 3, "packet_speed_range_per_tick": "4.4-6.0 plus per-packet increments", "gate_half_width": "5-6", "intercept_tick_ms": 105, "route_points": 9, "checkpoint_radius": 6, "corridor_radius": 8},
+        "round_controls": ["Pressure: hold Space while clicking 7-8 ordered pulses, then release.", "Chord: press/release 3 displayed two-key chords after 4 charge ticks at 145 ms per tick.", "Dial: drag/release the flywheel, then BRAKE during 95 ms inertial ticks inside ±13 degrees.", "Intercept: arm once and click each of 3 fast moving packets inside its visible 5-6 half-width gate; the packet interval is 105 ms.", "Route: hold-drag through 9 numbered hoops inside the corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [{"process": "Chord charge", "period": "While a displayed chord is held", "behavior": "A 145 ms timer fills 4 visible charge ticks for each chord.", "outcome_affecting_control": "Release follows a minimum hold and does not expire through waiting."}, {"process": "Dial coast", "period": "After flywheel release", "behavior": "The angle advances every 95 ms and velocity is multiplied by 0.945.", "outcome_affecting_control": "BRAKE is active during coast; the moving packet is the common witness."}, {"process": "Moving-packet intercept", "period": "After arm and before each of 3 captures", "behavior": "Fast targets move every 105 ms, reverse at track ends, and are visibly compared with packet-specific narrow gates.", "outcome_affecting_control": "The full packet click loses effectiveness when the target leaves its gate."}, {"process": "Round transition", "period": "After a seal or fault", "behavior": "A fixed short transition renders the next or fresh round.", "outcome_affecting_control": "No solving action is available during it."}],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All full Space-hold/pulse-click occurrences."}, {"mode": "chord", "D": "All full three-field key-chord occurrences."}, {"mode": "dial", "D": "All full flywheel coast/BRAKE occurrences."}, {"mode": "intercept", "D": "All full armed fast-packet capture occurrences across three packets."}, {"mode": "route", "D": "All full continuous capsule-route drags."}],
+      "delta_ms": 210,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the full armed moving-packet D. The baseline generator varies packet speed and gate center, and packet phase differs across occurrences; q(I_t) therefore cannot select the delayed-optimal click for every history."},
+      "clause_ii": {"holds": true, "reason": "The six chronological frames over 800 ms visibly expose the fast target's position and direction relative to its narrow gate. g can predict the target at Delta=210 ms and choose the full click or no-op from that window."},
+      "clause_iii": {"holds": true, "reason": "At an in-gate state moving toward an edge, a full click succeeds now. After about one 105 ms tick the target can be outside the 5-6 half-width gate, reducing the same click's Q, while its continued bouncing keeps another capture possible."},
+      "common_visible_process": "I use the baseline level-4 moving-packet process. Delta=210 ms spans two 105 ms ticks, and w=800 ms exposes enough target trajectory to predict delayed alignment. The same visible motion defeats q, enables g, and makes an in-gate click temporarily less effective without relying on elapsed deadline time.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "Level 4 retains the intercept round with 3 packets. After arming, each packet requires a distinct full-mode target click in the browser and in replay, so no instance can be solved by sending no outcome-affecting actions until the autonomous phase ends.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "82-104,131-145", "claim": "The level-4 baseline profile and 800 ms/6-frame observation settings are explicit."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "64-79,110-121,167-205", "claim": "Level 4 preserves the baseline stream, always includes the intercept round, and randomizes packet speed and gate center."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "The fast target moves on the 105 ms interval and full click capture succeeds only when the visible gate test is true."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The fast target and narrow gate are visible in the full UI."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,236-306", "claim": "The grader replays the 105 ms motion, requires in-gate clicks for all packets, and enforces full mode."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-160", "claim": "The visible solver waits for in-gate alignment before clicking each full-mode target."}],
+      "uncertainties": []
+    },
+    {
+      "case_index": 228,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "simplified",
+        "difficulty_profile": {"pressure_pulses": "7-8", "chords": 3, "chord_required_ticks": 4, "chord_tick_ms": 145, "dial_target_tolerance_degrees": 13, "dial_friction": 0.945, "dial_tick_ms": 95, "packets": 3, "packet_speed_range_per_tick": "4.4-6.0 plus per-packet increments", "gate_half_width": "5-6", "intercept_tick_ms": 105, "route_points": 9, "checkpoint_radius": 6, "corridor_radius": 8},
+        "round_controls": ["Pressure: use ENGAGE PRESSURE, click 7-8 ordered pulses, and use RELEASE BANK.", "Chord: engage/release 3 displayed pairs after 4 charge ticks at 145 ms per tick.", "Dial: use GRIP CALIBRATION, ±12° turns, RELEASE / COAST, and BRAKE inside ±13 degrees.", "Intercept: use ARM SCANNER and CAPTURE ALIGNED PACKET for each of 3 fast packets in its visible 5-6 half-width gate; motion ticks every 105 ms.", "Route: select 9 numbered hoops in order through the visible corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [{"process": "Chord charge", "period": "After each proxy engage", "behavior": "A 145 ms interval fills 4 visible charge ticks while the pair is held.", "outcome_affecting_control": "Release follows a fixed minimum duration and remains effective afterward."}, {"process": "Dial coast", "period": "After proxy coast release", "behavior": "The angle advances every 95 ms with friction 0.945.", "outcome_affecting_control": "BRAKE acts during coast; packet motion is the common witness."}, {"process": "Moving-packet intercept", "period": "After ARM SCANNER and before each capture", "behavior": "Fast targets visibly advance every 105 ms and reverse at the ends against their narrow gates.", "outcome_affecting_control": "The simplified capture button is effective only during an in-gate crossing."}, {"process": "Round transition", "period": "After a seal or fault", "behavior": "A fixed short transition changes the round.", "outcome_affecting_control": "No solving control is available during it."}],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All simplified pressure proxy and pulse-button occurrences."}, {"mode": "chord", "D": "All simplified chord proxy occurrences."}, {"mode": "dial", "D": "All simplified dial proxy turn/coast/BRAKE occurrences."}, {"mode": "intercept", "D": "All simplified armed fast-packet capture-button occurrences."}, {"mode": "route", "D": "All simplified ordered hoop-button occurrences."}],
+      "delta_ms": 210,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the simplified armed packet D. Equal action histories can precede different generated packet speeds, gate centers, and phases, so q cannot choose the delayed-optimal capture-button timing without the visible trajectory."},
+      "clause_ii": {"holds": true, "reason": "The recent six-frame window shows fast target displacement and direction against the narrow gate. g can forecast alignment 210 ms later and choose CAPTURE ALIGNED PACKET or no-op from I_t and that bounded window."},
+      "clause_iii": {"holds": true, "reason": "A simplified capture button succeeds when the packet is inside its gate; one 105 ms autonomous tick can move it out and reduce that button's Q. The packet keeps bouncing, so later success remains possible and the strict loss is caused by state motion."},
+      "common_visible_process": "I use the same visible fast-packet process across all clauses. Delta=210 ms covers two 105 ms ticks; w=800 ms records the direction and speed needed for delayed capture, while an in-gate opportunity can temporarily close without a deadline.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "The five-round level-4 instance always contains 3 moving packets. ARM SCANNER starts their autonomous phase and each requires a separate simplified capture action, which the replay grader checks; therefore no pre-run solution exists for any instance.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "82-104,131-145", "claim": "The level-4 simplified profile and real-time observation settings are explicit."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "64-79,110-121,167-205", "claim": "The baseline level always includes the moving intercept and varies packet speed and gate center."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "Simplified capture shares the fast timer, visible gate test, and packet progression with full mode."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The fast target, narrow gate, and simplified capture proxy are visible."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,247-306", "claim": "The replay requires all moving captures and the selected simplified surface."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-152", "claim": "The visible solver waits for the in-gate state before simplified capture."}],
+      "uncertainties": []
+    },
+    {
+      "case_index": 229,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "full",
+        "difficulty_profile": {"pressure_pulses": "9-10", "chords": 4, "chord_required_ticks": 5, "chord_tick_ms": 135, "dial_target_tolerance_degrees": 8, "dial_friction": 0.96, "dial_tick_ms": 88, "packets": 4, "packet_speed_range_per_tick": "5.8-7.1 plus per-packet increments", "gate_half_width": "4-5", "intercept_tick_ms": 95, "route_points": 11, "checkpoint_radius": 5, "corridor_radius": 6},
+        "round_controls": ["Pressure: hold Space while clicking 9-10 ordered pulses, then release.", "Chord: press/release 4 displayed two-key chords after 5 charge ticks at 135 ms per tick.", "Dial: drag/release the flywheel and BRAKE during 88 ms inertial ticks inside ±8 degrees.", "Intercept: arm once and click each of 4 faster packets inside its visible 4-5 half-width gate; motion ticks every 95 ms.", "Route: hold-drag through 11 numbered hoops inside the narrow visible corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [{"process": "Chord charge", "period": "While each displayed chord is held", "behavior": "A 135 ms timer fills 5 visible charge ticks for each of 4 fields.", "outcome_affecting_control": "Release follows a fixed minimum hold and does not expire by waiting."}, {"process": "Dial coast", "period": "After flywheel release", "behavior": "The angle advances every 88 ms and velocity is multiplied by 0.96.", "outcome_affecting_control": "BRAKE acts during coast; packet motion supplies the common witness."}, {"process": "Moving-packet intercept", "period": "After arm and before each of 4 captures", "behavior": "The fast target advances every 95 ms, reverses at track endpoints, and visibly crosses a narrow packet-specific gate.", "outcome_affecting_control": "The full target click is effective only during the short in-gate crossing."}, {"process": "Round transition", "period": "After a seal or fault", "behavior": "A fixed short transition renders the next or fresh round.", "outcome_affecting_control": "No solving action is available during it."}],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All full Space-hold and ordered pulse-click occurrences."}, {"mode": "chord", "D": "All full four-field key-chord hold/release occurrences."}, {"mode": "dial", "D": "All full flywheel coast/BRAKE occurrences."}, {"mode": "intercept", "D": "All full armed fast-packet capture occurrences across four packets."}, {"mode": "route", "D": "All full continuous capsule-route drags."}],
+      "delta_ms": 190,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the full armed-packet D. Per-instance speed, gate center, and phase differ, while q sees only I_t; it cannot select the delayed-optimal full target click for every generated history."},
+      "clause_ii": {"holds": true, "reason": "Six chronological frames across 800 ms expose the fast target's direction and displacement relative to the narrow gate. g can forecast the target at Delta=190 ms and choose the full click or no-op from this bounded visible window."},
+      "clause_iii": {"holds": true, "reason": "When a packet is inside the gate and moving toward its edge, clicking succeeds at H_t. After roughly one 95 ms autonomous tick the same click can be outside the 4-5 half-width gate and lose Q, while the continuing bounce leaves later capture possible."},
+      "common_visible_process": "I use the level-5 moving-packet process as the common witness. Delta=190 ms spans two 95 ms ticks and w=800 ms shows the trajectory needed to forecast delayed alignment. The same visible motion makes observation necessary and makes a short in-gate click opportunity degrade without relying on a deadline.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "Every level-5 instance includes 4 moving packets. After arm, each packet requires a separate full-mode click, and replay requires each intercept event; hence no instance can send no outcome-affecting actions during the autonomous intercept phase.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "106-128,131-145", "claim": "The level-5 profile specifies 4 packets, 95 ms motion ticks, 4-5 gate half-width, 11 route points, and the configured observation window."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "80-109,110-121,167-205", "claim": "The level-5 parameters generate the fixed five-round set and per-packet speed and gate values."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "The 95 ms target interval, endpoint reversal, visible in-gate state, and full capture click are implemented."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The moving target and narrow gate are visible in full mode."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,236-306", "claim": "The grader replays fast packet motion and requires every in-gate full-mode capture."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-160", "claim": "The visible solver waits for in-gate state before clicking each full-mode target."}],
+      "uncertainties": []
+    },
+    {
+      "case_index": 230,
+      "public_environment_name": "Five-System Verification Reactor",
+      "environment_id": "microgame_gauntlet_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": {
+        "active_interaction_surface": "simplified",
+        "difficulty_profile": {"pressure_pulses": "9-10", "chords": 4, "chord_required_ticks": 5, "chord_tick_ms": 135, "dial_target_tolerance_degrees": 8, "dial_friction": 0.96, "dial_tick_ms": 88, "packets": 4, "packet_speed_range_per_tick": "5.8-7.1 plus per-packet increments", "gate_half_width": "4-5", "intercept_tick_ms": 95, "route_points": 11, "checkpoint_radius": 5, "corridor_radius": 6},
+        "round_controls": ["Pressure: use ENGAGE PRESSURE, click 9-10 ordered pulses, and use RELEASE BANK.", "Chord: engage/release 4 displayed pairs after 5 charge ticks at 135 ms per tick.", "Dial: use GRIP CALIBRATION, ±12° turns, RELEASE / COAST, and BRAKE inside ±8 degrees.", "Intercept: use ARM SCANNER and CAPTURE ALIGNED PACKET for each of 4 fast packets in its visible 4-5 half-width gate; motion ticks every 95 ms.", "Route: select 11 numbered hoops in order through the narrow visible corridor."],
+        "shared_controls": ["Reset current round, costing 4 stability", "Certify after all five rounds"]
+      },
+      "autonomous_processes": [{"process": "Chord charge", "period": "After each simplified chord engage", "behavior": "A 135 ms interval fills 5 visible charge ticks while the pair is held.", "outcome_affecting_control": "Release follows a fixed minimum duration and remains effective after waiting."}, {"process": "Dial coast", "period": "After simplified coast release", "behavior": "The dial advances every 88 ms with friction 0.96.", "outcome_affecting_control": "BRAKE acts during coast; packet motion is the common witness."}, {"process": "Moving-packet intercept", "period": "After ARM SCANNER and before each of 4 captures", "behavior": "Fast targets visibly advance every 95 ms and reverse at the endpoints against narrow gates.", "outcome_affecting_control": "The simplified capture button is effective only during a short in-gate crossing."}, {"process": "Round transition", "period": "After a seal or fault", "behavior": "A fixed short transition changes the displayed round.", "outcome_affecting_control": "No solving control is available during it."}],
+      "grouped_control_modes": [{"mode": "pressure", "D": "All simplified pressure proxy and ordered pulse-button occurrences."}, {"mode": "chord", "D": "All simplified four-field chord proxy occurrences."}, {"mode": "dial", "D": "All simplified dial proxy turn/coast/BRAKE occurrences."}, {"mode": "intercept", "D": "All simplified armed fast-packet capture-button occurrences across four packets."}, {"mode": "route", "D": "All simplified ordered hoop-button occurrences."}],
+      "delta_ms": 190,
+      "window_ms": 800,
+      "clause_i": {"holds": true, "reason": "I use the simplified armed-packet D. Equal I_t histories can have different generated speeds, gate centers, and phases, so q cannot choose the delayed-optimal capture-button timing without observation."},
+      "clause_ii": {"holds": true, "reason": "The six-frame 800 ms window visibly supplies fast target position and direction against the narrow gate. g can forecast alignment 190 ms later and choose CAPTURE ALIGNED PACKET or no-op."},
+      "clause_iii": {"holds": true, "reason": "At an in-gate outward-moving history, the simplified capture succeeds immediately; one 95 ms autonomous tick can move the target outside the 4-5 half-width gate and lower that button's Q, while future bouncing preserves a possible later capture."},
+      "common_visible_process": "I use the same fast moving-packet process for all clauses. Delta=190 ms spans two 95 ms ticks and w=800 ms exposes enough motion to predict delayed capture. The opportunity is visibly temporary but recoverable, so the loss is caused by task-state evolution rather than a deadline.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "The generator always includes 4 moving packets at level 5. ARM SCANNER begins the autonomous phase and each packet requires a separate simplified capture action, which the replay grader enforces; no instance admits a no-action pre-run solution.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "weird_captcha_gym/environments/microgame_gauntlet_env/env.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json", "weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py"],
+      "source_evidence": [{"path": "weird_captcha_gym/environments/microgame_gauntlet_env/controls.json", "lines": "106-128,131-145", "claim": "The level-5 simplified profile and observation settings are explicit."}, {"path": "weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py", "lines": "80-109,110-121,167-205", "claim": "Level 5 always contains the intercept round and generates fast per-packet motion and gates."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.js", "lines": "427-489", "claim": "Simplified capture shares the 95 ms moving state, visible gate test, and packet progression with full mode."}, {"path": "weird_captcha_gym/shared_runtime/app/mechanics/microgame_gauntlet.css", "lines": "19-22", "claim": "The fast target, narrow gate, and simplified capture control are visible."}, {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/microgame_gauntlet.py", "lines": "142-178,247-306", "claim": "The replay requires each moving packet capture and the simplified input surface."}, {"path": "weird_captcha_gym/tools/incubator_solvers/microgame_gauntlet.py", "lines": "140-152", "claim": "The visible solver waits for the target to enter the gate before simplified capture."}],
+      "uncertainties": []
+    }
+  ]
+}

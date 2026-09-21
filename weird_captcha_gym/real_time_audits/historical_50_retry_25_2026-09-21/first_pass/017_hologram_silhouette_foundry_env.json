@@ -1,0 +1,1307 @@
+{
+  "case_index": 17,
+  "environment_id": "hologram_silhouette_foundry_env",
+  "public_environment_name": "Hologram Silhouette Foundry",
+  "configuration_reports": [
+    {
+      "case_index": 161,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "rod_count=3, grid_size=7, min_occluded_rays_per_view=0; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Full input: mouse dragging a visible gizmo axis handle applies one +/-1 translation detent, and dragging the orientation ring cycles the rod axis x->y->z.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "gizmo axis-handle drags for one-cell translation",
+        "gizmo orientation-ring drags for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "10-18",
+          "claim": "Difficulty 1 activates rod_count=3, grid_size=7, min_occluded_rays_per_view=0; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The full surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 162,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "rod_count=3, grid_size=7, min_occluded_rays_per_view=0; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Simplified input: labeled X-/X+/Y-/Y+/Z-/Z+ buttons apply one +/-1 translation detent, and the CYCLE AXIS X/Y/Z button cycles the rod axis.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "labeled transform-button clicks for one-cell translation",
+        "cycle-axis button clicks for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "10-18",
+          "claim": "Difficulty 1 activates rod_count=3, grid_size=7, min_occluded_rays_per_view=0; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The simplified surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 163,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "rod_count=4, grid_size=7, min_occluded_rays_per_view=1; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Full input: mouse dragging a visible gizmo axis handle applies one +/-1 translation detent, and dragging the orientation ring cycles the rod axis x->y->z.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "gizmo axis-handle drags for one-cell translation",
+        "gizmo orientation-ring drags for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "20-28",
+          "claim": "Difficulty 2 activates rod_count=4, grid_size=7, min_occluded_rays_per_view=1; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The full surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 164,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "rod_count=4, grid_size=7, min_occluded_rays_per_view=1; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Simplified input: labeled X-/X+/Y-/Y+/Z-/Z+ buttons apply one +/-1 translation detent, and the CYCLE AXIS X/Y/Z button cycles the rod axis.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "labeled transform-button clicks for one-cell translation",
+        "cycle-axis button clicks for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "20-28",
+          "claim": "Difficulty 2 activates rod_count=4, grid_size=7, min_occluded_rays_per_view=1; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The simplified surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 165,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "rod_count=5, grid_size=7, min_occluded_rays_per_view=1; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Full input: mouse dragging a visible gizmo axis handle applies one +/-1 translation detent, and dragging the orientation ring cycles the rod axis x->y->z.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "gizmo axis-handle drags for one-cell translation",
+        "gizmo orientation-ring drags for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "30-38",
+          "claim": "Difficulty 3 activates rod_count=5, grid_size=7, min_occluded_rays_per_view=1; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The full surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 166,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "rod_count=5, grid_size=7, min_occluded_rays_per_view=1; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Simplified input: labeled X-/X+/Y-/Y+/Z-/Z+ buttons apply one +/-1 translation detent, and the CYCLE AXIS X/Y/Z button cycles the rod axis.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "labeled transform-button clicks for one-cell translation",
+        "cycle-axis button clicks for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "30-38",
+          "claim": "Difficulty 3 activates rod_count=5, grid_size=7, min_occluded_rays_per_view=1; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The simplified surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 167,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "rod_count=6, grid_size=7, min_occluded_rays_per_view=2; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Full input: mouse dragging a visible gizmo axis handle applies one +/-1 translation detent, and dragging the orientation ring cycles the rod axis x->y->z.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "gizmo axis-handle drags for one-cell translation",
+        "gizmo orientation-ring drags for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "40-48",
+          "claim": "Difficulty 4 activates rod_count=6, grid_size=7, min_occluded_rays_per_view=2; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The full surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 168,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "rod_count=6, grid_size=7, min_occluded_rays_per_view=2; a 7^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Simplified input: labeled X-/X+/Y-/Y+/Z-/Z+ buttons apply one +/-1 translation detent, and the CYCLE AXIS X/Y/Z button cycles the rod axis.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "labeled transform-button clicks for one-cell translation",
+        "cycle-axis button clicks for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "40-48",
+          "claim": "Difficulty 4 activates rod_count=6, grid_size=7, min_occluded_rays_per_view=2; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The simplified surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 169,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "rod_count=7, grid_size=8, min_occluded_rays_per_view=3; an 8^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Full input: mouse dragging a visible gizmo axis handle applies one +/-1 translation detent, and dragging the orientation ring cycles the rod axis x->y->z.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "gizmo axis-handle drags for one-cell translation",
+        "gizmo orientation-ring drags for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "50-58",
+          "claim": "Difficulty 5 activates rod_count=7, grid_size=8, min_occluded_rays_per_view=3; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The full surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 170,
+      "public_environment_name": "Hologram Silhouette Foundry",
+      "environment_id": "hologram_silhouette_foundry_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "rod_count=7, grid_size=8, min_occluded_rays_per_view=3; an 8^3 volume and three orthographic target dies.",
+        "Rod-selection buttons choose the active rod.",
+        "Simplified input: labeled X-/X+/Y-/Y+/Z-/Z+ buttons apply one +/-1 translation detent, and the CYCLE AXIS X/Y/Z button cycles the rod axis.",
+        "CAST THREE SHADOWS submits the current arrangement; SCRAP / FRESH FOUNDRY abandons the trial."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "rod-selection button clicks",
+        "labeled transform-button clicks for one-cell translation",
+        "cycle-axis button clicks for one axis-cycle rotation",
+        "cast button submission (administrative; no geometry mutation)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The unchanged casting leaves the useful action opportunity open indefinitely. An observation-free no-op or fixed wait can be followed by the same optimal geometry-solving continuation, so the delayed next action does not need a time-dependent choice."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current screenshot is sufficient to inspect the unchanged target masks and rod arrangement, and a bounded one-frame policy can choose or plan the next transform. This supplies static visual grounding, not a prediction of autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Between agent actions the rods, projections, and target masks do not change. Transform handlers update geometry synchronously only when the agent acts; waiting cannot make any available transform unavailable or strictly less effective, so no 0 < tau < Delta witness exists."
+      },
+      "common_visible_process": "None: there is no autonomous task-state evolution. Only agent-triggered synchronous transforms update the visible projections.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot override the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "50-58",
+          "claim": "Difficulty 5 activates rod_count=7, grid_size=8, min_occluded_rays_per_view=3; these are static geometry and projection parameters, not time constants."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/controls.json",
+          "lines": "61-75",
+          "claim": "The simplified surface is explicitly defined, with play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/env.json",
+          "lines": "20-46",
+          "claim": "The environment exposes a frame observation and mouse/keyboard actions, but the runner uses a zero-ms observation window, one frame, synchronous=true, and no task-time progression requirement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "245-347",
+          "claim": "The foundry generator builds non-overlapping rods, a static rack, and target masks from the selected difficulty; it emits no autonomous trajectory, timer, or evolving state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "245-274",
+          "claim": "The renderer stores the rods, redraws synchronously after selection or transformation, and changes geometry only in button or pointer handlers; this entry creates no interval or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.js",
+          "lines": "1-7",
+          "claim": "The mechanic wrapper delegates the visible game to the shared foundry renderer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hologram_silhouette_foundry.css",
+          "lines": "1",
+          "claim": "The mechanic stylesheet imports the shared interaction styling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+          "lines": "100-107; 125-138",
+          "claim": "The only generic keyframe is verdict presentation; foundry CSS styles static projection views and the gizmo, with no task-state animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hologram_silhouette_foundry.py",
+          "lines": "47-105",
+          "claim": "The grader replays the submitted transform events synchronously against rod geometry and checks the final masks; it has no elapsed-time or autonomous-state criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hologram_silhouette_foundry_env/tasks/hologram_silhouette_foundry_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent geometry grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported JSON result; it introduces no task evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "192-255",
+          "claim": "The solver computes the static solution objects and performs the required transforms, then casts; its full/simplified branches differ only in input surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hologram_silhouette_foundry.py",
+          "lines": "20-29",
+          "claim": "The game-specific solver delegates to the shared foundry solve routine and has no timing loop of its own."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

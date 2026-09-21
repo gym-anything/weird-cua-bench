@@ -1,0 +1,987 @@
+{
+  "case_index": 11,
+  "environment_id": "cursor_constellation_hunt_env",
+  "public_environment_name": "Cursor-Controlled Constellation Hunt",
+  "configuration_reports": [
+    {
+      "case_index": 101,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full canvas-pointer surface: a 680x410 canvas; mouse movement sets the inspection pointer, mouseleave clears it, canvas click selects the current point, and VERIFY submits.",
+        "Difficulty 1 parameters: 0 decoys, 8 noise stars, reveal radius 160, decoy radius 88, decoy strength 0.18, accepted click radius 48.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "full / canvas_pointer: all canvas mousemove inspection and canvas click selection occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent pointer history is sufficient to choose the next search move or click; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 1 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Full mode binds mousemove, mouseleave, and canvas click to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 102,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified coordinate-control surface: a 680x410 canvas, X and Y number inputs bounded to the canvas, MOVE LENS, SELECT THIS POINT, and VERIFY.",
+        "Difficulty 1 parameters: 0 decoys, 8 noise stars, reveal radius 160, decoy radius 88, decoy strength 0.18, accepted click radius 48.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "simplified / coordinate_controls: all MOVE LENS and SELECT THIS POINT control occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent coordinate/button history is sufficient to choose the next search move or selection; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 1 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Simplified mode binds coordinate inputs and MOVE LENS/SELECT THIS POINT buttons to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 103,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full canvas-pointer surface: a 680x410 canvas; mouse movement sets the inspection pointer, mouseleave clears it, canvas click selects the current point, and VERIFY submits.",
+        "Difficulty 2 parameters: 2 decoys, 26 noise stars, reveal radius 112, decoy radius 72, decoy strength 0.34, accepted click radius 28.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "full / canvas_pointer: all canvas mousemove inspection and canvas click selection occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent pointer history is sufficient to choose the next search move or click; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 2 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Full mode binds mousemove, mouseleave, and canvas click to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 104,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified coordinate-control surface: a 680x410 canvas, X and Y number inputs bounded to the canvas, MOVE LENS, SELECT THIS POINT, and VERIFY.",
+        "Difficulty 2 parameters: 2 decoys, 26 noise stars, reveal radius 112, decoy radius 72, decoy strength 0.34, accepted click radius 28.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "simplified / coordinate_controls: all MOVE LENS and SELECT THIS POINT control occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent coordinate/button history is sufficient to choose the next search move or selection; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 2 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Simplified mode binds coordinate inputs and MOVE LENS/SELECT THIS POINT buttons to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 105,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full canvas-pointer surface: a 680x410 canvas; mouse movement sets the inspection pointer, mouseleave clears it, canvas click selects the current point, and VERIFY submits.",
+        "Difficulty 3 parameters: 3 decoys, 40 noise stars, reveal radius 90, decoy radius 68, decoy strength 0.4, accepted click radius 24.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "full / canvas_pointer: all canvas mousemove inspection and canvas click selection occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent pointer history is sufficient to choose the next search move or click; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 3 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Full mode binds mousemove, mouseleave, and canvas click to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 106,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified coordinate-control surface: a 680x410 canvas, X and Y number inputs bounded to the canvas, MOVE LENS, SELECT THIS POINT, and VERIFY.",
+        "Difficulty 3 parameters: 3 decoys, 40 noise stars, reveal radius 90, decoy radius 68, decoy strength 0.4, accepted click radius 24.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "simplified / coordinate_controls: all MOVE LENS and SELECT THIS POINT control occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent coordinate/button history is sufficient to choose the next search move or selection; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 3 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Simplified mode binds coordinate inputs and MOVE LENS/SELECT THIS POINT buttons to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 107,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full canvas-pointer surface: a 680x410 canvas; mouse movement sets the inspection pointer, mouseleave clears it, canvas click selects the current point, and VERIFY submits.",
+        "Difficulty 4 parameters: 4 decoys, 60 noise stars, reveal radius 72, decoy radius 62, decoy strength 0.46, accepted click radius 20.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "full / canvas_pointer: all canvas mousemove inspection and canvas click selection occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent pointer history is sufficient to choose the next search move or click; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 4 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Full mode binds mousemove, mouseleave, and canvas click to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 108,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified coordinate-control surface: a 680x410 canvas, X and Y number inputs bounded to the canvas, MOVE LENS, SELECT THIS POINT, and VERIFY.",
+        "Difficulty 4 parameters: 4 decoys, 60 noise stars, reveal radius 72, decoy radius 62, decoy strength 0.46, accepted click radius 20.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "simplified / coordinate_controls: all MOVE LENS and SELECT THIS POINT control occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent coordinate/button history is sufficient to choose the next search move or selection; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 4 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Simplified mode binds coordinate inputs and MOVE LENS/SELECT THIS POINT buttons to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 109,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full canvas-pointer surface: a 680x410 canvas; mouse movement sets the inspection pointer, mouseleave clears it, canvas click selects the current point, and VERIFY submits.",
+        "Difficulty 5 parameters: 6 decoys, 80 noise stars, reveal radius 60, decoy radius 58, decoy strength 0.52, accepted click radius 16.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "full / canvas_pointer: all canvas mousemove inspection and canvas click selection occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent pointer history is sufficient to choose the next search move or click; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 5 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Full mode binds mousemove, mouseleave, and canvas click to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 110,
+      "public_environment_name": "Cursor-Controlled Constellation Hunt",
+      "environment_id": "cursor_constellation_hunt_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified coordinate-control surface: a 680x410 canvas, X and Y number inputs bounded to the canvas, MOVE LENS, SELECT THIS POINT, and VERIFY.",
+        "Difficulty 5 parameters: 6 decoys, 80 noise stars, reveal radius 60, decoy radius 58, decoy strength 0.52, accepted click radius 16.",
+        "The runner supplies a 500 ms observation window with 4 frames and a 90 second play budget; these do not define a game deadline."
+      ],
+      "autonomous_processes": [
+        "The live shared clock repeatedly flushes the canvas requestAnimationFrame callback.",
+        "The renderer changes star alpha with a time-based twinkle and moves noise stars sinusoidally by at most 3 pixels per axis.",
+        "No autonomous update changes the solution, decoys, pointer-conditioned constellation geometry, accepted radius, or click opportunity."
+      ],
+      "grouped_control_modes": [
+        "simplified / coordinate_controls: all MOVE LENS and SELECT THIS POINT control occurrences"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generated target click is random and is not derivable from prior actions or time alone, so no observation-free policy can choose the optimal click for every seeded instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current rendered pointer response together with the agent's own recent coordinate/button history is sufficient to choose the next search move or selection; no long temporal trace is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The generated solution, decoys, and accepted click radius remain fixed. Time changes only twinkle alpha and noise-star positions, while grading uses distance to the fixed expected_click, so waiting does not reduce action value or expire the opportunity."
+      },
+      "common_visible_process": "All levels and both interaction modes use the same continuous canvas redraw: star alpha twinkles and noise stars drift, while non-noise constellation geometry changes only as a function of the current pointer.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical real-time test already fails at clause (iii), so the pre-run gate is not applicable.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/env.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/task.json",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/cursor_constellation_hunt_env/tasks/cursor_constellation_hunt_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/cursor_constellation_hunt.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cursor_constellation_hunt_env/controls.json",
+          "lines": "5-16",
+          "claim": "Difficulty 5 changes only decoys, noise count, pointer-response radii, and accepted radius; both interaction surfaces are implemented, and the listed observation/play settings are runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "184-210",
+          "claim": "The controlled condition validates difficulty, interaction, and real_time as identity fields while stating that state generation is time-agnostic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1297-1374",
+          "claim": "The generator samples a fixed solution and decoys, creates fixed star coordinates, and exports the fixed solution and control condition; it contains no timer or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2562-2618",
+          "claim": "The canvas redraw uses now only for twinkle and sinusoidal noise-star motion; non-noise geometry depends on pointer distance and the fixed surface data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2621-2674",
+          "claim": "Simplified mode binds coordinate inputs and MOVE LENS/SELECT THIS POINT buttons to the pointer surface and submits the selected point without any time-dependent mutation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cursor_constellation_hunt.py",
+          "lines": "18-54",
+          "claim": "The controlled grader checks the interaction source and grades only Euclidean distance from the submitted click to the fixed expected click and radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "301-335",
+          "claim": "The shared controller advances timers and animation frames only while task time is running; it does not implement a constellation task deadline."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

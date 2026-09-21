@@ -1,0 +1,1007 @@
+{
+  "case_index": 6,
+  "environment_id": "clockwork_doppelganger_customs_env",
+  "public_environment_name": "Clockwork Doppelgänger Customs",
+  "configuration_reports": [
+    {
+      "case_index": 51,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 parameters: one role; 1,800 ms recording; 4,400 ms master loop; 100 ms phase step; 100 ms recording samples; 100 ms cycle samples; track y 270; catch at 700 ms with conveyor speed 0.185 px/ms; minimum 15 recording samples; maximum recording gap 280 ms; maximum pointer step 120 px; minimum path travel 65 px; action-path tolerance 65 px; grab and station radii 52 px; handoff window 450 ms; minimum 32 cycle samples; maximum cycle gap 300 ms; handoff gap 100 ms.",
+        "Full interaction: move the pointer on the recording canvas and click the next visible PICK, STAMP, handoff, or EXIT station; these actions are recorded with the direct_station input source.",
+        "Shared preparation controls: RECORD and CLEAR for the role, phase slider and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 1,800 ms recording, a 100 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 4,400 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at 0.185 px/ms and replays the recorded one-role ghost actions through the catch, stamp, and release state machine.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and direct station clicks for the required grab, stamp, and release sequence.",
+        "Pre-cycle phase-edit mode: the role phase slider or +/- buttons select a multiple of the 100 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role path, controls, and nominal phase solution before interaction. A solution can complete the one recording and phase edit, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 4,400 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "10-35, 146-159",
+          "claim": "Difficulty 1 supplies the one-role timing and qualification values; the full surface is implemented as direct station clicks, and the shared live/paused observation settings are 800 ms and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the role guide and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in full mode canvas clicks at the next guide station record actions with direct_station, while pointer movement and recording actions are the available inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and recorded actions, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records the roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 52,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 parameters: one role; 1,800 ms recording; 4,400 ms master loop; 100 ms phase step; 100 ms recording samples; 100 ms cycle samples; track y 270; catch at 700 ms with conveyor speed 0.185 px/ms; minimum 15 recording samples; maximum recording gap 280 ms; maximum pointer step 120 px; minimum path travel 65 px; action-path tolerance 65 px; grab and station radii 52 px; handoff window 450 ms; minimum 32 cycle samples; maximum cycle gap 300 ms; handoff gap 100 ms.",
+        "Simplified interaction: move the pointer along the same recording path and use visible GRAB, STAMP, and RELEASE controls or the G, T, and R keyboard shortcuts; these actions are recorded with the proxy_control input source.",
+        "Shared preparation controls: RECORD and CLEAR for the role, phase slider and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 1,800 ms recording, a 100 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 4,400 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at 0.185 px/ms and replays the recorded one-role ghost actions through the catch, stamp, and release state machine.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and proxy GRAB/STAMP/RELEASE controls or G/T/R keys for the required action sequence.",
+        "Pre-cycle phase-edit mode: the role phase slider or +/- buttons select a multiple of the 100 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role path, controls, and nominal phase solution before interaction. A solution can complete the one recording and phase edit, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 4,400 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "10-35, 146-159",
+          "claim": "Difficulty 1 supplies the one-role timing and qualification values; the simplified surface uses visible proxy controls or keyboard shortcuts, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the role guide and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in simplified mode proxy buttons and G/T/R keys record the required actions with proxy_control while the pointer path remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and recorded actions, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records the roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 53,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 parameters: two roles; 2,000 ms recording; 5,000 ms master loop; 75 ms phase step; 90 ms recording samples; 100 ms cycle samples; track y choices 250 or 290; catch choices 750 or 800 ms; speed choices 0.2 or 0.21 px/ms; minimum 20 recording samples; maximum recording gap 250 ms; maximum pointer step 110 px; minimum path travel 80 px; action-path tolerance 55 px; grab radius 45 px; station radius 48 px; handoff window 340 ms; minimum 38 cycle samples; maximum cycle gap 280 ms; handoff gap 100 ms.",
+        "Full interaction: move the pointer on the recording canvas and click the next visible PICK, STAMP, handoff, or EXIT station; these actions are recorded with the direct_station input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,000 ms recording, a 90 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 5,000 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at the selected 0.2 or 0.21 px/ms speed and replays the two recorded ghosts through their catch, handoff, stamp, and release actions.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and direct station clicks for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 75 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete both recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 5,000 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "37-61, 146-159",
+          "claim": "Difficulty 2 supplies the two-role timing, motion, and qualification values; the full surface is implemented as direct station clicks, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the two role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in full mode canvas clicks at the next guide station record actions with direct_station, while pointer movement and recording actions are the available inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and both recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records both roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 54,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 parameters: two roles; 2,000 ms recording; 5,000 ms master loop; 75 ms phase step; 90 ms recording samples; 100 ms cycle samples; track y choices 250 or 290; catch choices 750 or 800 ms; speed choices 0.2 or 0.21 px/ms; minimum 20 recording samples; maximum recording gap 250 ms; maximum pointer step 110 px; minimum path travel 80 px; action-path tolerance 55 px; grab radius 45 px; station radius 48 px; handoff window 340 ms; minimum 38 cycle samples; maximum cycle gap 280 ms; handoff gap 100 ms.",
+        "Simplified interaction: move the pointer along the same recording path and use visible GRAB, STAMP, and RELEASE controls or the G, T, and R keyboard shortcuts; these actions are recorded with the proxy_control input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,000 ms recording, a 90 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 5,000 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at the selected 0.2 or 0.21 px/ms speed and replays the two recorded ghosts through their catch, handoff, stamp, and release actions.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and proxy GRAB/STAMP/RELEASE controls or G/T/R keys for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 75 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete both recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 5,000 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "37-61, 146-159",
+          "claim": "Difficulty 2 supplies the two-role timing, motion, and qualification values; the simplified surface uses visible proxy controls or keyboard shortcuts, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the two role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in simplified mode proxy buttons and G/T/R keys record the required actions with proxy_control while the pointer path remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and both recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records both roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 55,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 parameters: three roles; 2,200 ms recording; 5,900 ms master loop; 100 ms phase step; 90 ms recording samples; 100 ms cycle samples; track y choices 250, 270, or 290; catch choices 750, 800, or 850 ms; speed choices 0.195, 0.205, or 0.215 px/ms; minimum 22 recording samples; maximum recording gap 245 ms; maximum pointer step 105 px; minimum path travel 85 px; action-path tolerance 55 px; grab radius 43 px; station radius 46 px; handoff window 300 ms; minimum 42 cycle samples; maximum cycle gap 270 ms; handoff gap 100 ms.",
+        "Full interaction: move the pointer on the recording canvas and click the next visible PICK, STAMP, handoff, or EXIT station; these actions are recorded with the direct_station input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,200 ms recording, a 90 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 5,900 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at the selected 0.195, 0.205, or 0.215 px/ms speed and replays all three recorded ghosts through catch, handoff, stamp, and release actions.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and direct station clicks for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 100 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete all three recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 5,900 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "64-88, 146-159",
+          "claim": "Difficulty 3 supplies the three-role timing, motion, and qualification values; the full surface is implemented as direct station clicks, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the three role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in full mode canvas clicks at the next guide station record actions with direct_station, while pointer movement and recording actions are the available inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and all three recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records all roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 56,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 parameters: three roles; 2,200 ms recording; 5,900 ms master loop; 100 ms phase step; 90 ms recording samples; 100 ms cycle samples; track y choices 250, 270, or 290; catch choices 750, 800, or 850 ms; speed choices 0.195, 0.205, or 0.215 px/ms; minimum 22 recording samples; maximum recording gap 245 ms; maximum pointer step 105 px; minimum path travel 85 px; action-path tolerance 55 px; grab radius 43 px; station radius 46 px; handoff window 300 ms; minimum 42 cycle samples; maximum cycle gap 270 ms; handoff gap 100 ms.",
+        "Simplified interaction: move the pointer along the same recording path and use visible GRAB, STAMP, and RELEASE controls or the G, T, and R keyboard shortcuts; these actions are recorded with the proxy_control input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,200 ms recording, a 90 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 5,900 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at the selected 0.195, 0.205, or 0.215 px/ms speed and replays all three recorded ghosts through catch, handoff, stamp, and release actions.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and proxy GRAB/STAMP/RELEASE controls or G/T/R keys for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 100 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete all three recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 5,900 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "64-88, 146-159",
+          "claim": "Difficulty 3 supplies the three-role timing, motion, and qualification values; the simplified surface uses visible proxy controls or keyboard shortcuts, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the three role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in simplified mode proxy buttons and G/T/R keys record the required actions with proxy_control while the pointer path remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and all three recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records all roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 57,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 parameters: three roles; 2,300 ms recording; loop choice 5,900, 6,100, or 6,300 ms; 50 ms phase step; 80 ms recording samples; 100 ms cycle samples; track y choices 250, 270, or 290; catch choices 750, 800, or 850 ms; speed choices 0.205, 0.215, or 0.225 px/ms; minimum 24 recording samples; maximum recording gap 240 ms; maximum pointer step 98 px; minimum path travel 90 px; action-path tolerance 48 px; grab radius 38 px; station radius 42 px; handoff window 230 ms; minimum 45 cycle samples; maximum cycle gap 260 ms; handoff gap 100 ms.",
+        "Full interaction: move the pointer on the recording canvas and click the next visible PICK, STAMP, handoff, or EXIT station; these actions are recorded with the direct_station input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,300 ms recording, an 80 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts the selected 5,900, 6,100, or 6,300 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at the selected 0.205, 0.215, or 0.225 px/ms speed and replays all three recorded ghosts through the 230 ms handoff constraint.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and direct station clicks for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 50 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete all three recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the selected replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "91-115, 146-159",
+          "claim": "Difficulty 4 supplies the original three-role dense recording, multi-valued loop and speed, 50 ms phasing, and tighter handoff values; the full surface is direct station clicks, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the three role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in full mode canvas clicks at the next guide station record actions with direct_station, while pointer movement and recording actions are the available inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and all three recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records all roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 58,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 parameters: three roles; 2,300 ms recording; loop choice 5,900, 6,100, or 6,300 ms; 50 ms phase step; 80 ms recording samples; 100 ms cycle samples; track y choices 250, 270, or 290; catch choices 750, 800, or 850 ms; speed choices 0.205, 0.215, or 0.225 px/ms; minimum 24 recording samples; maximum recording gap 240 ms; maximum pointer step 98 px; minimum path travel 90 px; action-path tolerance 48 px; grab radius 38 px; station radius 42 px; handoff window 230 ms; minimum 45 cycle samples; maximum cycle gap 260 ms; handoff gap 100 ms.",
+        "Simplified interaction: move the pointer along the same recording path and use visible GRAB, STAMP, and RELEASE controls or the G, T, and R keyboard shortcuts; these actions are recorded with the proxy_control input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,300 ms recording, an 80 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts the selected 5,900, 6,100, or 6,300 ms replay with 100 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at the selected 0.205, 0.215, or 0.225 px/ms speed and replays all three recorded ghosts through the 230 ms handoff constraint.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and proxy GRAB/STAMP/RELEASE controls or G/T/R keys for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 50 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete all three recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the selected replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "91-115, 146-159",
+          "claim": "Difficulty 4 supplies the original three-role dense recording, multi-valued loop and speed, 50 ms phasing, and tighter handoff values; the simplified surface uses proxy controls or keyboard shortcuts, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the three role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in simplified mode proxy buttons and G/T/R keys record the required actions with proxy_control while the pointer path remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and all three recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records all roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 59,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 parameters: three roles; 2,500 ms recording; 6,300 ms master loop; 25 ms phase step; 60 ms recording samples; 80 ms cycle samples; track y choices 250, 270, or 290; catch choices 750, 800, or 850 ms; speed 0.225 px/ms; minimum 35 recording samples; maximum recording gap 150 ms; maximum pointer step 75 px; minimum path travel 100 px; action-path tolerance 36 px; grab radius 32 px; station radius 34 px; handoff window 150 ms; minimum 65 cycle samples; maximum cycle gap 170 ms; handoff gap 100 ms.",
+        "Full interaction: move the pointer on the recording canvas and click the next visible PICK, STAMP, handoff, or EXIT station; these actions are recorded with the direct_station input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,500 ms recording, a 60 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 6,300 ms replay with 80 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at 0.225 px/ms and replays all three recorded ghosts through the 150 ms handoff constraint.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and direct station clicks for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 25 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete all three recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 6,300 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "118-142, 146-159",
+          "claim": "Difficulty 5 supplies the three-role dense recording, 25 ms phasing, fastest conveyor, tightest radii and handoff, and 80 ms cycle sampling; the full surface is direct station clicks, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the three role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in full mode canvas clicks at the next guide station record actions with direct_station, while pointer movement and recording actions are the available inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and all three recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records all roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 60,
+      "public_environment_name": "Clockwork Doppelgänger Customs",
+      "environment_id": "clockwork_doppelganger_customs_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 parameters: three roles; 2,500 ms recording; 6,300 ms master loop; 25 ms phase step; 60 ms recording samples; 80 ms cycle samples; track y choices 250, 270, or 290; catch choices 750, 800, or 850 ms; speed 0.225 px/ms; minimum 35 recording samples; maximum recording gap 150 ms; maximum pointer step 75 px; minimum path travel 100 px; action-path tolerance 36 px; grab radius 32 px; station radius 34 px; handoff window 150 ms; minimum 65 cycle samples; maximum cycle gap 170 ms; handoff gap 100 ms.",
+        "Simplified interaction: move the pointer along the same recording path and use visible GRAB, STAMP, and RELEASE controls or the G, T, and R keyboard shortcuts; these actions are recorded with the proxy_control input source.",
+        "Shared preparation controls: RECORD and CLEAR for each role, phase sliders and +/- phase buttons, RUN MASTER CYCLE, REWIND / EDIT, and FILE CUSTOMS LOG."
+      ],
+      "autonomous_processes": [
+        "During each 2,500 ms recording, a 60 ms timer samples the agent-controlled cursor and a fixed-duration timer ends the take. The visible path changes from pointer movement and timer samples; no external target moves.",
+        "RUN MASTER CYCLE starts a 6,300 ms replay with 80 ms passport samples and 50 ms redraws. The replay moves the generated conveyor passport at 0.225 px/ms and replays all three recorded ghosts through the 150 ms handoff constraint.",
+        "When no recording or cycle is active, phase edits and idle controls do not advance task state. Failure/verdict transitions are presentation feedback."
+      ],
+      "grouped_control_modes": [
+        "Per-role recording mode: RECORD/CLEAR, pointer movement, and proxy GRAB/STAMP/RELEASE controls or G/T/R keys for each role's required action sequence.",
+        "Pre-cycle phase-edit mode: each role phase slider or +/- buttons select a multiple of the 25 ms phase step.",
+        "Master-cycle mode: RUN MASTER CYCLE starts the autonomous replay; REWIND / EDIT is available only while idle.",
+        "Administrative filing mode: FILE CUSTOMS LOG submits the already computed outcome and is not outcome-affecting."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "No valid history-only failure is tied to a changing task process. Before RUN, the recording and phase choices are determined by fixed visible geometry, the agent's own pointer/action timestamps, and known controls; after RUN there is no choice. Any need to target a station across seeds is static visual grounding, not delayed prediction of an evolving opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "A bounded recent visual window is not sufficient and necessary for any delayed outcome-affecting action in one common process. During playback the moving ghosts and passport are visible, but all recording, phase, rewind, and submit controls are disabled and the action handlers have no active recording to modify. Before playback the relevant task state is stationary."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The decisive failure is clause (iii). Recording changes only through a fixed clock, timer sampling, and the agent-controlled cursor, so waiting can only consume the known recording deadline; it does not make an action strictly less effective through non-clock task-state evolution. Playback does autonomously move the passport and ghosts, but it begins after RUN and leaves no outcome-affecting control available until the fixed replay ends. No legitimate D and Delta therefore produce an available action whose value degrades from the same visible process."
+      },
+      "common_visible_process": "None satisfies the common-process requirement. The recording timer is a fixed, agent-clocked preparation deadline, whereas the visible conveyor/passport/ghost motion occurs only inside a pre-committed master replay during which outcome-affecting controls are disabled.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator creates the stations, role paths, controls, and nominal phase solution before interaction. A solution can complete all three recordings and phase edits, start RUN MASTER CYCLE, send no further outcome-affecting actions through the 6,300 ms replay, and then file the log administratively. The browser mechanic disables the controls during replay and the solver follows this prepare-then-run sequence. This establishes the threshold structurally without asserting a percentage.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/env.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/setup_task.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+        "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/tasks/clockwork_doppelganger_customs_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_doppelganger_customs_env/controls.json",
+          "lines": "118-142, 146-159",
+          "claim": "Difficulty 5 supplies the three-role dense recording, 25 ms phasing, fastest conveyor, tightest radii and handoff, and 80 ms cycle sampling; the simplified surface uses proxy controls or keyboard shortcuts, with the shared 800 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_doppelganger_customs.py",
+          "lines": "24-83, 97-147",
+          "claim": "Generation consumes the difficulty parameters, samples only static station/conveyor geometry, creates the three role guides and nominal phases, and explicitly keeps interaction out of the world identity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "289-354, 532-568",
+          "claim": "Recording uses fixed sampling and end timers; in simplified mode proxy buttons and G/T/R keys record the required actions with proxy_control while the pointer path remains the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_doppelganger_customs.js",
+          "lines": "104-153, 366-412, 473-499",
+          "claim": "The master replay autonomously simulates conveyor possession and all three recorded action loops, then updateInterface disables recording, phase, run, rewind, and submit controls for the duration of the cycle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-61, 250-317, 548-580",
+          "claim": "Timers and performance.now use the task clock and only drain while task time runs; the fixed observation window can advance the recording or replay but does not introduce a state-dependent control."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_doppelganger_customs.py",
+          "lines": "51-95, 205-252",
+          "claim": "The independent grader replays the prepared recordings and phases and evaluates the final autonomous cycle; it does not require user actions during that cycle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/clockwork_doppelganger_customs.py",
+          "lines": "121-153",
+          "claim": "The solver records all roles, computes and sets phases, starts the master cycle, waits for completion, and only then files the log, providing the source-structural pre-run sequence."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

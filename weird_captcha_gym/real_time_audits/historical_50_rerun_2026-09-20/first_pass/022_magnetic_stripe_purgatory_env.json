@@ -1,0 +1,942 @@
+{
+  "case_index": 22,
+  "environment_id": "magnetic_stripe_purgatory_env",
+  "public_environment_name": "Magnetic-Stripe Purgatory",
+  "configuration_reports": [
+    {
+      "case_index": 211,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "One card and one reader; drag the badge-matched card into the reader slot.",
+        "Hold the reader handle and move it from the illuminated arrow end to the opposite end with a dense, monotonic pointer path; the single timing window is broad and there are no interference fields.",
+        "Use visible TOO FAST, TOO SLOW, or BAD READ feedback, reset the desk, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "direct_card_drag: pointer-down/move/up card insertion",
+        "direct_timed_swipe: pointer-down/move/up reader swipe"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot select the badge-matched slot or choose the reader direction and timing; those facts are supplied by the visible desk and feedback. This is static visual dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current frame is enough to expose the card, slot, arrow, and current feedback needed for the static drag/swipe decision. It does not provide evidence of an evolving task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new pointer or click event, the desk has no task-clock, physics, or animation transition; the card, reader, feedback, and lock state remain unchanged. Swipe duration advances only when pointer samples are delivered, so no action loses value inside a positive no-op delay. The post-audit verdict animation is administrative and occurs after the outcome-affecting run."
+      },
+      "common_visible_process": "None. The desk is static between agent events; all insertion, swipe, feedback, lock, reset, and audit transitions are event-driven.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "10-27",
+          "claim": "Difficulty 1 generates one reader/card, no interference fields, and only the broad static swipe/path thresholds; the listed insertion minimums are not consumed by the generator or grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full uses a physical drag and timed pointer path, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "154-238",
+          "claim": "The generator consumes the difficulty condition to build fixed reader count, directions, shuffled profiles, geometry, static fields, and calibration thresholds; it defines no autonomous phase or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "55-74",
+          "claim": "Direct swipe duration is accumulated from timestamps on delivered pointer events, with no-op time not advancing a task mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "234-352",
+          "claim": "Full swipes collect the pointer path and evaluate direction, coverage, samples, gaps, backtrack, static-field hits, and fixed timing thresholds only when the gesture ends."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "375-438",
+          "claim": "The authoritative grader replays explicit insertion/swipe/audit events and changes feedback or locks only while processing those events; it has no autonomous update loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+          "lines": "49-53",
+          "claim": "The interference fields and full handle are static visual geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only timeout is removal of a failure verdict after audit submission; it is post-grade presentation and not an expiring task opportunity."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 212,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "One card and one reader; select the card and click the matching reader's INSERT SELECTED CARD proxy.",
+        "Set a visible test duration and click EXECUTE STRAIGHT SWIPE; the proxy synchronously generates the dense route.",
+        "Use visible feedback, reset the desk, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "card_reader_proxy: card selection followed by matching-reader insertion click",
+        "timed_swipe_proxy: duration control followed by generated-route execution click"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot select the badge-matched card/reader or choose the reader's direction and timing; the current visible desk and feedback are needed. This is static visual dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single current frame exposes the selectable card, reader slot, arrow, and feedback, and the proxy builds its static route synchronously. The frame contains no evidence of autonomous task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Without a new click, the proxy does not emit its swipe events and the desk does not advance. Once clicked, the complete route and its timestamps are created synchronously; no action opportunity degrades during a no-op interval. The post-audit verdict timeout is administrative."
+      },
+      "common_visible_process": "None. The desk is static between agent events; proxy insertion, proxy swipe, feedback, lock, reset, and audit transitions are all click-triggered.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "10-27",
+          "claim": "Difficulty 1 generates one reader/card, no interference fields, and only the broad static swipe/path thresholds; the listed insertion minimums are not consumed by the generator or grader."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified uses selection, insertion, a visible duration, and a generated clearance/straight proxy, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "154-238",
+          "claim": "The generator consumes the difficulty condition to build fixed reader count, directions, shuffled profiles, geometry, static fields, and calibration thresholds; it defines no autonomous phase or task-state clock."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "403-434",
+          "claim": "Simplified insertion emits its complete transcript synchronously from a click, with no elapsed task phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "481-531",
+          "claim": "Simplified computes a static clearance polyline and records every swipe sample and timestamp synchronously when the execute button is clicked."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "313-438",
+          "claim": "The grader binds the simplified input sources and replays explicit proxy events; state changes only while events are processed."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only timeout is removal of a failure verdict after audit submission; it is administrative presentation."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 213,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Two cards and two readers; drag each badge-matched card into its reader slot.",
+        "For each inserted reader, hold its handle and move from the illuminated arrow end to the opposite end with a denser, straighter monotonic pointer path; there are no interference fields.",
+        "Use visible TOO FAST, TOO SLOW, or BAD READ feedback, reset the desk, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "direct_card_drag: pointer-down/move/up card insertion",
+        "direct_timed_swipe: pointer-down/move/up reader swipe"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot choose both badge assignments or each reader's direction and timing. The required information is visible/static or supplied by feedback, not produced by a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "One current frame exposes the two-card/two-reader geometry, arrows, and current feedback, so it is sufficient for a static screenshot policy to choose the next drag or swipe. It does not show an autonomous evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new input event, no card, reader, field, feedback, or lock state changes. The swipe timing is accumulated from delivered pointer samples and the fixed timing windows do not expire while waiting, so no positive Delta creates the required strict Q loss."
+      },
+      "common_visible_process": "None. The desk is static between agent events; all state transitions are caused by direct pointer events or the explicit reset/audit controls.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "29-46",
+          "claim": "Difficulty 2 uses two readers/cards, paired broad profiles, no fields, and denser/straighter static swipe thresholds; inactive insertion minimum fields are not credited."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full is the direct physical drag/swipe surface and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "154-238",
+          "claim": "The generator creates fixed directions, profiles, geometry, and static calibration constraints from the condition, with no autonomous task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "234-352",
+          "claim": "Full swipe timing and geometric checks occur from the pointer gesture itself against fixed requirements."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "254-438",
+          "claim": "The server grade is a replay of the finite event list; explicit insert/swipe events, not elapsed no-op time, update the replay state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py",
+          "lines": "128-167",
+          "claim": "The supplied full-mode solver deliberately waits only while sending the pointer samples of a swipe, demonstrating agent-controlled gesture duration rather than autonomous world evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 214,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Two cards and two readers; select each card and click its matching reader's INSERT SELECTED CARD proxy.",
+        "Set each visible test duration and click EXECUTE STRAIGHT SWIPE; the proxy synchronously generates each dense route, with no interference fields.",
+        "Use visible feedback, reset the desk, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "card_reader_proxy: card selection followed by matching-reader insertion click",
+        "timed_swipe_proxy: duration control followed by generated-route execution click"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot choose the two badge assignments or the readers' directions and timing windows; the visible desk and feedback are needed. This is static visual dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single frame exposes the selectable cards, reader geometry, arrows, and feedback, and the simplified proxy deterministically builds each static route. No recent frame is evidence of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Without a new click, the proxy emits no path or calibration event and the desk remains unchanged. The fixed timing windows and static fields do not make any action less effective during a no-op delay; the audit verdict timeout is after grading."
+      },
+      "common_visible_process": "None. The desk is static between agent events; proxy insertion, proxy swipe, feedback, lock, reset, and audit transitions are click-triggered.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "29-46",
+          "claim": "Difficulty 2 uses two readers/cards, paired broad profiles, no fields, and denser/straighter static swipe thresholds; inactive insertion minimum fields are not credited."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified uses card selection, insertion and a visible-duration proxy, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "154-238",
+          "claim": "The generator creates fixed directions, profiles, geometry, and static calibration constraints from the condition, with no autonomous task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "403-434",
+          "claim": "Simplified insertion is a synchronous click-generated transcript."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "481-531",
+          "claim": "Simplified computes and records the entire swipe route at proxy-click time, with no autonomous interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "313-438",
+          "claim": "The grader enforces simplified input sources and replays only explicit events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 215,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Three cards and three readers; drag each badge-matched card into its reader slot.",
+        "For each inserted reader, hold its handle and move from the illuminated arrow end to the opposite end with a dense, straight, monotonic pointer path; there are no interference fields.",
+        "Use visible TOO FAST, TOO SLOW, or BAD READ feedback, reset the desk, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "direct_card_drag: pointer-down/move/up card insertion",
+        "direct_timed_swipe: pointer-down/move/up reader swipe"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot resolve three badge assignments or each reader's direction and timing. The current visual desk and feedback are required, but they describe fixed state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single frame exposes the three-card/reader geometry, arrows, and current feedback, so a bounded-window screenshot policy can choose the next static action. It does not predict any autonomous change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No new event leaves the full desk unchanged. Pointer duration and path are measured only while the agent supplies the swipe events, and fixed timing windows do not decay while waiting; therefore no action becomes strictly less effective within Delta."
+      },
+      "common_visible_process": "None. The desk is static between agent events; all insertion, swipe, feedback, lock, reset, and audit transitions are event-driven.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "48-65",
+          "claim": "Difficulty 3 uses three readers/cards, three tempered static timing profiles, no fields, and moderate fixed swipe-density/path limits; inactive insertion minimum fields are not credited."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full is the direct physical drag/swipe surface and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "154-238",
+          "claim": "The generator creates fixed directions, shuffled profiles, geometry, and static calibration constraints from the condition, with no autonomous task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "234-352",
+          "claim": "Full mode evaluates the agent-supplied pointer path and duration against fixed direction, geometry, and timing thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "254-438",
+          "claim": "The authoritative result is an explicit event replay; no idle or task-clock processing changes state."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py",
+          "lines": "222-245",
+          "claim": "The solver repeats explicit insertion and swipe actions for each generated reader and audits only after all locks are accepted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 216,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Three cards and three readers; select each card and click its matching reader's INSERT SELECTED CARD proxy.",
+        "Set each visible test duration and click EXECUTE STRAIGHT SWIPE; the proxy synchronously generates each dense route, with no interference fields.",
+        "Use visible feedback, reset the desk, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "card_reader_proxy: card selection followed by matching-reader insertion click",
+        "timed_swipe_proxy: duration control followed by generated-route execution click"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot resolve three badge assignments or each reader's direction and timing. The current visual desk and feedback are required, but they describe fixed state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single frame exposes the selectable cards, reader geometry, arrows, and feedback, and the proxy builds a fixed route synchronously. It does not supply evidence of autonomous change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Without a new click, the proxy emits no path or calibration event and the desk remains unchanged. Fixed timing windows and static fields do not make an action less effective during a no-op delay; the audit verdict timeout is post-outcome."
+      },
+      "common_visible_process": "None. The desk is static between agent events; proxy insertion, proxy swipe, feedback, lock, reset, and audit transitions are click-triggered.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "48-65",
+          "claim": "Difficulty 3 uses three readers/cards, three tempered static timing profiles, no fields, and moderate fixed swipe-density/path limits; inactive insertion minimum fields are not credited."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified uses card selection, insertion and a visible-duration proxy, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "154-238",
+          "claim": "The generator creates fixed directions, shuffled profiles, geometry, and static calibration constraints from the condition, with no autonomous task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "403-434",
+          "claim": "Simplified insertion is a synchronous click-generated transcript."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "481-531",
+          "claim": "Simplified computes and records the entire swipe route at proxy-click time, with no autonomous interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "313-438",
+          "claim": "The grader enforces simplified input sources and replays only explicit events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 217,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Three cards and three readers; drag each badge-matched card into its reader slot.",
+        "For each inserted reader, hold the handle and make one dense, straight, monotonic swipe from its illuminated arrow end to the opposite end; two visible static fields sit off the rail, and each reader has a different hidden timing window.",
+        "Use TOO FAST, TOO SLOW, or BAD READ feedback until each reader locks, then reset if needed and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "direct_card_drag: pointer-down/move/up card insertion",
+        "direct_timed_swipe: pointer-down/move/up reader swipe"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot choose the three badge assignments, reader directions, paths, or distinct hidden timing windows. The visible desk and feedback are needed, but the underlying display and windows are fixed during waiting."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single frame exposes the card/reader badges, arrow directions, off-rail static fields, and current feedback for the next static action. It does not show an evolving task process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The two static fields do not move, the hidden timing windows do not count down, and no card/reader state changes without an input event. Swipe duration exists only over the agent's delivered pointer samples, so no action becomes strictly less effective during Delta."
+      },
+      "common_visible_process": "None. The legacy fields are static off-rail display geometry; the calibration desk otherwise changes only in response to agent pointer/click events.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "67-84",
+          "claim": "Difficulty 4 keeps three readers, legacy profiles, and two off-rail static fields with fixed dense/straight swipe requirements."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full is the direct physical drag/swipe surface and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "70-143",
+          "claim": "The legacy geometry constructs static off-lane rectangles, tracks, and fixed reader layout; it has no motion or timer update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "234-352",
+          "claim": "Full swipe behavior is entirely pointer-event driven and checks the fixed legacy geometry and timing thresholds at release."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "164-251",
+          "claim": "The grader treats interference as static rectangle intersection and evaluates the supplied duration/path; it has no autonomous movement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+          "lines": "46-53",
+          "claim": "The rail, static zones, handle, and proxy controls are static CSS geometry rather than animated task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 218,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Three cards and three readers; select each card and click its matching reader's INSERT SELECTED CARD proxy.",
+        "Set each visible test duration and click EXECUTE STRAIGHT SWIPE; the proxy generates a static route around only lane-blocking fields, while the legacy fields are off-rail.",
+        "Use visible feedback until each reader locks, reset if needed, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "card_reader_proxy: card selection followed by matching-reader insertion click",
+        "timed_swipe_proxy: duration control followed by generated-route execution click"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot choose the three badge assignments, reader directions, or distinct hidden timing windows. The visible desk and feedback are needed, but the legacy fields and windows remain fixed while waiting."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single frame exposes the selectable cards, reader directions, off-rail fields, and feedback, while the proxy constructs its fixed route synchronously. There is no changing visual process to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The legacy fields do not move or close a lane, timing windows do not count down, and no proxy event is emitted without a click. Thus no action loses value during a positive no-op delay; the verdict timeout is administrative."
+      },
+      "common_visible_process": "None. The legacy static fields and calibration desk remain unchanged between agent events; proxy actions are synchronous.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "67-84",
+          "claim": "Difficulty 4 keeps three readers, legacy profiles, and two off-rail static fields with fixed dense/straight swipe requirements."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified uses a visible-duration proxy and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "70-143",
+          "claim": "The legacy geometry constructs static off-lane rectangles, tracks, and fixed reader layout; it has no motion or timer update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "403-531",
+          "claim": "Simplified insertion and proxy swipes construct their complete event transcripts synchronously from clicks using fixed geometry and thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "313-438",
+          "claim": "The grader binds the simplified input sources and changes state only while replaying explicit events."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+          "lines": "46-53",
+          "claim": "The rail, static zones, and proxy controls are static CSS geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 219,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Four compact cards and four readers; drag each badge-matched card into its reader slot.",
+        "For each inserted reader, hold its handle and thread a dense pointer path from the illuminated arrow end to the opposite end, detouring around the three visible lane-blocking static fields while staying within the tight straightness/backtrack/gap limits.",
+        "Use visible TOO FAST, TOO SLOW, BAD READ, or STATIC FIELD feedback until all four readers lock, then submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "direct_card_drag: pointer-down/move/up compact-card insertion",
+        "direct_timed_swipe: pointer-down/move/up clearance swipe"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot choose four badge assignments, four directions, clearance paths, or four distinct narrow timing windows. The required information is static visible geometry plus feedback, not an autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single frame exposes the compact card/reader geometry, arrows, lane-blocking fields, and current feedback, so a bounded-window screenshot policy can choose a static clearance action. It does not evidence motion or phase."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The three fields per reader are fixed rectangles, the narrow timing windows do not count down, and card/reader state changes only on pointer events. The action path can be difficult but does not become less effective from autonomous evolution during Delta."
+      },
+      "common_visible_process": "None. The compact desk and blocking fields are static; only direct pointer/click events change insertion, swipe feedback, locks, or audit state.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "86-103",
+          "claim": "Difficulty 5 generates four compact readers/cards, four narrow fixed profiles, three blocking static fields per reader, and tighter fixed path constraints."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full is the direct physical drag/swipe surface and the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "106-143",
+          "claim": "The blocking-lane layout creates fixed rectangles with visible feasible detour geometry; it does not update them over time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "234-352",
+          "claim": "Full mode evaluates the supplied clearance path and duration against fixed static-field, geometry, and timing checks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "164-251",
+          "claim": "The authoritative grader treats blocking fields as static rectangle intersections and evaluates the event-supplied path; it has no autonomous movement."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py",
+          "lines": "80-167",
+          "claim": "The solver derives a clearance polyline from the fixed fields and deliberately waits only while delivering pointer samples."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 220,
+      "public_environment_name": "Magnetic-Stripe Purgatory",
+      "environment_id": "magnetic_stripe_purgatory_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Four compact cards and four readers; select each card and click its matching reader's INSERT SELECTED CARD proxy.",
+        "Set each visible test duration and click EXECUTE CLEARANCE SWIPE; the proxy synchronously generates the dense route around the three visible blocking fields.",
+        "Use visible feedback until all four readers lock, reset if needed, and submit the audit."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "card_reader_proxy: card selection followed by matching-reader insertion click",
+        "timed_swipe_proxy: duration control followed by generated-clearance-route execution click"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated instances, I_t alone cannot choose four badge assignments, four directions, four fixed clearance paths, or four narrow timing windows. The visible desk and feedback are needed, but the underlying task state does not evolve while waiting."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A single frame exposes the compact selectable cards, reader directions, blocking fields, and feedback, and the proxy builds the fixed route synchronously. There is no temporal process for the window to predict."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The blocking fields are fixed, timing windows do not count down, and the proxy emits its complete route only after a click. Therefore no action loses value during a positive no-op delay; the verdict timeout is administrative and post-outcome."
+      },
+      "common_visible_process": "None. The compact desk and blocking fields are static; proxy insertion, proxy swipe, feedback, lock, reset, and audit transitions are click-triggered.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No because clause (iii) fails, so the pre-run override is not needed and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/env.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/task.json",
+        "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/tasks/magnetic_stripe_purgatory_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "86-103",
+          "claim": "Difficulty 5 generates four compact readers/cards, four narrow fixed profiles, three blocking static fields per reader, and tighter fixed path constraints."
+        },
+        {
+          "path": "weird_captcha_gym/environments/magnetic_stripe_purgatory_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified uses card selection, insertion, a visible duration, and a generated clearance proxy, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/magnetic_stripe_purgatory.py",
+          "lines": "106-143",
+          "claim": "The blocking-lane layout creates fixed rectangles with visible feasible detour geometry; it does not update them over time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "403-531",
+          "claim": "Simplified insertion and clearance swipes construct and evaluate their complete event transcripts synchronously from clicks against fixed fields and thresholds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/magnetic_stripe_purgatory.py",
+          "lines": "313-438",
+          "claim": "The grader binds simplified input sources and changes state only while replaying explicit proxy events."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/magnetic_stripe_purgatory.py",
+          "lines": "80-135",
+          "claim": "The solver's clearance route is derived from fixed field geometry and the simplified proxy receives an explicit duration; no autonomous wait is part of the task."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/magnetic_stripe_purgatory.js",
+          "lines": "600-625",
+          "claim": "The only delayed callback removes a post-audit failure verdict and cannot affect calibration outcome."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

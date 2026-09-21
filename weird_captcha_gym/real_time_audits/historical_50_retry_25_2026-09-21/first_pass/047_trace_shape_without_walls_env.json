@@ -1,0 +1,1147 @@
+{
+  "case_index": 47,
+  "environment_id": "trace_shape_without_walls_env",
+  "public_environment_name": "Blind Corridor Oscilloscope",
+  "configuration_reports": [
+    {
+      "case_index": 461,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 profile: 8 main control points with curve_delta 45; one generated branch; 6 ordered checkpoints; corridor radius 56-62 px; sonar radius 110-120 px with 1600 ms fade; drift amplitude x 0-3 and y 0-2 with x rate 0.03-0.04 and y rate 0.025-0.035; mapping minimums 10 sonar samples, 6 cells, and 30% of the main path capped at 29 points; trace minimums 32 samples, 45% path coverage, 60% path-length ratio, 250 ms hold, and 85 px maximum raw step.",
+        "Full input surface: pointermove over the stage emits recoverable sonar before a trace; pointerdown on the armed START beacon starts the hold; pointermove while captured records one raw/effective trace sample; pointerup or pointercancel releases the trace.",
+        "An effective sample outside the corridor or an early release cancels the trace; after a cancellation, the pointer must be released and the RE-ARM CANCELLED TRACE control can be clicked before another start.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 1600 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new trace input during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later event can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "pointer_sonar: full-mode pointer movement before a committed trace; same-point movement within the 8 px de-duplication threshold emits no new probe.",
+        "pointer_trace: pointerdown at START, pointermove samples during the captured hold, and pointerup/pointercancel release.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on input actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after a pointermove; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (1600 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next pointer trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs pointermove samples and a release, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new pointer action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "10-48",
+          "claim": "Difficulty 1 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The full input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "205-237",
+          "claim": "Full mode uses pointer movement and pointer press/release handlers for sonar, trace start, trace samples, and trace end."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 462,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 profile: 8 main control points with curve_delta 45; one generated branch; 6 ordered checkpoints; corridor radius 56-62 px; sonar radius 110-120 px with 1600 ms fade; drift amplitude x 0-3 and y 0-2 with x rate 0.03-0.04 and y rate 0.025-0.035; mapping minimums 10 sonar samples, 6 cells, and 30% of the main path capped at 29 points; trace minimums 32 samples, 45% path coverage, 60% path-length ratio, 250 ms hold, and 85 px maximum raw step.",
+        "Simplified input surface: integer X/Y coordinate fields plus EMIT SONAR, START TRACE, RECORD TRACE SAMPLE, and RELEASE AT EXIT buttons; each accepted trace sample is an explicit coordinate-console action.",
+        "An effective sample outside the corridor or an early release cancels the trace; the RE-ARM CANCELLED TRACE button clears the pending collision before another START TRACE.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 1600 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new coordinate-console trace action during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later button action can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "coordinate_sonar: integer X/Y entry followed by EMIT SONAR.",
+        "coordinate_trace: integer X/Y entry followed by START TRACE, repeated RECORD TRACE SAMPLE actions, and RELEASE AT EXIT.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the coordinate trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw coordinate cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on button actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after RECORD TRACE SAMPLE; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (1600 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next coordinate trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs START TRACE, positive RECORD TRACE SAMPLE actions, and RELEASE AT EXIT, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new coordinate-console action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "10-48",
+          "claim": "Difficulty 1 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The simplified input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "341-369",
+          "claim": "Simplified mode maps the coordinate-console buttons to the same sonar, trace-start, trace-sample, and trace-end handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 463,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 profile: 8 main control points with curve_delta 65; two generated branches; 8 ordered checkpoints; corridor radius 49-55 px; sonar radius 95-105 px with 1300 ms fade; drift amplitude x 4-7 and y 3-5 with x rate 0.04-0.052 and y rate 0.034-0.047; mapping minimums 15 sonar samples, 9 cells, and 44% of the main path capped at 40 points; trace minimums 45 samples, 60% path coverage, 70% path-length ratio, 400 ms hold, and 74 px maximum raw step.",
+        "Full input surface: pointermove over the stage emits recoverable sonar before a trace; pointerdown on the armed START beacon starts the hold; pointermove while captured records one raw/effective trace sample; pointerup or pointercancel releases the trace.",
+        "An effective sample outside the corridor or an early release cancels the trace; after a cancellation, the pointer must be released and the RE-ARM CANCELLED TRACE control can be clicked before another start.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 1300 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new trace input during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later event can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "pointer_sonar: full-mode pointer movement before a committed trace; same-point movement within the 8 px de-duplication threshold emits no new probe.",
+        "pointer_trace: pointerdown at START, pointermove samples during the captured hold, and pointerup/pointercancel release.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on input actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after a pointermove; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (1300 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next pointer trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs pointermove samples and a release, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new pointer action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "50-88",
+          "claim": "Difficulty 2 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The full input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "205-237",
+          "claim": "Full mode uses pointer movement and pointer press/release handlers for sonar, trace start, trace samples, and trace end."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 464,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 profile: 8 main control points with curve_delta 65; two generated branches; 8 ordered checkpoints; corridor radius 49-55 px; sonar radius 95-105 px with 1300 ms fade; drift amplitude x 4-7 and y 3-5 with x rate 0.04-0.052 and y rate 0.034-0.047; mapping minimums 15 sonar samples, 9 cells, and 44% of the main path capped at 40 points; trace minimums 45 samples, 60% path coverage, 70% path-length ratio, 400 ms hold, and 74 px maximum raw step.",
+        "Simplified input surface: integer X/Y coordinate fields plus EMIT SONAR, START TRACE, RECORD TRACE SAMPLE, and RELEASE AT EXIT buttons; each accepted trace sample is an explicit coordinate-console action.",
+        "An effective sample outside the corridor or an early release cancels the trace; the RE-ARM CANCELLED TRACE button clears the pending collision before another START TRACE.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 1300 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new coordinate-console trace action during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later button action can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "coordinate_sonar: integer X/Y entry followed by EMIT SONAR.",
+        "coordinate_trace: integer X/Y entry followed by START TRACE, repeated RECORD TRACE SAMPLE actions, and RELEASE AT EXIT.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the coordinate trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw coordinate cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on button actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after RECORD TRACE SAMPLE; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (1300 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next coordinate trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs START TRACE, positive RECORD TRACE SAMPLE actions, and RELEASE AT EXIT, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new coordinate-console action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "50-88",
+          "claim": "Difficulty 2 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The simplified input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "341-369",
+          "claim": "Simplified mode maps the coordinate-console buttons to the same sonar, trace-start, trace-sample, and trace-end handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 465,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 profile: 8 main control points with curve_delta 80; three generated branches; 10 ordered checkpoints; corridor radius 42-47 px; sonar radius 82-92 px with 1000 ms fade; drift amplitude x 7-10 and y 6-8 with x rate 0.05-0.065 and y rate 0.041-0.057; mapping minimums 20 sonar samples, 12 cells, and 54% of the main path capped at 50 points; trace minimums 56 samples, 70% path coverage, 78% path-length ratio, 520 ms hold, and 65 px maximum raw step.",
+        "Full input surface: pointermove over the stage emits recoverable sonar before a trace; pointerdown on the armed START beacon starts the hold; pointermove while captured records one raw/effective trace sample; pointerup or pointercancel releases the trace.",
+        "An effective sample outside the corridor or an early release cancels the trace; after a cancellation, the pointer must be released and the RE-ARM CANCELLED TRACE control can be clicked before another start.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 1000 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new trace input during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later event can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "pointer_sonar: full-mode pointer movement before a committed trace; same-point movement within the 8 px de-duplication threshold emits no new probe.",
+        "pointer_trace: pointerdown at START, pointermove samples during the captured hold, and pointerup/pointercancel release.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on input actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after a pointermove; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (1000 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next pointer trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs pointermove samples and a release, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new pointer action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "90-128",
+          "claim": "Difficulty 3 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The full input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "205-237",
+          "claim": "Full mode uses pointer movement and pointer press/release handlers for sonar, trace start, trace samples, and trace end."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 466,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 profile: 8 main control points with curve_delta 80; three generated branches; 10 ordered checkpoints; corridor radius 42-47 px; sonar radius 82-92 px with 1000 ms fade; drift amplitude x 7-10 and y 6-8 with x rate 0.05-0.065 and y rate 0.041-0.057; mapping minimums 20 sonar samples, 12 cells, and 54% of the main path capped at 50 points; trace minimums 56 samples, 70% path coverage, 78% path-length ratio, 520 ms hold, and 65 px maximum raw step.",
+        "Simplified input surface: integer X/Y coordinate fields plus EMIT SONAR, START TRACE, RECORD TRACE SAMPLE, and RELEASE AT EXIT buttons; each accepted trace sample is an explicit coordinate-console action.",
+        "An effective sample outside the corridor or an early release cancels the trace; the RE-ARM CANCELLED TRACE button clears the pending collision before another START TRACE.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 1000 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new coordinate-console trace action during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later button action can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "coordinate_sonar: integer X/Y entry followed by EMIT SONAR.",
+        "coordinate_trace: integer X/Y entry followed by START TRACE, repeated RECORD TRACE SAMPLE actions, and RELEASE AT EXIT.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the coordinate trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw coordinate cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on button actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after RECORD TRACE SAMPLE; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (1000 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next coordinate trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs START TRACE, positive RECORD TRACE SAMPLE actions, and RELEASE AT EXIT, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new coordinate-console action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "90-128",
+          "claim": "Difficulty 3 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The simplified input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "341-369",
+          "claim": "Simplified mode maps the coordinate-console buttons to the same sonar, trace-start, trace-sample, and trace-end handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 467,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 profile: 8 main control points with curve_delta 94; 3-4 generated branches; 11 ordered checkpoints; corridor radius 36-41 px; sonar radius 71-79 px with 780 ms fade; drift amplitude x 10-14 and y 8-12 with x rate 0.06-0.078 and y rate 0.047-0.066; mapping minimums 24 sonar samples, 14 cells, and 62% of the main path capped at 58 points; trace minimums 62 samples, 78% path coverage, 83% path-length ratio, 620 ms hold, and 58 px maximum raw step.",
+        "Full input surface: pointermove over the stage emits recoverable sonar before a trace; pointerdown on the armed START beacon starts the hold; pointermove while captured records one raw/effective trace sample; pointerup or pointercancel releases the trace.",
+        "An effective sample outside the corridor or an early release cancels the trace; after a cancellation, the pointer must be released and the RE-ARM CANCELLED TRACE control can be clicked before another start.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 780 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new trace input during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later event can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "pointer_sonar: full-mode pointer movement before a committed trace; same-point movement within the 8 px de-duplication threshold emits no new probe.",
+        "pointer_trace: pointerdown at START, pointermove samples during the captured hold, and pointerup/pointercancel release.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on input actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after a pointermove; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (780 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next pointer trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs pointermove samples and a release, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new pointer action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "130-168",
+          "claim": "Difficulty 4 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The full input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "205-237",
+          "claim": "Full mode uses pointer movement and pointer press/release handlers for sonar, trace start, trace samples, and trace end."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 468,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 profile: 8 main control points with curve_delta 94; 3-4 generated branches; 11 ordered checkpoints; corridor radius 36-41 px; sonar radius 71-79 px with 780 ms fade; drift amplitude x 10-14 and y 8-12 with x rate 0.06-0.078 and y rate 0.047-0.066; mapping minimums 24 sonar samples, 14 cells, and 62% of the main path capped at 58 points; trace minimums 62 samples, 78% path coverage, 83% path-length ratio, 620 ms hold, and 58 px maximum raw step.",
+        "Simplified input surface: integer X/Y coordinate fields plus EMIT SONAR, START TRACE, RECORD TRACE SAMPLE, and RELEASE AT EXIT buttons; each accepted trace sample is an explicit coordinate-console action.",
+        "An effective sample outside the corridor or an early release cancels the trace; the RE-ARM CANCELLED TRACE button clears the pending collision before another START TRACE.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 780 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new coordinate-console trace action during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later button action can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "coordinate_sonar: integer X/Y entry followed by EMIT SONAR.",
+        "coordinate_trace: integer X/Y entry followed by START TRACE, repeated RECORD TRACE SAMPLE actions, and RELEASE AT EXIT.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the coordinate trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw coordinate cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on button actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after RECORD TRACE SAMPLE; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (780 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next coordinate trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs START TRACE, positive RECORD TRACE SAMPLE actions, and RELEASE AT EXIT, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new coordinate-console action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "130-168",
+          "claim": "Difficulty 4 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The simplified input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "341-369",
+          "claim": "Simplified mode maps the coordinate-console buttons to the same sonar, trace-start, trace-sample, and trace-end handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 469,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 profile: 10 main control points with curve_delta 122; five generated branches; 15 ordered checkpoints; corridor radius 28-33 px; sonar radius 57-66 px with 540 ms fade; drift amplitude x 15-20 and y 13-17 with x rate 0.08-0.105 and y rate 0.068-0.092; mapping minimums 30 sonar samples, 18 cells, and 76% of the main path capped at 100 points; trace minimums 95 samples, 86% path coverage, 91% path-length ratio, 800 ms hold, and 45 px maximum raw step.",
+        "Full input surface: pointermove over the stage emits recoverable sonar before a trace; pointerdown on the armed START beacon starts the hold; pointermove while captured records one raw/effective trace sample; pointerup or pointercancel releases the trace.",
+        "An effective sample outside the corridor or an early release cancels the trace; after a cancellation, the pointer must be released and the RE-ARM CANCELLED TRACE control can be clicked before another start.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 540 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new trace input during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later event can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "pointer_sonar: full-mode pointer movement before a committed trace; same-point movement within the 8 px de-duplication threshold emits no new probe.",
+        "pointer_trace: pointerdown at START, pointermove samples during the captured hold, and pointerup/pointercancel release.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on input actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after a pointermove; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (540 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next pointer trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs pointermove samples and a release, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new pointer action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "170-208",
+          "claim": "Difficulty 5 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The full input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "205-237",
+          "claim": "Full mode uses pointer movement and pointer press/release handlers for sonar, trace start, trace samples, and trace end."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 470,
+      "public_environment_name": "Blind Corridor Oscilloscope",
+      "environment_id": "trace_shape_without_walls_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 profile: 10 main control points with curve_delta 122; five generated branches; 15 ordered checkpoints; corridor radius 28-33 px; sonar radius 57-66 px with 540 ms fade; drift amplitude x 15-20 and y 13-17 with x rate 0.08-0.105 and y rate 0.068-0.092; mapping minimums 30 sonar samples, 18 cells, and 76% of the main path capped at 100 points; trace minimums 95 samples, 86% path coverage, 91% path-length ratio, 800 ms hold, and 45 px maximum raw step.",
+        "Simplified input surface: integer X/Y coordinate fields plus EMIT SONAR, START TRACE, RECORD TRACE SAMPLE, and RELEASE AT EXIT buttons; each accepted trace sample is an explicit coordinate-console action.",
+        "An effective sample outside the corridor or an early release cancels the trace; the RE-ARM CANCELLED TRACE button clears the pending collision before another START TRACE.",
+        "CERTIFY TRACE RECORD submits the completed transcript and is administrative rather than outcome-affecting."
+      ],
+      "autonomous_processes": [
+        "With no new action while task time runs, revealed main-path and branch edges fade over the configured 540 ms sonar lifetime; drawScope removes expired reveal entries, but probeCount, probeCells, mainCoverage, and branchCoverage remain stored.",
+        "With no new coordinate-console trace action during a committed trace, no trace sample is appended: sample_index, effective probe position, checkpoint cursor, trace distance, and traceTail remain unchanged. A later button action can observe a larger elapsed_ms, which only helps satisfy the fixed minimum hold duration.",
+        "The beacon spin/pulse, sonar-lens pulse, breach pulse, and requestAnimationFrame redraw are autonomous presentation changes. They do not move the START/EXIT hit areas or alter the grader's trace state; the shared controller pauses task-time animation and frame progression when paused."
+      ],
+      "grouped_control_modes": [
+        "coordinate_sonar: integer X/Y entry followed by EMIT SONAR.",
+        "coordinate_trace: integer X/Y entry followed by START TRACE, repeated RECORD TRACE SAMPLE actions, and RELEASE AT EXIT.",
+        "trace_rearm: the re-arm button after a cancelled trace.",
+        "certification submit: administrative and excluded from outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The apparent crosswind is not an autonomous process: driftAt is evaluated from the agent-supplied sample_index, so the relevant correction is predictable from the coordinate trace event sequence and an action-clock/open-loop schedule. The hidden corridor still creates a visual mapping problem, but it does not make a delayed action depend on autonomous evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current or recent screenshot can show revealed corridor edges, the raw coordinate cursor, the effective probe, gate status, and the displayed drift vector, so bounded visual feedback can assist the spatial control. That visual assistance is not evidence of a real-time witness because the underlying trace state changes only on button actions."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D and positive Delta has the required strict loss. Sonar fading is recoverable and leaves coverage and START eligibility intact; during the trace, sample_index and crosswind advance only inside traceMoveAt after RECORD TRACE SAMPLE; elapsed time can only satisfy the minimum-duration check. Thus no non-clock autonomous task-state change makes an available action less effective while success remains possible."
+      },
+      "common_visible_process": "There is no qualifying common visible process. The only autonomous task-adjacent visual change is the fading sonar (540 ms), while the visible crosswind vector and effective probe change only when the agent supplies the next coordinate trace event. The fade does not close or degrade any outcome-affecting action, and the CSS animations are unrelated presentation.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated instance has the defined no-more-actions outcome phase: after mapping, the successful trace still needs START TRACE, positive RECORD TRACE SAMPLE actions, and RELEASE AT EXIT, and the grader requires positive trace samples, distance, ordered checkpoints, and hold evidence. With no new coordinate-console action, the trace does not progress to EXIT.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/env.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/task.json",
+        "weird_captcha_gym/environments/trace_shape_without_walls_env/tasks/trace_shape_without_walls_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "170-208",
+          "claim": "Difficulty 5 supplies the exact branch, checkpoint, corridor, sonar, drift, exploration, trace, hold, and raw-step ranges reported above."
+        },
+        {
+          "path": "weird_captcha_gym/environments/trace_shape_without_walls_env/controls.json",
+          "lines": "211-224",
+          "claim": "The simplified input surface is implemented alongside the other mode, with a 500 ms observation window, 5 frames, and 150 seconds."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/trace_shape_without_walls.py",
+          "lines": "165-245",
+          "claim": "The generator creates the hidden path, branches, ordered checkpoints, random per-instance drift parameters, and positive trace requirements; min_branch_coverage is explicitly 0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "69-91",
+          "claim": "Sonar coverage is accumulated in persistent sets, while revealed drawing segments receive an expiry timestamp."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "341-369",
+          "claim": "Simplified mode maps the coordinate-console buttons to the same sonar, trace-start, trace-sample, and trace-end handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.js",
+          "lines": "254-334",
+          "claim": "Each trace sample increments sample_index and computes drift, while release checks fixed requirements; no handler advances trace state without an input event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/trace_shape_without_walls.css",
+          "lines": "65-99",
+          "claim": "The autonomous beacon, sonar, and breach animations are CSS presentation effects and do not move task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "29-42",
+          "claim": "The authoritative crosswind transform is indexed by sample_index, not elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/trace_shape_without_walls.py",
+          "lines": "213-305",
+          "claim": "The grader advances the replay only when explicit trace_sample, trace_cancel, and trace_end events are present and requires ordered checkpoints, positive samples, distance, and hold time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-77",
+          "claim": "performance.now is virtual task time, while interactionNow is input-evidence time and does not advance task timers or physics during a paused boundary."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

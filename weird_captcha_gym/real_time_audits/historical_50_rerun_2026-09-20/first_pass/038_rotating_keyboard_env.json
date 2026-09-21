@@ -1,0 +1,1017 @@
+{
+  "case_index": 38,
+  "public_environment_name": "Rotating On-Screen Keyboard",
+  "environment_id": "rotating_keyboard_env",
+  "configuration_reports": [
+    {
+      "case_index": 371,
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible target code has 3 characters; 12 labeled on-screen keys are 52×56 px. The deck uses shallow_3d motion and begins spinning after 2 accepted on-screen characters.",
+        "Outcome-affecting actions are mouse clicks on labeled on-screen keys and ERASE; CONFIRM only submits the entered string."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 2 accepted on-screen characters.",
+        "After after 2 accepted on-screen characters, .rotating-deck.is-spinning runs the shallow_3d CSS 3D tumble indefinitely; the generated direction is randomized to ±1 and the cycle duration is randomized to 14,000–16,000 ms. The projected key geometry changes without another agent action."
+      ],
+      "grouped_control_modes": [
+        "Full: mouse clicks on moving labeled on-screen keys, grouped by each target-character click while .rotating-deck.is-spinning."
+      ],
+      "delta_ms": 800,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q(I_t) can choose a correct delayed mouse coordinate for every history: the random displayed target, key geometry, motion direction, and duration are not in I_t, while the required on-screen hitbox at t+800 ms differs across those histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 800 ms window contains six chronological frames plus the visible target and labels; g can identify the next key and estimate its current direction and phase to choose the mouse coordinate at delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At a spinning H_t away from terminal submission, for some 0<tau<800 ms the CSS 3D transform moves and reshapes the requested key's visible hitbox. A coordinate chosen at t loses value while a coordinate at the new position remains successful; this is the same visible autonomous process, not a clock-only deadline."
+      },
+      "common_visible_process": "For D=Full moving on-screen-key clicks, Delta=800 ms and w=800 ms (six frames), the shallow_3d tumble visibly changes the requested key's projected screen geometry during delivery; the old click coordinate loses advantage while a newly observed or predicted coordinate can still succeed.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. ",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 1 uses 12 keys, a 3-character code, 14,000–16,000 ms duration, shallow_3d motion, 52×56 px keys, and a spin threshold of 2; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Full to onscreen_keys input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Full solver repeatedly reacquires moving key bounding boxes before clicking, whereas its Simplified branch types physical keys."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 372,
+    "difficulty": 1,
+    "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible target code has 3 characters and the same 12-key shallow_3d deck (52×56 px); the deck begins spinning after 2 accepted physical characters.",
+        "Outcome-affecting actions are physical keyboard keydown events for alphabet characters or BACKSPACE; on-screen key clicks are inert in Simplified, and CONFIRM only submits."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 2 accepted physical characters.",
+        "After after 2 accepted physical characters, the same shallow_3d CSS 3D tumble runs indefinitely; direction is randomized to ±1 and the cycle duration is randomized to 14,000–16,000 ms, but the physical key mapping remains stationary."
+      ],
+      "grouped_control_modes": [
+        "Simplified: physical-keyboard keydown events for target characters, grouped across the same spinning interval."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The formal observation-free condition still holds for D because I_t alone lacks the displayed random target, so no q(I_t) can choose the next physical key across all histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The same 800 ms, six-frame window exposes the displayed target and alphabet. g can choose the next stationary physical key directly; it does not need the deck motion."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The deck's CSS transform moves only on-screen geometry. The physical keydown handler accepts the alphabet and BACKSPACE independently, so correct physical-key action effectiveness and Q do not decline; the animation is not a common expiring opportunity for D."
+      },
+      "common_visible_process": "The shallow_3d deck tumble remains visible for D=Simplified, but it changes only the on-screen presentation: physical keydown effectiveness is invariant, so no common Delta/witness satisfies clause iii.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. This does not change the Simplified label because the motion does not affect physical-key action effectiveness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 1 uses 12 keys, a 3-character code, 14,000–16,000 ms duration, shallow_3d motion, 52×56 px keys, and a spin threshold of 2; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Simplified to physical_keyboard input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Simplified solver types the target through physical keys, while the Full branch repeatedly reacquires moving key bounding boxes."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 373,
+    "difficulty": 2,
+    "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible target code has 4 characters; 20 labeled on-screen keys are 46×52 px. The deck uses partial_3d motion and begins spinning after 1 accepted on-screen characters.",
+        "Outcome-affecting actions are mouse clicks on labeled on-screen keys and ERASE; CONFIRM only submits the entered string."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 1 accepted on-screen characters.",
+        "After after 1 accepted on-screen characters, .rotating-deck.is-spinning runs the partial_3d CSS 3D tumble indefinitely; the generated direction is randomized to ±1 and the cycle duration is randomized to 12,000–14,000 ms. The projected key geometry changes without another agent action."
+      ],
+      "grouped_control_modes": [
+        "Full: mouse clicks on moving labeled on-screen keys, grouped by each target-character click while .rotating-deck.is-spinning."
+      ],
+      "delta_ms": 800,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q(I_t) can choose a correct delayed mouse coordinate for every history: the random displayed target, key geometry, motion direction, and duration are not in I_t, while the required on-screen hitbox at t+800 ms differs across those histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 800 ms window contains six chronological frames plus the visible target and labels; g can identify the next key and estimate its current direction and phase to choose the mouse coordinate at delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At a spinning H_t away from terminal submission, for some 0<tau<800 ms the CSS 3D transform moves and reshapes the requested key's visible hitbox. A coordinate chosen at t loses value while a coordinate at the new position remains successful; this is the same visible autonomous process, not a clock-only deadline."
+      },
+      "common_visible_process": "For D=Full moving on-screen-key clicks, Delta=800 ms and w=800 ms (six frames), the partial_3d tumble visibly changes the requested key's projected screen geometry during delivery; the old click coordinate loses advantage while a newly observed or predicted coordinate can still succeed.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. ",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 2 uses 20 keys, a 4-character code, 12,000–14,000 ms duration, partial_3d motion, 46×52 px keys, and a spin threshold of 1; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Full to onscreen_keys input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Full solver repeatedly reacquires moving key bounding boxes before clicking, whereas its Simplified branch types physical keys."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 374,
+    "difficulty": 2,
+    "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible target code has 4 characters and the same 20-key partial_3d deck (46×52 px); the deck begins spinning after 1 accepted physical characters.",
+        "Outcome-affecting actions are physical keyboard keydown events for alphabet characters or BACKSPACE; on-screen key clicks are inert in Simplified, and CONFIRM only submits."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 1 accepted physical characters.",
+        "After after 1 accepted physical characters, the same partial_3d CSS 3D tumble runs indefinitely; direction is randomized to ±1 and the cycle duration is randomized to 12,000–14,000 ms, but the physical key mapping remains stationary."
+      ],
+      "grouped_control_modes": [
+        "Simplified: physical-keyboard keydown events for target characters, grouped across the same spinning interval."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The formal observation-free condition still holds for D because I_t alone lacks the displayed random target, so no q(I_t) can choose the next physical key across all histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The same 800 ms, six-frame window exposes the displayed target and alphabet. g can choose the next stationary physical key directly; it does not need the deck motion."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The deck's CSS transform moves only on-screen geometry. The physical keydown handler accepts the alphabet and BACKSPACE independently, so correct physical-key action effectiveness and Q do not decline; the animation is not a common expiring opportunity for D."
+      },
+      "common_visible_process": "The partial_3d deck tumble remains visible for D=Simplified, but it changes only the on-screen presentation: physical keydown effectiveness is invariant, so no common Delta/witness satisfies clause iii.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. This does not change the Simplified label because the motion does not affect physical-key action effectiveness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 2 uses 20 keys, a 4-character code, 12,000–14,000 ms duration, partial_3d motion, 46×52 px keys, and a spin threshold of 1; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Simplified to physical_keyboard input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Simplified solver types the target through physical keys, while the Full branch repeatedly reacquires moving key bounding boxes."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 375,
+    "difficulty": 3,
+    "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible target code has 5 characters; 26 labeled on-screen keys are 42×48 px. The deck uses full_3d motion and begins spinning after 1 accepted on-screen characters.",
+        "Outcome-affecting actions are mouse clicks on labeled on-screen keys and ERASE; CONFIRM only submits the entered string."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 1 accepted on-screen characters.",
+        "After after 1 accepted on-screen characters, .rotating-deck.is-spinning runs the full_3d CSS 3D tumble indefinitely; the generated direction is randomized to ±1 and the cycle duration is randomized to 10,500–12,000 ms. The projected key geometry changes without another agent action."
+      ],
+      "grouped_control_modes": [
+        "Full: mouse clicks on moving labeled on-screen keys, grouped by each target-character click while .rotating-deck.is-spinning."
+      ],
+      "delta_ms": 800,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q(I_t) can choose a correct delayed mouse coordinate for every history: the random displayed target, key geometry, motion direction, and duration are not in I_t, while the required on-screen hitbox at t+800 ms differs across those histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 800 ms window contains six chronological frames plus the visible target and labels; g can identify the next key and estimate its current direction and phase to choose the mouse coordinate at delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At a spinning H_t away from terminal submission, for some 0<tau<800 ms the CSS 3D transform moves and reshapes the requested key's visible hitbox. A coordinate chosen at t loses value while a coordinate at the new position remains successful; this is the same visible autonomous process, not a clock-only deadline."
+      },
+      "common_visible_process": "For D=Full moving on-screen-key clicks, Delta=800 ms and w=800 ms (six frames), the full_3d tumble visibly changes the requested key's projected screen geometry during delivery; the old click coordinate loses advantage while a newly observed or predicted coordinate can still succeed.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. ",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 3 uses 26 keys, a 5-character code, 10,500–12,000 ms duration, full_3d motion, 42×48 px keys, and a spin threshold of 1; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Full to onscreen_keys input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Full solver repeatedly reacquires moving key bounding boxes before clicking, whereas its Simplified branch types physical keys."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 376,
+    "difficulty": 3,
+    "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible target code has 5 characters and the same 26-key full_3d deck (42×48 px); the deck begins spinning after 1 accepted physical characters.",
+        "Outcome-affecting actions are physical keyboard keydown events for alphabet characters or BACKSPACE; on-screen key clicks are inert in Simplified, and CONFIRM only submits."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 1 accepted physical characters.",
+        "After after 1 accepted physical characters, the same full_3d CSS 3D tumble runs indefinitely; direction is randomized to ±1 and the cycle duration is randomized to 10,500–12,000 ms, but the physical key mapping remains stationary."
+      ],
+      "grouped_control_modes": [
+        "Simplified: physical-keyboard keydown events for target characters, grouped across the same spinning interval."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The formal observation-free condition still holds for D because I_t alone lacks the displayed random target, so no q(I_t) can choose the next physical key across all histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The same 800 ms, six-frame window exposes the displayed target and alphabet. g can choose the next stationary physical key directly; it does not need the deck motion."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The deck's CSS transform moves only on-screen geometry. The physical keydown handler accepts the alphabet and BACKSPACE independently, so correct physical-key action effectiveness and Q do not decline; the animation is not a common expiring opportunity for D."
+      },
+      "common_visible_process": "The full_3d deck tumble remains visible for D=Simplified, but it changes only the on-screen presentation: physical keydown effectiveness is invariant, so no common Delta/witness satisfies clause iii.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. This does not change the Simplified label because the motion does not affect physical-key action effectiveness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 3 uses 26 keys, a 5-character code, 10,500–12,000 ms duration, full_3d motion, 42×48 px keys, and a spin threshold of 1; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Simplified to physical_keyboard input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Simplified solver types the target through physical keys, while the Full branch repeatedly reacquires moving key bounding boxes."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 377,
+    "difficulty": 4,
+    "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible target code has 5 characters; 32 labeled on-screen keys are 38×45 px. The deck uses current (base keyboard-tumble) motion and begins spinning after 1 accepted on-screen characters.",
+        "Outcome-affecting actions are mouse clicks on labeled on-screen keys and ERASE; CONFIRM only submits the entered string."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 1 accepted on-screen characters.",
+        "After after 1 accepted on-screen characters, .rotating-deck.is-spinning runs the current (base keyboard-tumble) CSS 3D tumble indefinitely; the generated direction is randomized to ±1 and the cycle duration is randomized to 8,800/9,400/10,000 ms. The projected key geometry changes without another agent action."
+      ],
+      "grouped_control_modes": [
+        "Full: mouse clicks on moving labeled on-screen keys, grouped by each target-character click while .rotating-deck.is-spinning."
+      ],
+      "delta_ms": 800,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q(I_t) can choose a correct delayed mouse coordinate for every history: the random displayed target, key geometry, motion direction, and duration are not in I_t, while the required on-screen hitbox at t+800 ms differs across those histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 800 ms window contains six chronological frames plus the visible target and labels; g can identify the next key and estimate its current direction and phase to choose the mouse coordinate at delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At a spinning H_t away from terminal submission, for some 0<tau<800 ms the CSS 3D transform moves and reshapes the requested key's visible hitbox. A coordinate chosen at t loses value while a coordinate at the new position remains successful; this is the same visible autonomous process, not a clock-only deadline."
+      },
+      "common_visible_process": "For D=Full moving on-screen-key clicks, Delta=800 ms and w=800 ms (six frames), the current (base keyboard-tumble) tumble visibly changes the requested key's projected screen geometry during delivery; the old click coordinate loses advantage while a newly observed or predicted coordinate can still succeed.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. ",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 4 uses 32 keys, a 5-character code, 8,800/9,400/10,000 ms duration, current (base keyboard-tumble) motion, 38×45 px keys, and a spin threshold of 1; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Full to onscreen_keys input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Full solver repeatedly reacquires moving key bounding boxes before clicking, whereas its Simplified branch types physical keys."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 378,
+    "difficulty": 4,
+    "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible target code has 5 characters and the same 32-key current (base keyboard-tumble) deck (38×45 px); the deck begins spinning after 1 accepted physical characters.",
+        "Outcome-affecting actions are physical keyboard keydown events for alphabet characters or BACKSPACE; on-screen key clicks are inert in Simplified, and CONFIRM only submits."
+      ],
+      "autonomous_processes": [
+        "The deck is static until 1 accepted physical characters.",
+        "After after 1 accepted physical characters, the same current (base keyboard-tumble) CSS 3D tumble runs indefinitely; direction is randomized to ±1 and the cycle duration is randomized to 8,800/9,400/10,000 ms, but the physical key mapping remains stationary."
+      ],
+      "grouped_control_modes": [
+        "Simplified: physical-keyboard keydown events for target characters, grouped across the same spinning interval."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The formal observation-free condition still holds for D because I_t alone lacks the displayed random target, so no q(I_t) can choose the next physical key across all histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The same 800 ms, six-frame window exposes the displayed target and alphabet. g can choose the next stationary physical key directly; it does not need the deck motion."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The deck's CSS transform moves only on-screen geometry. The physical keydown handler accepts the alphabet and BACKSPACE independently, so correct physical-key action effectiveness and Q do not decline; the animation is not a common expiring opportunity for D."
+      },
+      "common_visible_process": "The current (base keyboard-tumble) deck tumble remains visible for D=Simplified, but it changes only the on-screen presentation: physical keydown effectiveness is invariant, so no common Delta/witness satisfies clause iii.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. This does not change the Simplified label because the motion does not affect physical-key action effectiveness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 4 uses 32 keys, a 5-character code, 8,800/9,400/10,000 ms duration, current (base keyboard-tumble) motion, 38×45 px keys, and a spin threshold of 1; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Simplified to physical_keyboard input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Simplified solver types the target through physical keys, while the Full branch repeatedly reacquires moving key bounding boxes."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 379,
+    "difficulty": 5,
+    "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible target code has 8 characters; 32 labeled on-screen keys are 32×38 px. The deck uses variable_3d motion and begins spinning immediately at render because the threshold is zero.",
+        "Outcome-affecting actions are mouse clicks on labeled on-screen keys and ERASE; CONFIRM only submits the entered string."
+      ],
+      "autonomous_processes": [
+        "The deck is static until render time.",
+        "After immediately at render because the threshold is zero, .rotating-deck.is-spinning runs the variable_3d CSS 3D tumble indefinitely; the generated direction is randomized to ±1 and the cycle duration is randomized to 5,500–7,000 ms. The projected key geometry changes without another agent action."
+      ],
+      "grouped_control_modes": [
+        "Full: mouse clicks on moving labeled on-screen keys, grouped by each target-character click while .rotating-deck.is-spinning."
+      ],
+      "delta_ms": 800,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "No observation-free q(I_t) can choose a correct delayed mouse coordinate for every history: the random displayed target, key geometry, motion direction, and duration are not in I_t, while the required on-screen hitbox at t+800 ms differs across those histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The 800 ms window contains six chronological frames plus the visible target and labels; g can identify the next key and estimate its current direction and phase to choose the mouse coordinate at delivery."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At a spinning H_t away from terminal submission, for some 0<tau<800 ms the CSS 3D transform moves and reshapes the requested key's visible hitbox. A coordinate chosen at t loses value while a coordinate at the new position remains successful; this is the same visible autonomous process, not a clock-only deadline."
+      },
+      "common_visible_process": "For D=Full moving on-screen-key clicks, Delta=800 ms and w=800 ms (six frames), the variable_3d tumble visibly changes the requested key's projected screen geometry during delivery; the old click coordinate loses advantage while a newly observed or predicted coordinate can still succeed.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. ",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 5 uses 32 keys, a 8-character code, 5,500–7,000 ms duration, variable_3d motion, 32×38 px keys, and a spin threshold of 0; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Full to onscreen_keys input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Full solver repeatedly reacquires moving key bounding boxes before clicking, whereas its Simplified branch types physical keys."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+    "case_index": 380,
+    "difficulty": 5,
+    "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Visible target code has 8 characters and the same 32-key variable_3d deck (32×38 px); the deck begins spinning immediately at render because the threshold is zero.",
+        "Outcome-affecting actions are physical keyboard keydown events for alphabet characters or BACKSPACE; on-screen key clicks are inert in Simplified, and CONFIRM only submits."
+      ],
+      "autonomous_processes": [
+        "The deck is static until render time.",
+        "After immediately at render because the threshold is zero, the same variable_3d CSS 3D tumble runs indefinitely; direction is randomized to ±1 and the cycle duration is randomized to 5,500–7,000 ms, but the physical key mapping remains stationary."
+      ],
+      "grouped_control_modes": [
+        "Simplified: physical-keyboard keydown events for target characters, grouped across the same spinning interval."
+      ],
+      "delta_ms": null,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "The formal observation-free condition still holds for D because I_t alone lacks the displayed random target, so no q(I_t) can choose the next physical key across all histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The same 800 ms, six-frame window exposes the displayed target and alphabet. g can choose the next stationary physical key directly; it does not need the deck motion."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The deck's CSS transform moves only on-screen geometry. The physical keydown handler accepts the alphabet and BACKSPACE independently, so correct physical-key action effectiveness and Q do not decline; the animation is not a common expiring opportunity for D."
+      },
+      "common_visible_process": "The variable_3d deck tumble remains visible for D=Simplified, but it changes only the on-screen presentation: physical keydown effectiveness is invariant, so no common Delta/witness satisfies clause iii.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The code length exceeds spin_after_characters at every supplied level (3>2, 4>1, 5>1, 5>1, 8>0), so each generated instance still needs outcome-affecting input after the autonomous phase begins; the source-structural pre-run rate is therefore below the 0.5 threshold. This does not change the Simplified label because the motion does not affect physical-key action effectiveness.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/styles.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/server/legacy_browser_grader.py",
+        "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 5 uses 32 keys, a 8-character code, 5,500–7,000 ms duration, variable_3d motion, 32×38 px keys, and a spin threshold of 0; both Full and Simplified are implemented and the live runtime exposes an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions and configures the live observation schedule as an 800 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rotating_keyboard_env/tasks/rotating_keyboard_seed_0001/task.json",
+          "lines": "5-19",
+          "claim": "The task presents the on-screen code and labels the mechanic as a moving coordinate frame/timed clicking task with continuous 3D rotation and exact-string verification."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+          "lines": "1450-1512",
+          "claim": "The generator randomizes the target, direction, and duration, derives the rows and spin threshold from the active difficulty, and exposes the target and keyboard geometry in public state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/app.js",
+          "lines": "2982-3045",
+          "claim": "renderRotatingKeyboard displays the target and labels; Full accepts labeled on-screen clicks and starts the deck at the threshold, while Simplified accepts physical keydown input and leaves on-screen clicks inert."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/styles.css",
+          "lines": "357-393",
+          "claim": "The spinning deck runs an infinite CSS 3D X/Y/Z transform animation; shallow, partial, and variable profiles have dedicated keyframes, while current uses the base keyboard-tumble animation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201",
+          "claim": "Live task time lets document animations run, while pausing the task pauses document animations and resumes them with task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "485-500",
+          "claim": "The verifier requires the exact target text and maps Simplified to physical_keyboard input."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rotating_keyboard.py",
+          "lines": "39-73",
+          "claim": "The normal Simplified solver types the target through physical keys, while the Full branch repeatedly reacquires moving key bounding boxes."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

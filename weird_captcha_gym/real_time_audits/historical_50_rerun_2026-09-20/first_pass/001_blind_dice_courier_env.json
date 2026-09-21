@@ -1,0 +1,1097 @@
+{
+  "case_index": 1,
+  "environment_id": "blind_dice_courier_env",
+  "public_environment_name": "Blind Dice Courier",
+  "configuration_reports": [
+    {
+      "case_index": 1,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode uses W/A/S/D or arrow keys to roll the die one cell north, east, south, or west on an 8 by 7 board.",
+        "The single gate checks the post-roll top face, and the orientation display remains visible after every roll.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "keyboard_roll",
+          "actions": "W/A/S/D and arrow keys dispatch one north/east/south/west roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the board, die position, gate, and current orientation, and the same state persists through a wait; a bounded current-frame policy can therefore choose the same optimal next roll."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available roll strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. The only visible motion is an input-triggered token or rejection animation, while the delayed result submission is administrative; no autonomous visible process can witness all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "10-25",
+          "claim": "Difficulty 1 is an 8 by 7, single-gate, always-visible orientation profile."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Full mode is keyboard rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,299-339",
+          "claim": "The generator applies the selected difficulty parameters to a static board, randomizes initial orientation and gates by seed, and computes a fixed solution path; it defines no clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "224-262",
+          "claim": "Position and orientation mutate inside move() only after an input, and the only timer is the 240 ms post-goal administrative submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Keyboard input is bound only in full mode, while direction buttons, reset, and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100",
+          "claim": "The wait-visible effects are a rejected-gate animation and an action-triggered token transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 2,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode uses visible north, west, south, and east buttons to roll the die one cell on an 8 by 7 board.",
+        "The single gate checks the post-roll top face, and the orientation display remains visible after every roll.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "direction_button_roll",
+          "actions": "Visible north, west, south, and east buttons dispatch one roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the board, die position, gate, and current orientation, and the same state persists through a wait; a bounded current-frame policy can therefore choose the same optimal next button."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available button strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. The only visible motion is an input-triggered token or rejection animation, while the delayed result submission is administrative; no autonomous visible process can witness all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "10-25",
+          "claim": "Difficulty 1 is an 8 by 7, single-gate, always-visible orientation profile."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Simplified mode is button rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,299-339",
+          "claim": "The generator applies the selected difficulty parameters to a static board, randomizes initial orientation and gates by seed, and computes a fixed solution path; it defines no clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "224-262",
+          "claim": "Position and orientation mutate inside move() only after an input, and the only timer is the 240 ms post-goal administrative submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Direction buttons dispatch moves in simplified mode, while reset and reissue remain explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100",
+          "claim": "The wait-visible effects are a rejected-gate animation and an action-triggered token transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 3,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode uses W/A/S/D or arrow keys to roll the die one cell north, east, south, or west on an 11 by 7 board.",
+        "Two sequential gates check the post-roll top face, and the orientation display remains visible after every roll.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "keyboard_roll",
+          "actions": "W/A/S/D and arrow keys dispatch one north/east/south/west roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the board, die position, gates, and current orientation, and the same state persists through a wait; a bounded current-frame policy can choose the same optimal next roll."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available roll strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. The only visible motion is an input-triggered token or rejection animation, while the delayed result submission is administrative; no autonomous visible process can witness all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "28-43",
+          "claim": "Difficulty 2 is an 11 by 7, two-gate, always-visible orientation profile."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Full mode is keyboard rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,299-339",
+          "claim": "The generator applies the selected difficulty parameters to a static board, randomizes initial orientation and gates by seed, and computes a fixed solution path; it defines no clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "224-262",
+          "claim": "Position and orientation mutate inside move() only after an input, and the only timer is the 240 ms post-goal administrative submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Keyboard input is bound only in full mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100",
+          "claim": "The wait-visible effects are a rejected-gate animation and an action-triggered token transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 4,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode uses visible north, west, south, and east buttons to roll the die one cell on an 11 by 7 board.",
+        "Two sequential gates check the post-roll top face, and the orientation display remains visible after every roll.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "direction_button_roll",
+          "actions": "Visible north, west, south, and east buttons dispatch one roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the board, die position, gates, and current orientation, and the same state persists through a wait; a bounded current-frame policy can choose the same optimal next button."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available button strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. The only visible motion is an input-triggered token or rejection animation, while the delayed result submission is administrative; no autonomous visible process can witness all three clauses.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "28-43",
+          "claim": "Difficulty 2 is an 11 by 7, two-gate, always-visible orientation profile."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Simplified mode is button rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,299-339",
+          "claim": "The generator applies the selected difficulty parameters to a static board, randomizes initial orientation and gates by seed, and computes a fixed solution path; it defines no clock or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "224-262",
+          "claim": "Position and orientation mutate inside move() only after an input, and the only timer is the 240 ms post-goal administrative submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Direction buttons dispatch moves in simplified mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100",
+          "claim": "The wait-visible effects are a rejected-gate animation and an action-triggered token transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 5,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode uses W/A/S/D or arrow keys to roll the die one cell north, east, south, or west on a 14 by 9 board.",
+        "Three sequential top-face gates are checked after rolls; orientation is visible initially and at the three scanner tiles, and hidden elsewhere.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "keyboard_roll",
+          "actions": "W/A/S/D and arrow keys dispatch one north/east/south/west roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The shared roll mode includes blind intervals after leaving a scanner. During those intervals the current bounded window hides orientation, while I_t contains actions and times but not the earlier visible initial or scanner orientation; that outside-window information can change the optimal roll."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available roll strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. Scanner reveal and orientation hiding occur when an input changes position; the only visible motion is action-triggered presentation, and terminal submission is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "46-61",
+          "claim": "Difficulty 3 is a 14 by 9, three-gate, single-face profile with scanners at all three gates and initial/scanner-only visibility."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Full mode is keyboard rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,285-307",
+          "claim": "The generator creates the fixed board, gates, and scanner tiles from difficulty parameters and computes a fixed route; scanner positions are static board data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "56-63,119-139,224-262",
+          "claim": "Orientation visibility is determined from current position after a move, and position/orientation mutate only in response to move input; the only timer is post-goal submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Keyboard input is bound only in full mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100,126-127",
+          "claim": "CSS animations and orientation filtering are presentation effects, not autonomous changes to the die or board."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 6,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode uses visible north, west, south, and east buttons to roll the die one cell on a 14 by 9 board.",
+        "Three sequential top-face gates are checked after rolls; orientation is visible initially and at the three scanner tiles, and hidden elsewhere.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "direction_button_roll",
+          "actions": "Visible north, west, south, and east buttons dispatch one roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The shared roll mode includes blind intervals after leaving a scanner. During those intervals the current bounded window hides orientation, while I_t contains actions and times but not the earlier visible initial or scanner orientation; that outside-window information can change the optimal button."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available button strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. Scanner reveal and orientation hiding occur when an input changes position; the only visible motion is action-triggered presentation, and terminal submission is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "46-61",
+          "claim": "Difficulty 3 is a 14 by 9, three-gate, single-face profile with scanners at all three gates and initial/scanner-only visibility."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Simplified mode is button rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,285-307",
+          "claim": "The generator creates the fixed board, gates, and scanner tiles from difficulty parameters and computes a fixed route; scanner positions are static board data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "56-63,119-139,224-262",
+          "claim": "Orientation visibility is determined from current position after a move, and position/orientation mutate only in response to move input; the only timer is post-goal submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Direction buttons dispatch moves in simplified mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100,126-127",
+          "claim": "CSS animations and orientation filtering are presentation effects, not autonomous changes to the die or board."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 7,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode uses W/A/S/D or arrow keys to roll the die one cell north, east, south, or west on an 18 by 11 board.",
+        "Five sequential top-face gates are checked after rolls; orientation is visible initially and at four sparse scanner tiles, and hidden elsewhere.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "keyboard_roll",
+          "actions": "W/A/S/D and arrow keys dispatch one north/east/south/west roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The shared roll mode includes blind intervals after leaving a scanner. During those intervals the current bounded window hides orientation, while I_t contains actions and times but not the earlier visible initial or scanner orientation; that outside-window information can change the optimal roll."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available roll strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. Scanner reveal and orientation hiding occur when an input changes position; the only visible motion is action-triggered presentation, and terminal submission is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "64-79",
+          "claim": "Difficulty 4 is an 18 by 11, five-gate, single-face profile with four sparse scanners and initial/scanner-only visibility."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Full mode is keyboard rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,285-307",
+          "claim": "The generator creates the fixed board, gates, and scanner tiles from difficulty parameters and computes a fixed route; scanner positions are static board data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "56-63,119-139,224-262",
+          "claim": "Orientation visibility is determined from current position after a move, and position/orientation mutate only in response to move input; the only timer is post-goal submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Keyboard input is bound only in full mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100,126-127",
+          "claim": "CSS animations and orientation filtering are presentation effects, not autonomous changes to the die or board."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 8,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode uses visible north, west, south, and east buttons to roll the die one cell on an 18 by 11 board.",
+        "Five sequential top-face gates are checked after rolls; orientation is visible initially and at four sparse scanner tiles, and hidden elsewhere.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "direction_button_roll",
+          "actions": "Visible north, west, south, and east buttons dispatch one roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The shared roll mode includes blind intervals after leaving a scanner. During those intervals the current bounded window hides orientation, while I_t contains actions and times but not the earlier visible initial or scanner orientation; that outside-window information can change the optimal button."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available button strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. Scanner reveal and orientation hiding occur when an input changes position; the only visible motion is action-triggered presentation, and terminal submission is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "64-79",
+          "claim": "Difficulty 4 is an 18 by 11, five-gate, single-face profile with four sparse scanners and initial/scanner-only visibility."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Simplified mode is button rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,203-245,285-307",
+          "claim": "The generator creates the fixed board, gates, and scanner tiles from difficulty parameters and computes a fixed route; scanner positions are static board data."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "56-63,119-139,224-262",
+          "claim": "Orientation visibility is determined from current position after a move, and position/orientation mutate only in response to move input; the only timer is post-goal submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Direction buttons dispatch moves in simplified mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100,126-127",
+          "claim": "CSS animations and orientation filtering are presentation effects, not autonomous changes to the die or board."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 9,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode uses W/A/S/D or arrow keys to roll the die one cell north, east, south, or west on a 22 by 13 board.",
+        "Six sequential gates check both post-roll top and east faces; orientation is visible initially and at two sparse scanner tiles, and hidden elsewhere.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "keyboard_roll",
+          "actions": "W/A/S/D and arrow keys dispatch one north/east/south/west roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The shared roll mode includes blind intervals after leaving a scanner. During those intervals the current bounded window hides orientation, while I_t contains actions and times but not the earlier visible initial or scanner orientation; that outside-window information can change the optimal roll."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available roll strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. Scanner reveal and orientation hiding occur when an input changes position; the only visible motion is action-triggered presentation, and terminal submission is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "82-97",
+          "claim": "Difficulty 5 is a 22 by 13, six-gate, dual-face profile with two sparse scanners and initial/scanner-only visibility."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Full mode is keyboard rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,246-307",
+          "claim": "The generator applies dual-face gate constraints and static scanner placement to a fixed board and computes a fixed route; no clock or autonomous update is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "56-63,119-139,224-262",
+          "claim": "Orientation visibility is determined from current position after a move, and position/orientation mutate only in response to move input; the only timer is post-goal submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Keyboard input is bound only in full mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100,126-127",
+          "claim": "CSS animations and orientation filtering are presentation effects, not autonomous changes to the die or board."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 10,
+      "public_environment_name": "Blind Dice Courier",
+      "environment_id": "blind_dice_courier_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode uses visible north, west, south, and east buttons to roll the die one cell on a 22 by 13 board.",
+        "Six sequential gates check both post-roll top and east faces; orientation is visible initially and at two sparse scanner tiles, and hidden elsewhere.",
+        "R or RESET CRATE resets position, orientation, and crossings; REISSUE MANIFEST abandons the run and requests a new manifest."
+      ],
+      "autonomous_processes": [
+        "None changes outcome-affecting task state while no input is supplied: position, orientation, crossings, and gate state remain unchanged.",
+        "An input can trigger a CSS token transition or rejected-gate shake, but those are action-triggered presentation effects rather than autonomous task evolution.",
+        "After a successful final move, a fixed 240 ms timer submits the result; this is administrative terminal handling, not a changing control opportunity."
+      ],
+      "grouped_control_modes": [
+        {
+          "mode": "direction_button_roll",
+          "actions": "Visible north, west, south, and east buttons dispatch one roll.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "crate_reset",
+          "actions": "R or RESET CRATE restores the start and initial orientation.",
+          "outcome_affecting": true
+        },
+        {
+          "mode": "manifest_reissue",
+          "actions": "REISSUE MANIFEST sends an unsuccessful result and requests a new manifest.",
+          "outcome_affecting": false
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, board geometry, gate requirements, and initial orientation vary, so a policy using only its own action history cannot select an optimal roll for every history. This is static visual dependence, not dependence on autonomous time evolution."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The shared roll mode includes blind intervals after leaving a scanner. During those intervals the current bounded window hides orientation, while I_t contains actions and times but not the earlier visible initial or scanner orientation; that outside-window information can change the optimal button."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No no-input interval changes the position, orientation, crossings, or gate availability. The CSS transitions and fixed terminal submission do not make an available button strictly less effective, so no Delta witness exists."
+      },
+      "common_visible_process": "None. Scanner reveal and orientation hiding occur when an input changes position; the only visible motion is action-triggered presentation, and terminal submission is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails because there is no autonomous outcome phase or expiring action opportunity; the pre-run threshold does not override this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/env.json",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+        "weird_captcha_gym/environments/blind_dice_courier_env/tasks/blind_dice_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/blind_dice_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "82-97",
+          "claim": "Difficulty 5 is a 22 by 13, six-gate, dual-face profile with two sparse scanners and initial/scanner-only visibility."
+        },
+        {
+          "path": "weird_captcha_gym/environments/blind_dice_courier_env/controls.json",
+          "lines": "101-114",
+          "claim": "Simplified mode is button rolling, and the configured observation window is 400 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/blind_dice_courier.py",
+          "lines": "155-201,246-307",
+          "claim": "The generator applies dual-face gate constraints and static scanner placement to a fixed board and computes a fixed route; no clock or autonomous update is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "56-63,119-139,224-262",
+          "claim": "Orientation visibility is determined from current position after a move, and position/orientation mutate only in response to move input; the only timer is post-goal submission."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.js",
+          "lines": "370-389",
+          "claim": "Direction buttons dispatch moves in simplified mode, while reset and reissue are explicit event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/blind_dice_courier.css",
+          "lines": "93-100,126-127",
+          "claim": "CSS animations and orientation filtering are presentation effects, not autonomous changes to the die or board."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/blind_dice_courier.py",
+          "lines": "169-250",
+          "claim": "The grader replays the submitted action transcript and checks timestamps only for finite monotonicity; it has no elapsed-time or deadline condition."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

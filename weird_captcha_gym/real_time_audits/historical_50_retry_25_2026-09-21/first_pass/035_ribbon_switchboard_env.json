@@ -1,0 +1,977 @@
+{
+  "case_index": 35,
+  "environment_id": "ribbon_switchboard_env",
+  "public_environment_name": "Ribbon Switchboard",
+  "configuration_reports": [
+    {
+      "case_index": 341,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 3 ribbons, 4 control columns, and at least 2 marked target crossings; the local lens is 100-110 px and the trace corridor is 30-34 px.",
+        "Direct pointer hover probes illuminate local depth; pointer-down on the armed marked source, continuous pointer-move samples, and pointer-up at the matching terminal record the route. RE-ARM CANCELLED SIGNAL recovers a breach.",
+        "The active thresholds are at least 8 hover samples, 5 map cells, 2 local crossings, 24 trace samples, and 220 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=direct_pointer_hover: unheld pointer movement recorded as hover_probe.",
+        "D=direct_pointer_trace: pointerdown/hold, pointermove samples, and pointerup or cancellation recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. An existing pointer hold can remain in place, while a later continuation can still inspect, re-arm, trace, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "10-42; 181-194",
+          "claim": "Difficulty 1 supplies the three-ribbon/four-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and records input-driven trace events for separate direct-pointer and coordinate modes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the selected input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 342,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 3 ribbons, 4 control columns, and at least 2 marked target crossings; the local lens is 100-110 px and the trace corridor is 30-34 px.",
+        "The X/Y coordinate console accepts whole-stage coordinates for ILLUMINATE COORDINATE, START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL; RE-ARM CANCELLED SIGNAL recovers a breach without direct mouse tracing.",
+        "The active thresholds are at least 8 hover samples, 5 map cells, 2 local crossings, 24 trace samples, and 220 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=coordinate_hover: X/Y entry plus ILLUMINATE COORDINATE, recorded as hover_probe.",
+        "D=coordinate_trace: X/Y entry plus START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL, recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. A later continuation can still enter coordinates, re-arm, record the route, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "10-42; 181-194",
+          "claim": "Difficulty 1 supplies the three-ribbon/four-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and maps the coordinate console to the same trace model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the coordinate input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 343,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 4 ribbons, 5 control columns, and at least 3 marked target crossings; the local lens is 82-90 px and the trace corridor is 25-29 px.",
+        "Direct pointer hover probes illuminate local depth; pointer-down on the armed marked source, continuous pointer-move samples, and pointer-up at the matching terminal record the route. RE-ARM CANCELLED SIGNAL recovers a breach.",
+        "The active thresholds are at least 14 hover samples, 8 map cells, 3 local crossings, 40 trace samples, and 350 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=direct_pointer_hover: unheld pointer movement recorded as hover_probe.",
+        "D=direct_pointer_trace: pointerdown/hold, pointermove samples, and pointerup or cancellation recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. An existing pointer hold can remain in place, while a later continuation can still inspect, re-arm, trace, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "44-76; 181-194",
+          "claim": "Difficulty 2 supplies the four-ribbon/five-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and records input-driven trace events for separate direct-pointer and coordinate modes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the selected input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 344,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 4 ribbons, 5 control columns, and at least 3 marked target crossings; the local lens is 82-90 px and the trace corridor is 25-29 px.",
+        "The X/Y coordinate console accepts whole-stage coordinates for ILLUMINATE COORDINATE, START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL; RE-ARM CANCELLED SIGNAL recovers a breach without direct mouse tracing.",
+        "The active thresholds are at least 14 hover samples, 8 map cells, 3 local crossings, 40 trace samples, and 350 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=coordinate_hover: X/Y entry plus ILLUMINATE COORDINATE, recorded as hover_probe.",
+        "D=coordinate_trace: X/Y entry plus START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL, recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. A later continuation can still enter coordinates, re-arm, record the route, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "44-76; 181-194",
+          "claim": "Difficulty 2 supplies the four-ribbon/five-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and maps the coordinate console to the same trace model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the coordinate input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 345,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 4-5 ribbons, 6 control columns, and at least 4 marked target crossings; the local lens is 68-74 px and the trace corridor is 21-25 px.",
+        "Direct pointer hover probes illuminate local depth; pointer-down on the armed marked source, continuous pointer-move samples, and pointer-up at the matching terminal record the route. RE-ARM CANCELLED SIGNAL recovers a breach.",
+        "The active thresholds are at least 20 hover samples, 11 map cells, 4 local crossings, 56 trace samples, and 460 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=direct_pointer_hover: unheld pointer movement recorded as hover_probe.",
+        "D=direct_pointer_trace: pointerdown/hold, pointermove samples, and pointerup or cancellation recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. An existing pointer hold can remain in place, while a later continuation can still inspect, re-arm, trace, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "78-110; 181-194",
+          "claim": "Difficulty 3 supplies the four-to-five-ribbon/six-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and records input-driven trace events for separate direct-pointer and coordinate modes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the selected input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 346,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 4-5 ribbons, 6 control columns, and at least 4 marked target crossings; the local lens is 68-74 px and the trace corridor is 21-25 px.",
+        "The X/Y coordinate console accepts whole-stage coordinates for ILLUMINATE COORDINATE, START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL; RE-ARM CANCELLED SIGNAL recovers a breach without direct mouse tracing.",
+        "The active thresholds are at least 20 hover samples, 11 map cells, 4 local crossings, 56 trace samples, and 460 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=coordinate_hover: X/Y entry plus ILLUMINATE COORDINATE, recorded as hover_probe.",
+        "D=coordinate_trace: X/Y entry plus START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL, recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. A later continuation can still enter coordinates, re-arm, record the route, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "78-110; 181-194",
+          "claim": "Difficulty 3 supplies the four-to-five-ribbon/six-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and maps the coordinate console to the same trace model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the coordinate input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 347,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 4-6 ribbons, 6 control columns, and at least 5 marked target crossings; the local lens is 58-66 px and the trace corridor is 18-22 px.",
+        "Direct pointer hover probes illuminate local depth; pointer-down on the armed marked source, continuous pointer-move samples, and pointer-up at the matching terminal record the route. RE-ARM CANCELLED SIGNAL recovers a breach.",
+        "The active thresholds are at least 26 hover samples, 14 map cells, 6 local crossings, 70 trace samples, and 560 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=direct_pointer_hover: unheld pointer movement recorded as hover_probe.",
+        "D=direct_pointer_trace: pointerdown/hold, pointermove samples, and pointerup or cancellation recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. An existing pointer hold can remain in place, while a later continuation can still inspect, re-arm, trace, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "112-144; 181-194",
+          "claim": "Difficulty 4 supplies the four-to-six-ribbon/six-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and records input-driven trace events for separate direct-pointer and coordinate modes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the selected input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 348,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 4-6 ribbons, 6 control columns, and at least 5 marked target crossings; the local lens is 58-66 px and the trace corridor is 18-22 px.",
+        "The X/Y coordinate console accepts whole-stage coordinates for ILLUMINATE COORDINATE, START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL; RE-ARM CANCELLED SIGNAL recovers a breach without direct mouse tracing.",
+        "The active thresholds are at least 26 hover samples, 14 map cells, 6 local crossings, 70 trace samples, and 560 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=coordinate_hover: X/Y entry plus ILLUMINATE COORDINATE, recorded as hover_probe.",
+        "D=coordinate_trace: X/Y entry plus START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL, recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. A later continuation can still enter coordinates, re-arm, record the route, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "112-144; 181-194",
+          "claim": "Difficulty 4 supplies the four-to-six-ribbon/six-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; it does not create a time-varying route."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and maps the coordinate console to the same trace model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the coordinate input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 349,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 6 ribbons, 7 control columns, and at least 7 marked target crossings; the local lens is 46-52 px and the trace corridor is 13-16 px.",
+        "Direct pointer hover probes illuminate local depth; pointer-down on the armed marked source, continuous pointer-move samples, and pointer-up at the matching terminal record the route. RE-ARM CANCELLED SIGNAL recovers a breach.",
+        "The active thresholds are at least 34 hover samples, 18 map cells, 7 local crossings, 100 trace samples, and 760 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=direct_pointer_hover: unheld pointer movement recorded as hover_probe.",
+        "D=direct_pointer_trace: pointerdown/hold, pointermove samples, and pointerup or cancellation recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. An existing pointer hold can remain in place, while a later continuation can still inspect, re-arm, trace, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "146-178; 181-194",
+          "claim": "Difficulty 5 supplies the six-ribbon/seven-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; the dense fallback also produces a fixed layout rather than motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and records input-driven trace events for separate direct-pointer and coordinate modes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the selected input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 350,
+      "public_environment_name": "Ribbon Switchboard",
+      "environment_id": "ribbon_switchboard_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "A static 1000x440 analytic weave has 6 ribbons, 7 control columns, and at least 7 marked target crossings; the local lens is 46-52 px and the trace corridor is 13-16 px.",
+        "The X/Y coordinate console accepts whole-stage coordinates for ILLUMINATE COORDINATE, START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL; RE-ARM CANCELLED SIGNAL recovers a breach without direct mouse tracing.",
+        "The active thresholds are at least 34 hover samples, 18 map cells, 7 local crossings, 100 trace samples, and 760 ms of hold time. CERTIFY ROUTED SIGNAL is administrative."
+      ],
+      "autonomous_processes": [
+        "While live task time runs, requestAnimationFrame redraws the canvas from the fixed generated ribbons and trace tail; it does not generate or move route geometry.",
+        "A hover sets a 650 ms hoverExpiry, so the local illumination fades without a new action; hover counts, route coverage, crossing coverage, and source arming persist.",
+        "CSS port-spin, source-ready, lens-pulse, and breach animations change presentation only and are paused by the shared clock in paused mode.",
+        "During a held trace, performance.now supplies nondecreasing elapsed_ms and the grader requires only a minimum duration; the target path and corridor remain fixed."
+      ],
+      "grouped_control_modes": [
+        "D=coordinate_hover: X/Y entry plus ILLUMINATE COORDINATE, recorded as hover_probe.",
+        "D=coordinate_trace: X/Y entry plus START SIGNAL HOLD, RECORD TRACE SAMPLE, and RELEASE SIGNAL, recorded as trace events.",
+        "D=rearm_button: recovery after a cancelled trace; certification is administrative and is not an outcome-affecting mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For every legitimate grouped mode, q(I_t)=no-op is optimal after any delay: the static weave, route, and recovery state remain usable, and there is no deadline. A later continuation can still enter coordinates, re-arm, record the route, or certify."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Only vacuously: g(I_t,W_t^w)=no-op is in A*_Delta for the same static/no-deadline reason. The visible window is not needed to choose a delayed-optimal action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock autonomous task-state change makes an action worse. The redraw and CSS animation are presentation-only, hoverExpiry removes only the highlight while coverage persists, and elapsed_ms is a lower-bound hold check. The target path, hit corridor, and controls do not move, expire, or close."
+      },
+      "common_visible_process": "There is no common outcome-affecting visible autonomous process. The common redraw, 650 ms highlight fade, and CSS animations do not alter route geometry, action availability, or replay value.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition is already No because clauses (i) and (iii) fail; the pre-run threshold cannot change the label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+        "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+        "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+          "lines": "146-178; 181-194",
+          "claim": "Difficulty 5 supplies the six-ribbon/seven-column parameters and exact Full/Simplified surfaces; the shared observation window is 500 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+          "lines": "310-407",
+          "claim": "The generator constructs fixed seeded ribbon points, target crossings, terminal, radii, and replay requirements once; the dense fallback also produces a fixed layout rather than motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+          "lines": "54-65; 70-85; 89-95",
+          "claim": "The browser redraws fixed state, expires only the hover visual, persists coverage, and maps the coordinate console to the same trace model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+          "lines": "145-176; 212-299",
+          "claim": "The grader validates the coordinate input source and statically replays points, crossings, corridor distance, monotonicity, and a minimum elapsed hold; it has no moving target or expiry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+          "lines": "6-8; 13-14",
+          "claim": "The visible autonomous effects are port, lens, source, and breach animations plus the coordinate-console presentation, not task-state motion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "80-107; 301-339",
+          "claim": "The shared clock pauses CSS animations, timers, and requestAnimationFrame task progression; live redraw is therefore not an outcome-affecting state transition here."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

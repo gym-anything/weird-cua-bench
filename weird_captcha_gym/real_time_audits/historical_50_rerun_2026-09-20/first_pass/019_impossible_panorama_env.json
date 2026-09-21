@@ -1,0 +1,717 @@
+{
+  "case_index": 19,
+  "environment_id": "impossible_panorama_env",
+  "public_environment_name": "Impossible Panorama",
+  "configuration_reports": [
+    {
+      "case_index": 181,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas drag pans the 3x2, six-specimen panorama; the profile's coarse pan nudge is 220 px.",
+        "Direct optical-scale slider from 0.50 to 2.40 in 0.10 steps.",
+        "Direct focal-plane slider from 0 to 100 in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 5000-7000 ms and amplitudes of 4-8 px horizontally and 4-7 px vertically.",
+        "The target's visible event repeats every 6200 ms with a 3600 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "full canvas_drag pan across all panorama drag gestures",
+        "full zoom slider across all direct optical-scale changes",
+        "full focus slider across all direct focal-plane changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 720 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The window is bounded and is the evidence for the delayed choice."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 820 ms remaining, which is 100 ms more than the 720 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 620 ms of active event left and cannot qualify, while the next 6200 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 3600 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 720 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "10-40", "claim": "Difficulty 1 sets six sectors, the optical and focus tolerances, 720 ms/6-sample exposure, 6200 ms event period, 3600 ms event window, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Full mode uses direct panorama dragging and optical/focal sliders; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,267-278", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and evaluates the moving projection against the reticle."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "418-450,533-537", "claim": "The shutter hold starts and samples over time, and every start/sample/end time must satisfy the active event and minimum exposure checks while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,501-509", "claim": "The independent grader duplicates the moving target/active phase and counts a hold only when all recorded hold times qualify."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 182,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Directional pan buttons with COARSE 1x and FINE 1/4x modes across the 3x2, six-specimen panorama; coarse pan nudge is 220 px.",
+        "Stepped zoom minus/plus buttons from 0.50 to 2.40 in 0.10 steps.",
+        "NEAR/FAR focus buttons over the 0-100 focal range in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 5000-7000 ms and amplitudes of 4-8 px horizontally and 4-7 px vertically.",
+        "The target's visible event repeats every 6200 ms with a 3600 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "simplified pan_pad coarse/fine across all directional pan nudges",
+        "simplified zoom buttons across all button_in/button_out changes",
+        "simplified focus buttons across all button_near/button_far changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every simplified-mode shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 720 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The simplified pan/zoom/focus surface does not change this bounded-window shutter witness."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 820 ms remaining, which is 100 ms more than the 720 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 620 ms of active event left and cannot qualify, while the next 6200 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 3600 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 720 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "10-40", "claim": "Difficulty 1 sets six sectors, the optical and focus tolerances, 720 ms/6-sample exposure, 6200 ms event period, 3600 ms event window, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Simplified mode uses directional pan, stepped zoom, and near/far focus controls; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,367-433", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and binds simplified pan/zoom/focus inputs plus timed shutter samples."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "438-450,533-537", "claim": "The hold is qualified only when its start, samples, and release remain inside the active event while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,373-454,501-509", "claim": "The grader binds the simplified input sources and independently replays the same moving target, active phase, and all-time hold qualification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 183,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas drag pans the 4x3, twelve-specimen panorama; the profile's coarse pan nudge is 180 px.",
+        "Direct optical-scale slider from 0.50 to 2.40 in 0.10 steps.",
+        "Direct focal-plane slider from 0 to 100 in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 4400-6200 ms and amplitudes of 5-11 px horizontally and 5-9 px vertically.",
+        "The target's visible event repeats every 6400 ms with a 3000 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "full canvas_drag pan across all panorama drag gestures",
+        "full zoom slider across all direct optical-scale changes",
+        "full focus slider across all direct focal-plane changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 820 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The window is bounded and supplies the state evidence needed for the delayed choice."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 920 ms remaining, which is 100 ms more than the 820 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 720 ms of active event left and cannot qualify, while the next 6400 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 3000 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 820 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "42-72", "claim": "Difficulty 2 sets twelve sectors, 820 ms/7-sample exposure, 6400 ms event period, 3000 ms event window, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Full mode uses direct panorama dragging and optical/focal sliders; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,267-278", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and evaluates the moving projection against the reticle."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "418-450,533-537", "claim": "The shutter hold starts and samples over time, and every start/sample/end time must satisfy the active event and minimum exposure checks while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,501-509", "claim": "The independent grader duplicates the moving target/active phase and counts a hold only when all recorded hold times qualify."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 184,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Directional pan buttons with COARSE 1x and FINE 1/4x modes across the 4x3, twelve-specimen panorama; coarse pan nudge is 180 px.",
+        "Stepped zoom minus/plus buttons from 0.50 to 2.40 in 0.10 steps.",
+        "NEAR/FAR focus buttons over the 0-100 focal range in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 4400-6200 ms and amplitudes of 5-11 px horizontally and 5-9 px vertically.",
+        "The target's visible event repeats every 6400 ms with a 3000 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "simplified pan_pad coarse/fine across all directional pan nudges",
+        "simplified zoom buttons across all button_in/button_out changes",
+        "simplified focus buttons across all button_near/button_far changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every simplified-mode shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 820 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The simplified pan/zoom/focus surface does not change this bounded-window shutter witness."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 920 ms remaining, which is 100 ms more than the 820 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 720 ms of active event left and cannot qualify, while the next 6400 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 3000 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 820 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "42-72", "claim": "Difficulty 2 sets twelve sectors, 820 ms/7-sample exposure, 6400 ms event period, 3000 ms event window, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Simplified mode uses directional pan, stepped zoom, and near/far focus controls; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,367-433", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and binds simplified pan/zoom/focus inputs plus timed shutter samples."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "438-450,533-537", "claim": "The hold is qualified only when its start, samples, and release remain inside the active event while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,373-454,501-509", "claim": "The grader binds the simplified input sources and independently replays the same moving target, active phase, and all-time hold qualification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 185,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas drag pans the 6x3, eighteen-specimen panorama; the profile's coarse pan nudge is 150 px.",
+        "Direct optical-scale slider from 0.50 to 2.40 in 0.10 steps.",
+        "Direct focal-plane slider from 0 to 100 in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 3800-5400 ms and amplitudes of 6-14 px horizontally and 5-12 px vertically.",
+        "The target's visible event repeats every 6600 ms with a 2400 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "full canvas_drag pan across all panorama drag gestures",
+        "full zoom slider across all direct optical-scale changes",
+        "full focus slider across all direct focal-plane changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 900 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The window is bounded and supplies the state evidence needed for the delayed choice."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 1000 ms remaining, which is 100 ms more than the 900 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 800 ms of active event left and cannot qualify, while the next 6600 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 2400 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 900 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "74-104", "claim": "Difficulty 3 sets eighteen sectors, 900 ms/8-sample exposure, 6600 ms event period, 2400 ms event window, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Full mode uses direct panorama dragging and optical/focal sliders; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,267-278", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and evaluates the moving projection against the reticle."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "418-450,533-537", "claim": "The shutter hold starts and samples over time, and every start/sample/end time must satisfy the active event and minimum exposure checks while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,501-509", "claim": "The independent grader duplicates the moving target/active phase and counts a hold only when all recorded hold times qualify."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 186,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Directional pan buttons with COARSE 1x and FINE 1/4x modes across the 6x3, eighteen-specimen panorama; coarse pan nudge is 150 px.",
+        "Stepped zoom minus/plus buttons from 0.50 to 2.40 in 0.10 steps.",
+        "NEAR/FAR focus buttons over the 0-100 focal range in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 3800-5400 ms and amplitudes of 6-14 px horizontally and 5-12 px vertically.",
+        "The target's visible event repeats every 6600 ms with a 2400 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "simplified pan_pad coarse/fine across all directional pan nudges",
+        "simplified zoom buttons across all button_in/button_out changes",
+        "simplified focus buttons across all button_near/button_far changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every simplified-mode shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 900 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The simplified pan/zoom/focus surface does not change this bounded-window shutter witness."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 1000 ms remaining, which is 100 ms more than the 900 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 800 ms of active event left and cannot qualify, while the next 6600 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 2400 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 900 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "74-104", "claim": "Difficulty 3 sets eighteen sectors, 900 ms/8-sample exposure, 6600 ms event period, 2400 ms event window, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Simplified mode uses directional pan, stepped zoom, and near/far focus controls; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,367-433", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and binds simplified pan/zoom/focus inputs plus timed shutter samples."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "438-450,533-537", "claim": "The hold is qualified only when its start, samples, and release remain inside the active event while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,373-454,501-509", "claim": "The grader binds the simplified input sources and independently replays the same moving target, active phase, and all-time hold qualification."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 187,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas drag pans the 8x4, thirty-two-specimen panorama; the profile's coarse pan nudge is 130 px.",
+        "Direct optical-scale slider from 0.50 to 2.40 in 0.10 steps.",
+        "Direct focal-plane slider from 0 to 100 in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The legacy target specimen moves continuously with generated motion periods of 3400-5100 ms and amplitudes of 7-16 px horizontally and 6-14 px vertically.",
+        "The target's visible event repeats with a challenge-derived period of 5880-6720 ms, a 1980 ms active window, and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "full canvas_drag pan across all panorama drag gestures",
+        "full zoom slider across all direct optical-scale changes",
+        "full focus slider across all direct focal-plane changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every shutter_hold attempt after camera, zoom, and focus preparation, the legacy contract derives the event offset from the challenge identity rather than exposing it as a visible control. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 940 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The legacy event is visibly rendered by the same browser mechanic."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 1040 ms remaining, which is 100 ms more than the 940 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 840 ms of active event left and cannot qualify, while the next legacy loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 1980 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The legacy event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 940 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "106-136", "claim": "Difficulty 4 is the legacy 32-sector profile with 940 ms/8-sample exposure, 1980 ms event window, legacy challenge period, and legacy target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Full mode uses direct panorama dragging and optical/focal sliders; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "28-47,208-258,331-337", "claim": "The legacy generator derives the challenge event period/window/offset and target motion, and difficulty 4 deliberately preserves that legacy path."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "21-37,76-107,194-253,267-278", "claim": "The browser derives the legacy event contract, advances target position and active phase, draws the cyan ring event, and evaluates the moving projection."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "418-450,533-537", "claim": "The shutter hold starts and samples over time, and every start/sample/end time must satisfy the active event and minimum exposure checks while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "52-69,202-225,501-509", "claim": "The grader independently replays the legacy challenge contract and counts a hold only when all recorded hold times qualify."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 188,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Directional pan buttons with COARSE 1x and FINE 1/4x modes across the 8x4, thirty-two-specimen panorama; coarse pan nudge is 130 px.",
+        "Stepped zoom minus/plus buttons from 0.50 to 2.40 in 0.10 steps.",
+        "NEAR/FAR focus buttons over the 0-100 focal range in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The legacy target specimen moves continuously with generated motion periods of 3400-5100 ms and amplitudes of 7-16 px horizontally and 6-14 px vertically.",
+        "The target's visible event repeats with a challenge-derived period of 5880-6720 ms, a 1980 ms active window, and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "simplified pan_pad coarse/fine across all directional pan nudges",
+        "simplified zoom buttons across all button_in/button_out changes",
+        "simplified focus buttons across all button_near/button_far changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every simplified-mode shutter_hold attempt after camera, zoom, and focus preparation, the legacy contract derives the event offset from the challenge identity rather than exposing it as a visible control. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 940 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The simplified input surface does not change the legacy visible-event witness."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 1040 ms remaining, which is 100 ms more than the 940 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 840 ms of active event left and cannot qualify, while the next legacy loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 1980 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The legacy event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 940 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "106-136", "claim": "Difficulty 4 is the legacy 32-sector profile with 940 ms/8-sample exposure, 1980 ms event window, legacy challenge period, and legacy target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Simplified mode uses directional pan, stepped zoom, and near/far focus controls; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "28-47,208-258,331-337", "claim": "The legacy generator derives the challenge event period/window/offset and target motion, and difficulty 4 deliberately preserves that legacy path."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "21-37,76-107,194-253,367-433", "claim": "The browser derives the legacy event contract, advances target position and active phase, draws the cyan ring event, and binds simplified inputs plus timed shutter samples."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "438-450,533-537", "claim": "The hold is qualified only when its start, samples, and release remain inside the active event while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "52-69,202-225,373-454,501-509", "claim": "The grader independently replays the legacy challenge contract, binds simplified input sources, and checks all hold times."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 189,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Canvas drag pans the 10x5, fifty-specimen panorama; the profile's coarse pan nudge is 100 px.",
+        "Direct optical-scale slider from 0.50 to 2.40 in 0.05 steps.",
+        "Direct focal-plane slider from 0 to 100 in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 2600-4200 ms and amplitudes of 3-5 px horizontally and 3-5 px vertically.",
+        "The target's visible event repeats every 7200 ms with a 2400 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "full canvas_drag pan across all panorama drag gestures",
+        "full zoom slider across all direct optical-scale changes",
+        "full focus slider across all direct focal-plane changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 1020 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The window is bounded and supplies the state evidence needed for the delayed choice."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 1120 ms remaining, which is 100 ms more than the 1020 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 920 ms of active event left and cannot qualify, while the next 7200 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 2400 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 1020 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "138-169", "claim": "Difficulty 5 sets fifty sectors, 1020 ms/10-sample exposure, 7200 ms event period, 2400 ms event window, narrow optical tolerances, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Full mode uses direct panorama dragging and optical/focal sliders; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,267-278", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and evaluates the moving projection against the reticle."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "418-450,533-537", "claim": "The shutter hold starts and samples over time, and every start/sample/end time must satisfy the active event and minimum exposure checks while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,501-509", "claim": "The independent grader duplicates the moving target/active phase and counts a hold only when all recorded hold times qualify."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 190,
+      "public_environment_name": "Impossible Panorama",
+      "environment_id": "impossible_panorama_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Directional pan buttons with COARSE 1x and FINE 1/4x modes across the 10x5, fifty-specimen panorama; coarse pan nudge is 100 px.",
+        "Stepped zoom minus/plus buttons from 0.50 to 2.40 in 0.05 steps.",
+        "NEAR/FAR focus buttons over the 0-100 focal range in 1-point steps.",
+        "Mouse press-and-hold on HOLD SHUTTER, followed by release after a stable exposure.",
+        "RESET OPTICS and DEVELOP PLATE controls."
+      ],
+      "autonomous_processes": [
+        "The target specimen moves continuously with generated motion periods of 2600-4200 ms and amplitudes of 3-5 px horizontally and 3-5 px vertically.",
+        "The target's visible event repeats every 7200 ms with a 2400 ms active window and a challenge-derived offset; at adequate zoom and focus it changes to twin vanes with two expanding cyan rings.",
+        "The canvas redraws the time-dependent scene every 50 ms, and an active shutter appends samples every 90 ms without another agent action."
+      ],
+      "grouped_control_modes": [
+        "simplified pan_pad coarse/fine across all directional pan nudges",
+        "simplified zoom buttons across all button_in/button_out changes",
+        "simplified focus buttons across all button_near/button_far changes",
+        "shutter_hold across every exposure attempt after optical preparation"
+      ],
+      "delta_ms": 400,
+      "window_ms": 800,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every simplified-mode shutter_hold attempt after camera, zoom, and focus preparation, the challenge-derived event offset is not available to an observation-free policy. Identical prior actions and task times can arrive at an active or inactive event phase across generated instances, so no q(I_t) can always select the delayed shutter start or safe no-op action."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With the configured 800 ms, six-frame window, g can use the visible target trajectory and the expanding-ring phase to predict whether delivery 400 ms later leaves at least the 1020 ms hold inside the active event; it starts the shutter when that remains optimal and otherwise preserves the next loop with no-op. The simplified pan/zoom/focus surface does not change this bounded-window shutter witness."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an active-event history with 1120 ms remaining, which is 100 ms more than the 1020 ms minimum hold. Starting the shutter now can qualify, but after tau=200 ms the same shutter_start has only 920 ms of active event left and cannot qualify, while the next 7200 ms loop remains available. The changing target/ring state is visible in the recent frames and causes the strict loss."
+      },
+      "common_visible_process": "The common witness is the continuously moving target together with its repeating visible phase: the target trajectory and expanding cyan rings change autonomously, the rings disappear when the 2400 ms active window closes, and qualifiedAt requires the phase and moving projection at shutter start, every sample, and release.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The event loop starts from the browser's render-time clock rather than from a preparatory agent action. A valid exposure must issue shutter_start during phaseActive and keep the 1020 ms hold, all samples, and release within that phase, so a preparation followed by no outcome-affecting actions through the autonomous event cannot succeed on any generated instance.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/impossible_panorama_env/controls.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/env.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/task.json",
+        "weird_captcha_gym/environments/impossible_panorama_env/tasks/impossible_panorama_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py",
+        "weird_captcha_gym/tools/incubator_solvers/impossible_panorama.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "138-169", "claim": "Difficulty 5 sets fifty sectors, 1020 ms/10-sample exposure, 7200 ms event period, 2400 ms event window, narrow optical tolerances, and the target motion ranges."},
+        {"path": "weird_captcha_gym/environments/impossible_panorama_env/controls.json", "lines": "171-184", "claim": "Simplified mode uses directional pan, stepped zoom, and near/far focus controls; the shared real-time schedule is an 800 ms, six-frame observation and 180-second allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/impossible_panorama.py", "lines": "249-328,331-337", "claim": "The controlled generator binds difficulty parameters, creates the target motion and challenge-derived event contract, and preserves the target position equation."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "76-107,194-253,367-433", "claim": "The browser advances target position and phaseActive autonomously, draws the cyan ring event, and binds simplified pan/zoom/focus inputs plus timed shutter samples."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/impossible_panorama.js", "lines": "438-450,533-537", "claim": "The hold is qualified only when its start, samples, and release remain inside the active event while the scene redraws continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/impossible_panorama.py", "lines": "202-225,373-454,501-509", "claim": "The grader binds the simplified input sources and independently replays the same moving target, active phase, and all-time hold qualification."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

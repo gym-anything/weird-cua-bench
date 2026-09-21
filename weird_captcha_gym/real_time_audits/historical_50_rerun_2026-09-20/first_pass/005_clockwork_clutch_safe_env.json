@@ -1,0 +1,937 @@
+{
+  "case_index": 5,
+  "environment_id": "clockwork_clutch_safe_env",
+  "public_environment_name": "Clockwork Clutch Safe",
+  "configuration_reports": [
+    {
+      "case_index": 41,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "One direct clutch-lever drag per seal, from the visible COUPLED detent to the FREE detent; the verifier expects clutch_lever_drag.",
+        "One rotating seal canvas with a fixed red witness mark, exact angle and speed telemetry, drive tick, coupled count, and load factor."
+      ],
+      "autonomous_processes": [
+        "While the master drive is running, the single engaged shaft advances every 85 ms at 1.2 degrees per tick; the shaft does not move while braked.",
+        "At tick 90 the drive stops automatically; the safe accepts only a free shaft whose phase error is at most 30 degrees."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its direct lever-release control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator draws the release moment from ticks 34 through 42 and derives a seed-specific initial angle. An observation-free policy using only its own actions and times cannot choose the optimal release for every hidden phase."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Five chronological frames over 600 ms show the seal crossing the red witness mark, while the angle and speed readouts expose its current phase and motion. That bounded window is sufficient to select the release or no-op."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is only one rotating shaft and one usable zero crossing before the 90-tick limit. While success remains possible, a delayed release remains inside the 30-degree acceptance band and is verifier-equivalent; a delay that moves it outside that band leaves no later zero crossing before the limit. No legitimate running-drive D and delay therefore gives a strict action-value loss while success remains possible."
+      },
+      "common_visible_process": "The engaged seal autonomously rotates around the visible red witness mark at 85-ms ticks. In this one-shaft profile that process supplies phase information but not the strict survivable degradation required by clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start marks all shaft engaged, while the grader requires all of them to be free and within phase tolerance. A no-outcome-action autonomous run cannot change engagement state, so it cannot pass.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "10-27,116-129",
+          "claim": "Level 1 has one shaft, a 34-42 release range, 85-ms ticks, 1.2 degrees per tick, 30-degree tolerance, a 90-tick limit, both readouts, re-engagement, and both interaction surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Full mode renders direct lever drags; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the full input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the full input source clutch_lever_drag, replays running-only time and active-set motion, and grades the final free phases against the Level 1 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, drags the corresponding visible lever, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 42,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "One labelled RELEASE / ENGAGE button per seal; the verifier expects clutch_button.",
+        "One rotating seal canvas with a fixed red witness mark, exact angle and speed telemetry, drive tick, coupled count, and load factor."
+      ],
+      "autonomous_processes": [
+        "While the master drive is running, the single engaged shaft advances every 85 ms at 1.2 degrees per tick; the shaft does not move while braked.",
+        "At tick 90 the drive stops automatically; the safe accepts only a free shaft whose phase error is at most 30 degrees."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its labelled release-button control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator draws the release moment from ticks 34 through 42 and derives a seed-specific initial angle. An observation-free policy using only its own actions and times cannot choose the optimal release for every hidden phase."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Five chronological frames over 600 ms show the seal crossing the red witness mark, while the angle and speed readouts expose its current phase and motion. That bounded window is sufficient to select the release or no-op."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is only one rotating shaft and one usable zero crossing before the 90-tick limit. While success remains possible, a delayed release remains inside the 30-degree acceptance band and is verifier-equivalent; a delay that moves it outside that band leaves no later zero crossing before the limit. No legitimate running-drive D and delay therefore gives a strict action-value loss while success remains possible."
+      },
+      "common_visible_process": "The engaged seal autonomously rotates around the visible red witness mark at 85-ms ticks. In this one-shaft profile that process supplies phase information but not the strict survivable degradation required by clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start marks all shaft engaged, while the grader requires all of them to be free and within phase tolerance. A no-outcome-action autonomous run cannot change engagement state, so it cannot pass.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "10-27,116-129",
+          "claim": "Level 1 has one shaft, a 34-42 release range, 85-ms ticks, 1.2 degrees per tick, 30-degree tolerance, a 90-tick limit, both readouts, re-engagement, and both interaction surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Simplified mode renders labelled clutch buttons; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the simplified input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the simplified input source clutch_button, replays running-only time and active-set motion, and grades the final free phases against the Level 1 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, clicks the corresponding labelled control, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 43,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Two direct clutch-lever drags between visible COUPLED and FREE detents; re-engagement is legal and the verifier expects clutch_lever_drag.",
+        "Two rotating seal canvases with angle and speed telemetry, drive tick, coupled count, and load factor."
+      ],
+      "autonomous_processes": [
+        "Both engaged shafts advance every 85 ms at their ratio times 1.5 degrees per tick; after one release the remaining engaged shaft runs at twice that active-set factor.",
+        "The drive stops at tick 125; the safe accepts only two free shafts whose phase errors are at most 20 degrees."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its direct lever-release control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The paired profile samples two seed-dependent release moments from disjoint ranges and shuffles which shaft receives each moment. An I_t-only policy cannot select the optimal shaft and time for every hidden phase."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame 600-ms window shows both rotating seals, their witness marks, exact angles, and current speeds; it is sufficient to predict the delayed phase and the load change after a release."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The two-shaft profile has no qualifying survivable strict-loss interval. A delay small enough to leave success possible keeps the selected release inside its 20-degree phase band, and the other release can be retimed to absorb the corresponding load shift. Once a shaft passes that band, its next zero crossing is beyond the 125-tick limit, so success is no longer possible. Re-engagement does not create another available crossing within the configured horizon."
+      },
+      "common_visible_process": "The active-set gear train rotates autonomously and doubles the remaining shaft's speed after a release. That visible redistribution changes timing, but in this two-phase horizon it does not make a release strictly worse before the state becomes unsalvageable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start marks all shafts engaged, while the grader requires all of them to be free and within phase tolerance. A no-outcome-action autonomous run cannot change engagement state, so it cannot pass.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "29-47,116-129",
+          "claim": "Level 2 has two paired shafts, release ranges 31-39 and 70-82, 85-ms ticks, 1.5 degrees per tick, 20-degree tolerance, a 125-tick limit, both readouts, re-engagement, and both interaction surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Full mode renders direct lever drags; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the full input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the full input source clutch_lever_drag, replays running-only time and active-set motion, and grades the final free phases against the Level 2 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, drags the corresponding visible lever, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 44,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Two labelled RELEASE / ENGAGE buttons; re-engagement is legal and the verifier expects clutch_button.",
+        "Two rotating seal canvases with angle and speed telemetry, drive tick, coupled count, and load factor."
+      ],
+      "autonomous_processes": [
+        "Both engaged shafts advance every 85 ms at their ratio times 1.5 degrees per tick; after one release the remaining engaged shaft runs at twice that active-set factor.",
+        "The drive stops at tick 125; the safe accepts only two free shafts whose phase errors are at most 20 degrees."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its labelled release-button control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": null,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The paired profile samples two seed-dependent release moments from disjoint ranges and shuffles which shaft receives each moment. An I_t-only policy cannot select the optimal shaft and time for every hidden phase."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame 600-ms window shows both rotating seals, their witness marks, exact angles, and current speeds; it is sufficient to predict the delayed phase and the load change after a release."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The two-shaft profile has no qualifying survivable strict-loss interval. A delay small enough to leave success possible keeps the selected release inside its 20-degree phase band, and the other release can be retimed to absorb the corresponding load shift. Once a shaft passes that band, its next zero crossing is beyond the 125-tick limit, so success is no longer possible. Re-engagement does not create another available crossing within the configured horizon."
+      },
+      "common_visible_process": "The active-set gear train rotates autonomously and doubles the remaining shaft's speed after a release. That visible redistribution changes timing, but in this two-phase horizon it does not make a release strictly worse before the state becomes unsalvageable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start marks all shafts engaged, while the grader requires all of them to be free and within phase tolerance. A no-outcome-action autonomous run cannot change engagement state, so it cannot pass.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "29-47,116-129",
+          "claim": "Level 2 has two paired shafts, release ranges 31-39 and 70-82, 85-ms ticks, 1.5 degrees per tick, 20-degree tolerance, a 125-tick limit, both readouts, re-engagement, and both interaction surfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Simplified mode renders labelled clutch buttons; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the simplified input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the simplified input source clutch_button, replays running-only time and active-set motion, and grades the final free phases against the Level 2 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, clicks the corresponding labelled control, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 45,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Four direct clutch-lever drags between visible COUPLED and FREE detents; re-engagement is legal and the verifier expects clutch_lever_drag.",
+        "Four rotating seal canvases with exact angle and speed telemetry, drive tick, coupled count, and load factor."
+      ],
+      "autonomous_processes": [
+        "All four engaged shafts advance every 85 ms; each engaged speed is its ratio times 1.8 degrees per tick times 4 divided by the number of currently engaged shafts.",
+        "Each clutch release changes that active-set multiplier for all shafts still engaged; the drive stops at tick 170 and the safe uses a 13-degree phase tolerance."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its direct lever-release control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": 340,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator shuffles shaft order and independently samples four release moments from disjoint ranges. A policy using only I_t cannot identify which shaft is at its witness phase for every generated instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame 600-ms window contains the current ring angles, motion direction and speed, visible coupled/free state, and the active-set count. Those observations predict which release will be optimal after the 340-ms delay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness: a legacy_four instance can place a magnitude-1.75 shaft in the third release position, after two earlier releases leave two active shafts. Its visible rate is 1.75 × 1.8 × (4/2) = 6.3 degrees per tick. Four ticks (340 ms) move it 25.2 degrees away from the witness, beyond the 13-degree tolerance, so the same release action is no longer effective; leaving it coupled preserves a later zero crossing before max_ticks=170, so success remains possible. This is the same rotating-shaft process used by clauses (i) and (ii), and the lever is the outcome-affecting action whose value changes."
+      },
+      "common_visible_process": "Running active-set gear rotation: the visible seal angle changes every 85-ms tick, and releasing a clutch changes the speed of every shaft still engaged. The red witness mark and successive ring positions visibly evidence the process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start publishes all four shafts engaged, while the grader accepts only an all-free bank within phase tolerance. Starting the autonomous drive without later clutch events leaves the active set unchanged and cannot pass; clutch releases are outcome-affecting run actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "49-69,116-129",
+          "claim": "Level 3 has four legacy-ratio shafts, four ordered release ranges, 85-ms ticks, 1.8 degrees per tick, 13-degree tolerance, a 170-tick limit, both readouts, re-engagement, and both interfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Full mode renders direct lever drags; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the full input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the full input source clutch_lever_drag, replays running-only time and active-set motion, and grades the final free phases against the Level 3 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, drags the corresponding visible lever, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 46,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Four labelled RELEASE / ENGAGE buttons; re-engagement is legal and the verifier expects clutch_button.",
+        "Four rotating seal canvases with exact angle and speed telemetry, drive tick, coupled count, and load factor."
+      ],
+      "autonomous_processes": [
+        "All four engaged shafts advance every 85 ms; each engaged speed is its ratio times 1.8 degrees per tick times 4 divided by the number of currently engaged shafts.",
+        "Each clutch release changes that active-set multiplier for all shafts still engaged; the drive stops at tick 170 and the safe uses a 13-degree phase tolerance."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its labelled release-button control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": 340,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator shuffles shaft order and independently samples four release moments from disjoint ranges. A policy using only I_t cannot identify which shaft is at its witness phase for every generated instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The five-frame 600-ms window contains the current ring angles, motion direction and speed, visible coupled/free state, and the active-set count. Those observations predict which release will be optimal after the 340-ms delay."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness: a legacy_four instance can place a magnitude-1.75 shaft in the third release position, after two earlier releases leave two active shafts. Its visible rate is 1.75 × 1.8 × (4/2) = 6.3 degrees per tick. Four ticks (340 ms) move it 25.2 degrees away from the witness, beyond the 13-degree tolerance, so the same release action is no longer effective; leaving it coupled preserves a later zero crossing before max_ticks=170, so success remains possible. This is the same rotating-shaft process used by clauses (i) and (ii), and the button is the outcome-affecting action whose value changes."
+      },
+      "common_visible_process": "Running active-set gear rotation: the visible seal angle changes every 85-ms tick, and releasing a clutch changes the speed of every shaft still engaged. The red witness mark and successive ring positions visibly evidence the process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start publishes all four shafts engaged, while the grader accepts only an all-free bank within phase tolerance. Starting the autonomous drive without later clutch events leaves the active set unchanged and cannot pass; clutch releases are outcome-affecting run actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "49-69,116-129",
+          "claim": "Level 3 has four legacy-ratio shafts, four ordered release ranges, 85-ms ticks, 1.8 degrees per tick, 13-degree tolerance, a 170-tick limit, both readouts, re-engagement, and both interfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Simplified mode renders labelled clutch buttons; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the simplified input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the simplified input source clutch_button, replays running-only time and active-set motion, and grades the final free phases against the Level 3 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, clicks the corresponding labelled control, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 47,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Four direct clutch-lever drags between visible COUPLED and FREE detents; re-engagement is legal and the verifier expects clutch_lever_drag.",
+        "Four rotating seal canvases with moving witness geometry and speed telemetry, but no numeric angle readout; drive tick, coupled count, and load factor remain visible."
+      ],
+      "autonomous_processes": [
+        "All four engaged shafts advance every 85 ms at 2.1 degrees per tick scaled by 4 divided by the number of currently engaged shafts.",
+        "Clutch releases redistribute the active-set speed; the drive stops at tick 155 and the safe uses a 9-degree phase tolerance."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its direct lever-release control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": 170,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator shuffles shaft order and independently samples four release moments from disjoint ranges. A policy using only I_t cannot identify which shaft is at its witness phase for every generated instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Although numeric angle readout is disabled, the five-frame window shows successive ring positions against the fixed witness mark and supplies speed telemetry and active-count context. That recent visual trajectory is sufficient to predict the delayed phase."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness: put a magnitude-1.75 legacy shaft in the third release position, after two earlier releases leave two active shafts. Its rate is 1.75 × 2.1 × (4/2) = 7.35 degrees per tick. Two ticks (170 ms) move it 14.7 degrees past the witness, beyond the 9-degree tolerance, while its next crossing remains reachable before max_ticks=155 if it is left coupled. This is the same rotating-shaft process used by clauses (i) and (ii), and the lever is the outcome-affecting action whose value changes."
+      },
+      "common_visible_process": "Running active-set gear rotation visibly moves each seal past the red witness mark; releasing a clutch changes the speed of every remaining engaged shaft, and the moving seal geometry remains the relevant temporal evidence.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start publishes all four shafts engaged, while the grader accepts only an all-free bank within phase tolerance. Starting the autonomous drive without later clutch events leaves the active set unchanged and cannot pass; clutch releases are outcome-affecting run actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "71-91,116-129",
+          "claim": "Level 4 has four faster legacy-ratio shafts, narrower release ranges, 85-ms ticks, 2.1 degrees per tick, 9-degree tolerance, a 155-tick limit, hidden angle readout, speed readout, re-engagement, and both interfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Full mode renders direct lever drags; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the full input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the full input source clutch_lever_drag, replays running-only time and active-set motion, and grades the final free phases against the Level 4 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, drags the corresponding visible lever, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 48,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Four labelled RELEASE / ENGAGE buttons; re-engagement is legal and the verifier expects clutch_button.",
+        "Four rotating seal canvases with moving witness geometry and speed telemetry, but no numeric angle readout; drive tick, coupled count, and load factor remain visible."
+      ],
+      "autonomous_processes": [
+        "All four engaged shafts advance every 85 ms at 2.1 degrees per tick scaled by 4 divided by the number of currently engaged shafts.",
+        "Clutch releases redistribute the active-set speed; the drive stops at tick 155 and the safe uses a 9-degree phase tolerance."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its labelled release-button control available, across all seeds and attempts.",
+        "Running or stopped clutch re-engagement recovery, plus master-drive start/stop and safe-unlock controls."
+      ],
+      "delta_ms": 170,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator shuffles shaft order and independently samples four release moments from disjoint ranges. A policy using only I_t cannot identify which shaft is at its witness phase for every generated instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Although numeric angle readout is disabled, the five-frame window shows successive ring positions against the fixed witness mark and supplies speed telemetry and active-count context. That recent visual trajectory is sufficient to predict the delayed phase."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness: put a magnitude-1.75 legacy shaft in the third release position, after two earlier releases leave two active shafts. Its rate is 1.75 × 2.1 × (4/2) = 7.35 degrees per tick. Two ticks (170 ms) move it 14.7 degrees past the witness, beyond the 9-degree tolerance, while its next crossing remains reachable before max_ticks=155 if it is left coupled. This is the same rotating-shaft process used by clauses (i) and (ii), and the button is the outcome-affecting action whose value changes."
+      },
+      "common_visible_process": "Running active-set gear rotation visibly moves each seal past the red witness mark; releasing a clutch changes the speed of every remaining engaged shaft, and the moving seal geometry remains the relevant temporal evidence.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start publishes all four shafts engaged, while the grader accepts only an all-free bank within phase tolerance. Starting the autonomous drive without later clutch events leaves the active set unchanged and cannot pass; clutch releases are outcome-affecting run actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "71-91,116-129",
+          "claim": "Level 4 has four faster legacy-ratio shafts, narrower release ranges, 85-ms ticks, 2.1 degrees per tick, 9-degree tolerance, a 155-tick limit, hidden angle readout, speed readout, re-engagement, and both interfaces."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Simplified mode renders labelled clutch buttons; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the simplified input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the simplified input source clutch_button, replays running-only time and active-set motion, and grades the final free phases against the Level 4 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, clicks the corresponding labelled control, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 49,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Four direct clutch-lever drags between visible COUPLED and FREE detents; released clutches cannot be re-engaged and the verifier expects clutch_lever_drag.",
+        "Four rotating seal canvases with only the witness geometry, drive tick, coupled count, and load factor; numeric angle and speed readouts are hidden."
+      ],
+      "autonomous_processes": [
+        "All four engaged shafts advance every 85 ms at 2.3 degrees per tick scaled by 4 divided by the number of currently engaged shafts.",
+        "Clutch releases redistribute the active-set speed; the drive stops at tick 145 and the safe uses a 6-degree phase tolerance; released clutches remain free."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its direct lever-release control available, across all seeds and attempts.",
+        "Irreversible released-clutch state plus master-drive start/stop and safe-unlock controls; no re-engagement mode exists."
+      ],
+      "delta_ms": 170,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator shuffles shaft order and independently samples four release moments from disjoint ranges. A policy using only I_t cannot identify which shaft is at its witness phase for every generated instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Even without numeric telemetry, five chronological frames over 600 ms show each ring's direction and angular displacement relative to the red witness mark. That bounded trajectory is sufficient to predict the delayed phase and select the correct action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness: put a magnitude-2.0 wide_four shaft in the third release position, after two earlier releases leave two active shafts. Its rate is 2.0 × 2.3 × (4/2) = 9.2 degrees per tick. Two ticks (170 ms) move it 18.4 degrees past the witness, beyond the 6-degree tolerance, so the same release action loses its outcome value. Success remains possible by leaving that shaft coupled for its later visible zero crossing and releasing the remaining active shaft at its own crossing before max_ticks=145; no re-engagement is needed. This is the same rotating-shaft process used by clauses (i) and (ii), and the lever is the outcome-affecting action whose value changes."
+      },
+      "common_visible_process": "Running wide-ratio active-set gear rotation visibly carries each seal through the fixed witness mark; each irreversible release changes the rate of the remaining coupled rings.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start publishes all four shafts engaged, while the grader accepts only an all-free bank within phase tolerance. Starting the autonomous drive without later clutch events leaves the active set unchanged and cannot pass; clutch releases are outcome-affecting run actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "93-113,116-129",
+          "claim": "Level 5 has four wide-ratio shafts, release ranges 26-32, 47-54, 68-77, and 94-105, 85-ms ticks, 2.3 degrees per tick, 6-degree tolerance, a 145-tick limit, hidden angle and speed readouts, and no re-engagement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Full mode renders direct lever drags; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the full input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the full input source clutch_lever_drag, replays running-only time and active-set motion, and grades the final free phases against the Level 5 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, drags the corresponding visible lever, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 50,
+      "public_environment_name": "Clockwork Clutch Safe",
+      "environment_id": "clockwork_clutch_safe_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "START DRIVE, BRAKE / STOP DRIVE, TRY SAFE, and BREAK TRAIN / FRESH SAFE.",
+        "Four labelled RELEASE buttons; released clutches cannot be re-engaged and the verifier expects clutch_button.",
+        "Four rotating seal canvases with only the witness geometry, drive tick, coupled count, and load factor; numeric angle and speed readouts are hidden."
+      ],
+      "autonomous_processes": [
+        "All four engaged shafts advance every 85 ms at 2.3 degrees per tick scaled by 4 divided by the number of currently engaged shafts.",
+        "Clutch releases redistribute the active-set speed; the drive stops at tick 145 and the safe uses a 6-degree phase tolerance; released clutches remain free."
+      ],
+      "grouped_control_modes": [
+        "Every running-drive interval with at least one engaged shaft and its labelled release-button control available, across all seeds and attempts.",
+        "Irreversible released-clutch state plus master-drive start/stop and safe-unlock controls; no re-engagement mode exists."
+      ],
+      "delta_ms": 170,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "The generator shuffles shaft order and independently samples four release moments from disjoint ranges. A policy using only I_t cannot identify which shaft is at its witness phase for every generated instance."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Even without numeric telemetry, five chronological frames over 600 ms show each ring's direction and angular displacement relative to the red witness mark. That bounded trajectory is sufficient to predict the delayed phase and select the correct action."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Common witness: put a magnitude-2.0 wide_four shaft in the third release position, after two earlier releases leave two active shafts. Its rate is 2.0 × 2.3 × (4/2) = 9.2 degrees per tick. Two ticks (170 ms) move it 18.4 degrees past the witness, beyond the 6-degree tolerance, so the same release action loses its outcome value. Success remains possible by leaving that shaft coupled for its later visible zero crossing and releasing the remaining active shaft at its own crossing before max_ticks=145; no re-engagement is needed. This is the same rotating-shaft process used by clauses (i) and (ii), and the button is the outcome-affecting action whose value changes."
+      },
+      "common_visible_process": "Running wide-ratio active-set gear rotation visibly carries each seal through the fixed witness mark; each irreversible release changes the rate of the remaining coupled rings.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every generated start publishes all four shafts engaged, while the grader accepts only an all-free bank within phase tolerance. Starting the autonomous drive without later clutch events leaves the active set unchanged and cannot pass; clutch releases are outcome-affecting run actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/task.json",
+        "weird_captcha_gym/environments/clockwork_clutch_safe_env/tasks/clockwork_clutch_safe_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/clockwork_clutch_safe.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/clockwork_clutch_safe.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/clockwork_clutch_safe.py",
+        "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/controls.json",
+          "lines": "93-113,116-129",
+          "claim": "Level 5 has four wide-ratio shafts, release ranges 26-32, 47-54, 68-77, and 94-105, 85-ms ticks, 2.3 degrees per tick, 6-degree tolerance, a 145-tick limit, hidden angle and speed readouts, and no re-engagement."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/_interaction_vii_viii_common.py",
+          "lines": "988-1001,1018-1026",
+          "claim": "The generator randomizes shaft order and release moments, integrates load_numerator divided by active-shaft count into the initial angles, and publishes all shafts initially engaged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/_interaction_vii_viii.js",
+          "lines": "897-936,951-995",
+          "claim": "Simplified mode renders labelled clutch buttons; the browser advances engaged shafts autonomously, applies the active-set speed, and handles clutch changes with the simplified input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockwork_clutch_safe.py",
+          "lines": "43-49,153-216",
+          "claim": "The grader binds the simplified input source clutch_button, replays running-only time and active-set motion, and grades the final free phases against the Level 5 tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/_interaction_vii_viii_common.py",
+          "lines": "521-566",
+          "claim": "The reference solver brakes at each generated release tick, clicks the corresponding labelled control, restarts the drive, and unlocks."
+        },
+        {
+          "path": "weird_captcha_gym/environments/clockwork_clutch_safe_env/env.json",
+          "lines": "20-45",
+          "claim": "The live observation contract supplies a 600-ms window, five frames per observation, and a 180-second play allowance."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
